@@ -14422,6 +14422,9 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       case "firefox":
         fluent_id = "newtab-wallpaper-category-title-firefox";
         break;
+      case "bluffy":
+        fluent_id = "newtab-wallpaper-category-title-bluffy";
+        break;
     }
     this.setState({
       activeCategoryFluentID: fluent_id
@@ -14675,6 +14678,9 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
           break;
         case "firefox":
           fluent_id = "newtab-wallpaper-category-title-firefox";
+          break;
+        case "bluffy":
+          fluent_id = "newtab-wallpaper-category-title-bluffy";
           break;
       }
       let style = {};

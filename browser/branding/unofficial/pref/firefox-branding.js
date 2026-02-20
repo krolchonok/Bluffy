@@ -32,3 +32,5 @@ pref("app.update.badgeWaitTime", 0);
 pref("devtools.selfxss.count", 5);
 
 pref("browser.newtabpage.activity-stream.feeds.section.topstories", false);
+pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", true);
+pref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper", "bluffy-home-bg");

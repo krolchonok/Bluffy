@@ -1,0 +1,21 @@
+{
+  "policies": {
+    "ExtensionSettings": {
+      "{446900e4-71c2-419f-a6a7-df9c091e268b}": {
+        "installation_mode": "normal_installed",
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/bitwarden-password-manager/latest.xpi",
+        "default_area": "navbar"
+      },
+      "{c3c10168-4186-445c-9c5b-63f12b8e2c87}": {
+        "installation_mode": "normal_installed",
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/cookie-editor/latest.xpi",
+        "default_area": "navbar"
+      },
+      "{aecec67f-0d10-4fa7-b7c7-609a2db280cf}": {
+        "installation_mode": "normal_installed",
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/violentmonkey/latest.xpi",
+        "default_area": "navbar"
+      }
+    }
+  }
+}

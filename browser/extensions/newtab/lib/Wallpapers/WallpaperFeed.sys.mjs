@@ -35,6 +35,9 @@ const PREF_SELECTED_WALLPAPER =
 
 const RS_FALLBACK_BASE_URL =
   "https://firefox-settings-attachments.cdn.mozilla.net/";
+const BLUFFY_WALLPAPER_TITLE = "bluffy-home-bg";
+const BLUFFY_WALLPAPER_URL =
+  "chrome://newtab/content/data/content/assets/bluffy-home-bg.png";
 
 export class WallpaperFeed {
   #customBackgroundObjectURL = null;
@@ -198,6 +201,15 @@ export class WallpaperFeed {
     }
 
     const wallpapers = [
+      {
+        title: BLUFFY_WALLPAPER_TITLE,
+        category: "bluffy",
+        wallpaperUrl: BLUFFY_WALLPAPER_URL,
+        thumbnail: BLUFFY_WALLPAPER_URL,
+        background_position: "center",
+        theme: "dark",
+        order: 1,
+      },
       ...records.map(record => {
         return {
           ...record,

@@ -348,6 +348,7 @@ newtab-wallpaper-celestial-river = Satellite image of river
 ## Firefox
 
 newtab-wallpaper-category-title-firefox = { -brand-product-name }
+newtab-wallpaper-category-title-bluffy = Bluffy
 
 
 # Variables
