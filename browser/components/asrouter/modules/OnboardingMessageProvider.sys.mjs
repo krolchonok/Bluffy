@@ -3171,7 +3171,7 @@ const PREONBOARDING_MESSAGES = () => [
     requireAction: true,
     currentVersion: 4,
     minimumVersion: 4,
-    firstRunURL: "https://www.mozilla.org/privacy/firefox/",
+    firstRunURL: "",
     screens: [
       {
         id: "TOU_ONBOARDING",
