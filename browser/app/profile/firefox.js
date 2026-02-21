@@ -1884,7 +1884,7 @@ pref("termsofuse.minimumVersion", 4);
 // Should we bypass the TOU modal notification completely, currently only true
 // for local/non-official builds
 #ifdef MOZILLA_OFFICIAL
-  pref("termsofuse.bypassNotification", false);
+  pref("termsofuse.bypassNotification", true);
 #else
   pref("termsofuse.bypassNotification", true);
 #endif
@@ -2185,7 +2185,7 @@ pref("nimbus.profilesdatastoreservice.sync.enabled", false);
 #endif
 
 // Enable Rollouts by default.
-pref("nimbus.rollouts.enabled", true);
+pref("nimbus.rollouts.enabled", false);
 
 // Nimbus QA prefs. Used to monitor pref-setting test experiments.
 pref("nimbus.qa.pref-1", "default");
@@ -2876,7 +2876,8 @@ pref("network.trr_ui.fallback_was_checked", true);
 // Normandy client preferences
 pref("app.normandy.api_url", "https://normandy.cdn.mozilla.net/api/v1");
 pref("app.normandy.dev_mode", false);
-pref("app.normandy.enabled", true);
+pref("app.normandy.enabled", false);
+pref("toolkit.telemetry.enabled", false);
 pref("app.normandy.first_run", true);
 pref("app.normandy.logging.level", 50); // Warn
 pref("app.normandy.run_interval_seconds", 21600); // 6 hours
@@ -2884,7 +2885,7 @@ pref("app.normandy.shieldLearnMoreUrl", "https://support.mozilla.org/1/firefox/%
 pref("app.normandy.last_seen_buildid", "");
 pref("app.normandy.onsync_skew_sec", 600);
 #ifdef MOZ_DATA_REPORTING
-  pref("app.shield.optoutstudies.enabled", true);
+  pref("app.shield.optoutstudies.enabled", false);
 #else
   pref("app.shield.optoutstudies.enabled", false);
 #endif
@@ -2920,7 +2921,7 @@ pref("toolkit.coverage.enabled", false);
 pref("toolkit.coverage.endpoint.base", "https://coverage.mozilla.org");
 
 // Discovery prefs
-pref("browser.discovery.enabled", true);
+pref("browser.discovery.enabled", false);
 pref("browser.discovery.containers.enabled", true);
 pref("browser.discovery.sites", "addons.mozilla.org");
 

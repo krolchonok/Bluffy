@@ -3764,7 +3764,7 @@ pref("toolkit.legacyUserProfileCustomizations.stylesheets", false);
   pref("datareporting.policy.minimumPolicyVersion", 1);
   pref("datareporting.policy.minimumPolicyVersion.channel-beta", 2);
   pref("datareporting.policy.firstRunURL", "");
-  pref("datareporting.policy.dataSubmissionPolicyBypassNotification", false);
+  pref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
 #endif
 
 #ifdef MOZ_SERVICES_HEALTHREPORT
@@ -3773,8 +3773,8 @@ pref("toolkit.legacyUserProfileCustomizations.stylesheets", false);
 
     // Health Report is enabled by default on all channels.
     // Do note that the toggle on Fenix and Focus does NOT reflect to this pref.
-    pref("datareporting.healthreport.uploadEnabled", true);
-    pref("datareporting.usage.uploadEnabled", true);
+    pref("datareporting.healthreport.uploadEnabled", false);
+    pref("datareporting.usage.uploadEnabled", false);
   #endif
 #endif
 

@@ -184,6 +184,8 @@ for icon in ("firefox", "document", "newwindow", "newtab", "pbmode", "document_p
         icon,
     )
 
+DEFINES["FIREFOX_ICO"] = '"%s/fluffyicon/Group 25.ico"' % TOPSRCDIR
+
 if CONFIG["MOZ_ASAN"] or CONFIG["MOZ_DEBUG"]:
     WINCONSOLE = True
 else:

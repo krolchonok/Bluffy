@@ -41,6 +41,9 @@ var gDataNotificationInfoBar = {
   },
 
   async _displayDataPolicyInfoBar(request) {
+    request.onUserNotifyComplete();
+    return;
+
     if (this._getDataReportingNotification()) {
       return;
     }
