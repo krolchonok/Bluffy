@@ -3252,6 +3252,7 @@ void SubarrayReplacer::visitLoadUnboxedScalar(MLoadUnboxedScalar* ins) {
       MLoadUnboxedScalar::New(alloc(), ins->elements(), adjustedIndex,
                               ins->storageType(), ins->requiresMemoryBarrier());
   replacement->setResultType(ins->type());
+  replacement->setBailoutKind(ins->bailoutKind());
   if (ins->resumePoint()) {
     replacement->stealResumePoint(ins);
   }

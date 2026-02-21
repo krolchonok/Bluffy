@@ -460,22 +460,6 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "weather.reportEndpoint",
-    {
-      title:
-        "Temporary measure for trainhopping. This adds the Merino endpoint for the weather report",
-      value: "https://prod.merino.prod.webservices.mozgcp.net/api/v1/suggest",
-    },
-  ],
-  [
-    "weather.hourlyEndpoint",
-    {
-      title:
-        "Temporary measure for trainhopping. This adds the Merino endpoint for the hourly forecasts to display in Weather Forecast widget",
-      value: "",
-    },
-  ],
-  [
     "images.smart",
     {
       title: "Smart crop images on newtab",

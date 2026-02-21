@@ -66,7 +66,6 @@
 #include "js/Object.h"  // JS::GetClass, JS::GetCompartment, JS::GetPrivate
 #include "js/PropertyAndElement.h"  // JS_DefineProperty
 #include "js/Warnings.h"            // JS::SetWarningReporter
-#include "js/ShadowRealmCallbacks.h"
 #include "js/SliceBudget.h"
 #include "jsfriendapi.h"
 #include "mozilla/AutoRestore.h"
@@ -87,8 +86,6 @@
 #include "mozilla/dom/PromiseBinding.h"
 #include "mozilla/dom/PromiseDebugging.h"
 #include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/ShadowRealmGlobalScope.h"
-#include "mozilla/dom/RegisterShadowRealmBindings.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionNoteRootCallback.h"
 #include "nsCycleCollectionParticipant.h"
@@ -780,14 +777,6 @@ size_t JSHolderList::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
   return mJSHolders.SizeOfExcludingThis(aMallocSizeOf);
 }
 
-static bool InitializeShadowRealm(JSContext* aCx,
-                                  JS::Handle<JSObject*> aGlobal) {
-  MOZ_ASSERT(StaticPrefs::javascript_options_experimental_shadow_realms());
-
-  JSAutoRealm ar(aCx, aGlobal);
-  return dom::RegisterShadowRealmBindings(aCx, aGlobal);
-}
-
 static bool InstanceClassIsError(const JSClass* clasp) {
   if (clasp->isDOMClass()) {
     const DOMJSClass* domClass = DOMJSClass::FromJSClass(clasp);
@@ -870,8 +859,6 @@ CycleCollectedJSRuntime::CycleCollectedJSRuntime(JSContext* aCx)
   JS::SetWaitCallback(mJSRuntime, BeforeWaitCallback, AfterWaitCallback,
                       sizeof(dom::AutoYieldJSThreadExecution));
   JS::SetWarningReporter(aCx, MozCrashWarningReporter);
-  JS::SetShadowRealmInitializeGlobalCallback(aCx, InitializeShadowRealm);
-  JS::SetShadowRealmGlobalCreationCallback(aCx, dom::NewShadowRealmGlobal);
 
   js::AutoEnterOOMUnsafeRegion::setAnnotateOOMAllocationSizeCallback(
       CrashReporter::AnnotateOOMAllocationSize);

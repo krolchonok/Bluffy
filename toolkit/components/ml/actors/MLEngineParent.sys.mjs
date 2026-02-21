@@ -1048,6 +1048,9 @@ export class MLEngine {
    */
   #port = null;
 
+  /**
+   * A monotonically increasing ID to track requests.
+   */
   #nextRequestId = 0;
 
   /**
@@ -1406,7 +1409,8 @@ export class MLEngine {
         break;
       }
       case "EnginePort:RunResponse": {
-        const { response, error, requestId } = data;
+        const { response, error, requestId, resourcesBefore, resourcesAfter } =
+          data;
         const request = this.#requests.get(requestId);
         if (request) {
           if (error) {
@@ -1423,6 +1427,9 @@ export class MLEngine {
                 this.engineId,
                 validatedResponse.metrics
               );
+              // Attach resource metrics from the child process
+              validatedResponse.resourcesBefore = resourcesBefore;
+              validatedResponse.resourcesAfter = resourcesAfter;
               request.resolve(validatedResponse);
             }
           }
@@ -1548,91 +1555,6 @@ export class MLEngine {
   }
 
   /**
-   * @returns {Promise<null | { cpuTime: null | number, memory: null | number}>}
-   */
-  async getInferenceResources() {
-    // TODO(Greg): ask that question directly to the inference process *or* move your metrics down into the child process
-    // so you don't have to do any IPC at all.
-    // you can get the memory with ChromeUtils.currentProcessMemoryUsage and the CPU since start with ChromeUtils.cpuTimeSinceProcessStart
-    // theses call can be done anywhere in the inference process including the workers, which means you can Glean metrics in any place with
-    // no IPC
-    try {
-      const { children } = await ChromeUtils.requestProcInfo();
-      if (!children) {
-        return null;
-      }
-      const [inference] = children.filter(child => child.type == "inference");
-      if (!inference) {
-        lazy.console.log(
-          "Could not find the inference process cpu information."
-        );
-        return null;
-      }
-      return {
-        cpuTime: inference.cpuTime ?? null,
-        memory: inference.memory ?? null,
-      };
-    } catch (error) {
-      lazy.console.error(error);
-      return null;
-    }
-  }
-
-  /**
-   * Attaches an async telemetry recording task to the result without waiting for the async telemetry to finish.
-   *
-   * @param {object} params - Parameters for attaching telemetry.
-   * @param {any} params.result - The result object that will be returned immediately and annotated with `telemetryPromise`.
-   * @param {Promise<null | { cpuTime: null | number, memory: null | number }>} params.resourcesPromise - Promise resolving to resource metrics captured before the run.
-   * @param {number} params.beforeRun - Timestamp from ChromeUtils.now() captured before execution.
-   * @param {{attach?: boolean}} [params.options] - Optional configuration options, where attach is an optional boolean property.
-   */
-  async #attachTelemetry({ result, resourcesPromise, beforeRun, options }) {
-    const telemetryPromise = resourcesPromise
-      .then(async resourcesBefore => {
-        if (!result) {
-          // The request failed, do not report the telemetry.
-          return;
-        }
-        const resourcesAfter = await this.getInferenceResources();
-        if (!resourcesBefore || !resourcesAfter) {
-          return;
-        }
-
-        // Convert nanoseconds to milliseconds
-        let cpuMilliseconds = null;
-        let cpuUtilization = null;
-        const wallMilliseconds = ChromeUtils.now() - beforeRun;
-        const cores = lazy.mlUtils.getOptimalCPUConcurrency();
-        const memoryBytes = resourcesAfter.memory;
-
-        if (resourcesAfter.cpuTime != null && resourcesBefore.cpuTime != null) {
-          cpuMilliseconds =
-            (resourcesAfter.cpuTime - resourcesBefore.cpuTime) / 1_000_000;
-          cpuUtilization = (cpuMilliseconds / wallMilliseconds / cores) * 100;
-        }
-
-        this.telemetry.recordEngineRun({
-          cpuMilliseconds,
-          wallMilliseconds,
-          cores,
-          cpuUtilization,
-          memoryBytes,
-          engineId: this.engineId,
-          modelId: this.pipelineOptions.modelId,
-          backend: this.pipelineOptions.backend,
-        });
-      })
-      .catch(() => {}); // Catch this error so that we don't trigger an unhandled promise rejection
-
-    if (options?.attach) {
-      result.telemetryPromise = telemetryPromise;
-    }
-
-    return result;
-  }
-
-  /**
    * Run the inference request
    *
    * @param {EngineRequests[FeatureID]} request
@@ -1664,7 +1586,6 @@ export class MLEngine {
       throw new Error("Request failed security validation");
     }
 
-    const resourcesPromise = this.getInferenceResources();
     const beforeRun = ChromeUtils.now();
 
     this.#port.postMessage(
@@ -1677,12 +1598,18 @@ export class MLEngine {
       transferables
     );
 
-    return this.#attachTelemetry({
-      result: await resolvers.promise,
-      resourcesPromise,
+    const result = await resolvers.promise;
+
+    this.telemetry.recordEngineRun({
       beforeRun,
-      options: request.telemetryOptions,
+      resourcesBefore: result.resourcesBefore,
+      resourcesAfter: result.resourcesAfter,
+      engineId: this.engineId,
+      modelId: this.pipelineOptions.modelId,
+      backend: this.pipelineOptions.backend,
     });
+
+    return result;
   }
 
   /**
@@ -1693,6 +1620,7 @@ export class MLEngine {
    */
   async *runWithGenerator(request) {
     lazy.console.debug(`runWithGenerator called for request ${request}`);
+    const startTime = ChromeUtils.now();
 
     // Create a promise to track when the engine has fully completed all runs
     const responseChunkResolvers = new ResponseOrChunkResolvers();
@@ -1748,7 +1676,13 @@ export class MLEngine {
         lazy.setTimeout(() => resolve({ timeout: true, ok: true }), delay)
       );
 
+    // Collect both the token and text counts, as the tokens aren't always available.
+    let tokenCount = 0;
+    let characterCount = 0;
+
     let chunkPromise = responseChunkResolvers.getAndAdvanceChunkPromise();
+    let chunkStartTime = ChromeUtils.now();
+
     // Loop to yield chunks as they arrive
     while (true) {
       // Wait for the chunk with a timeout
@@ -1759,12 +1693,34 @@ export class MLEngine {
         lazy.console.debug(
           `Chunk received ${lazy.stringifyForLog(chunk.metadata)}`
         );
+        tokenCount += chunk.metadata.tokens?.length ?? 0;
+        characterCount += chunk.metadata.text?.length ?? 0;
         yield {
           text: chunk.metadata.text,
           tokens: chunk.metadata.tokens,
           isPrompt: chunk.metadata.isPrompt,
           toolCalls: chunk.metadata.toolCalls,
         };
+
+        // Be a bit defensive here in getting the metadata, as different engines may
+        // report different things back.
+        let markerText;
+        if (chunk.metadata.tokens?.length) {
+          markerText = `${chunk.metadata.tokens?.length} tokens`;
+        } else if (chunk.metadata.text?.length) {
+          markerText = `${chunk.metadata.text?.length} characters`;
+        } else {
+          markerText = "empty response";
+        }
+
+        ChromeUtils.addProfilerMarker(
+          "MLEngineParent",
+          { startTime: chunkStartTime },
+          `chunk generated ${markerText}` +
+            ` (${this.pipelineOptions.backend} ${this.pipelineOptions.modelId})`
+        );
+
+        chunkStartTime = ChromeUtils.now();
         chunkPromise = responseChunkResolvers.getAndAdvanceChunkPromise();
       } else if (this.#port === null) {
         // in case of a timeout check if the inference process is still alive
@@ -1796,6 +1752,36 @@ export class MLEngine {
     }
 
     // Wait for the engine to fully complete before exiting
-    return completionPromise;
+    const result = await completionPromise;
+
+    // Tokens may not be available.
+    let markerText;
+    if (tokenCount) {
+      markerText = `${tokenCount} tokens`;
+    } else if (characterCount) {
+      markerText = `${characterCount} characters`;
+    } else {
+      markerText = "an empty response";
+    }
+
+    ChromeUtils.addProfilerMarker(
+      "MLEngineParent",
+      { startTime },
+      `runWithGenerator generated ${markerText}` +
+        ` (${this.pipelineOptions.backend} ${this.pipelineOptions.modelId})`
+    );
+
+    this.telemetry.recordEngineRun({
+      beforeRun: startTime,
+      resourcesBefore: result.resourcesBefore,
+      resourcesAfter: result.resourcesAfter,
+      engineId: this.engineId,
+      modelId: this.pipelineOptions.modelId,
+      backend: this.pipelineOptions.backend,
+      tokenCount,
+      characterCount,
+    });
+
+    return result;
   }
 }

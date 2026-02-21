@@ -994,6 +994,8 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
       const nsTArray<mozilla::dom::SynthesizeTouchEventData>& aTouches,
       const int32_t aModifiers,
       const mozilla::dom::SynthesizeTouchEventOptions& aOptions,
+      const mozilla::dom::Optional<
+          mozilla::OwningNonNull<mozilla::dom::VoidFunction>>& aCallback,
       mozilla::ErrorResult& aError);
 
  protected:

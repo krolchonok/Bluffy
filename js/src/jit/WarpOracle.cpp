@@ -847,10 +847,10 @@ bool WarpOracle::addFuseDependency(RealmFuses::FuseIndex fuseIndex,
   // Register a compilation dependency for all invalidating fuses that are still
   // valid.
   switch (fuseIndex) {
-    case RealmFuses::FuseIndex::OptimizeGetIteratorFuse: {
+    case RealmFuses::FuseIndex::OptimizeGetIteratorBytecodeFuse: {
       using Dependency =
-          RealmFuseDependency<&RealmFuses::optimizeGetIteratorFuse,
-                              CompilationDependency::Type::GetIterator>;
+          RealmFuseDependency<&RealmFuses::optimizeGetIteratorBytecodeFuse,
+                              CompilationDependency::Type::GetIteratorBytecode>;
       return addIfStillValid(Dependency());
     }
     case RealmFuses::FuseIndex::OptimizeArraySpeciesFuse: {

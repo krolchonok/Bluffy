@@ -3,15 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :host {
-  --browser-container-max-width-units: 290;
   height: 100vh;
   display: grid;
   grid-template-columns: 1fr;
   align-self: center;
   align-items: center;
   justify-items: center;
-  /* Cap the width at 580px (2 * 290) */
-  max-width: calc(var(--space-xxsmall) * var(--browser-container-max-width-units));
   width: 100%;
 }
 
@@ -67,9 +64,11 @@
 #smartbar-wrapper {
   grid-area: smartbar;
   height: var(--smartbar-height, auto);
-  width: 100%;
-  max-width: calc(var(--size-item-xsmall) * 45.5);
+  margin-block-end: var(--space-medium);
+  /* smartbar max width must be the same as the child context (ai-window-content.css) container */
+  max-width: var(--smartwindow-content-max-width);
   position: relative;
+  width: calc(100% - var(--space-large));
 }
 
 #ai-window-smartbar {
@@ -95,6 +94,7 @@ smartwindow-prompts {
 }
 
 .sidebar-header {
+  box-sizing: border-box;
   grid-area: sidebar-header;
   padding: var(--space-small);
   display: flex;

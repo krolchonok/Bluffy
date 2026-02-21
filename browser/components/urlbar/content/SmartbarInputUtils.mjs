@@ -135,6 +135,7 @@ function setupContextMentionsButton(container, panelList) {
     );
     panelList.anchor = contextButton;
     panelList.groups = getMentionSuggestions(contextMentionSearch, "");
+    panelList.setAttribute("data-triggered-by", "context-mention");
     panelList.toggle();
   });
 }
@@ -194,6 +195,7 @@ function setupMentionsPlugin(editorElement, panelList) {
       );
       panelList.anchor = getAnchorPos(mentionData.range, mentionData.view);
       panelList.groups = getMentionSuggestions(mentionSearch, "");
+      panelList.setAttribute("data-triggered-by", "inline-mention");
       panelList.show();
     },
     onChange: mentionData => {
@@ -224,18 +226,31 @@ function setupMentionsPlugin(editorElement, panelList) {
   const handleItemSelected = e => {
     const { id, label } = e.detail;
 
-    plugin.mentions.insert(
-      {
+    const isContextButtonTrigger =
+      panelList.getAttribute("data-triggered-by") === "context-mention";
+    // If the mention suggestions are triggered by the context “+”-button,
+    // add the mention to the context header.
+    if (isContextButtonTrigger) {
+      const smartbarInput = editorElement.closest("moz-smartbar");
+      // @ts-ignore - addContextMention method exists on SmartbarInput
+      smartbarInput.addContextMention({
         type: "tab",
-        id,
+        url: id,
         label,
-      },
-      // TODO (Bug 2011266): Falls back to inserting at the start of the editor.
-      // If the mention has been triggered inline by typing “@” we are going to
-      // add the mention to the context header instead.
-      latestMentionData?.range.from ?? 0,
-      latestMentionData?.range.to ?? 1
-    );
+      });
+    } else {
+      // Add inline mention when triggered by typing “@”
+      plugin.mentions.insert(
+        {
+          type: "tab",
+          id,
+          label,
+        },
+        latestMentionData?.range.from ?? 0,
+        latestMentionData?.range.to ?? 1
+      );
+    }
+    panelList.removeAttribute("data-triggered-by");
   };
 
   const handlePanelKeyDown = e => {

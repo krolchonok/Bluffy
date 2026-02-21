@@ -639,7 +639,11 @@ static JSScript* ReparseSource(JSContext* cx, Handle<ScriptSourceObject*> sso,
 
   if (asModule) {
     if (options.lineno == 0) {
-      JS_ReportErrorASCII(cx, "Module cannot be compiled with lineNumber == 0");
+      JS_ReportErrorASCII(cx, "Module cannot be reparsed with lineNumber == 0");
+      return nullptr;
+    }
+    if (!options.filename()) {
+      JS_ReportErrorASCII(cx, "Module cannot be reparsed without filename");
       return nullptr;
     }
     options.setModule();

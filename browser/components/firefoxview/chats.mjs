@@ -237,21 +237,13 @@ class ChatsInView extends ViewPage {
   }
 
   #emptyMessageTemplate() {
-    const descriptionHeader = "firefoxview-history-empty-header";
-    const descriptionLabels = [
-      "firefoxview-history-empty-description",
-      "firefoxview-history-empty-description-two",
-    ];
-    const descriptionLink = {
-      url: "about:preferences#privacy",
-      name: "history-settings-url",
-    };
+    const descriptionHeader = "firefoxview-chats-empty-header";
+    const descriptionLabels = ["firefoxview-chats-empty-description"];
 
     return html`
       <fxview-empty-state
         headerLabel=${descriptionHeader}
         .descriptionLabels=${descriptionLabels}
-        .descriptionLink=${descriptionLink}
         class="empty-state chats"
         ?isSelectedTab=${this.selectedTab}
         mainImageUrl="chrome://browser/content/firefoxview/history-empty.svg"

@@ -693,10 +693,6 @@ pref("browser.urlbar.merino.timeoutMs", 200);
 // Comma-separated list of providers to request from Merino
 pref("browser.urlbar.merino.providers", "");
 
-// Merino endpoint prefs to be used for weather widgets
-pref("browser.urlbar.merino.weather.reportEndpointURL", "https://prod.merino.prod.webservices.mozgcp.net/api/v1/suggest");
-pref("browser.urlbar.merino.weather.hourlyEndpointURL", "");
-
 // Comma-separated list of client variants to send to Merino
 pref("browser.urlbar.merino.clientVariants", "");
 
@@ -915,11 +911,8 @@ pref("browser.search.serpMetricsRecordedCounter", 0);
 // days
 pref("browser.search.widget.removeAfterDaysUnused", 120);
 
-#ifdef NIGHTLY_BUILD
+// Feature gate for searchbar based on urlbar code.
 pref("browser.search.widget.new", true);
-#else
-pref("browser.search.widget.new", false);
-#endif
 
 // The number of times the search function in the URL bar has been used,
 // capped at 100.

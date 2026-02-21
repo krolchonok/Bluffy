@@ -680,13 +680,21 @@ partial interface Window {
    *                   in nsIDOMWindowUtils.
    * @param options    A SynthesizeTouchEventOptions dictionary containing options
    *                   for the event dispatching.
+   * @param callback   A function to call when the synthesized touch event has
+   *                   been dispatched.
+   *                   XXX: This is currently not supported in the content process,
+   *                   simply because we don't have a use case for it yet. The same
+   *                   applies when the synthesized event might be coalesced,
+   *                   such as when `isDOMEventSynthesized = false`. In such cases,
+   *                   passing callback will throw an exception.
    *
    * @return true if someone called prevent default on this event.
    */
   [ChromeOnly, Throws]
   boolean synthesizeTouchEvent(DOMString type, sequence<SynthesizeTouchEventData> touches,
                                optional long modifiers = 0,
-                               optional SynthesizeTouchEventOptions options = {});
+                               optional SynthesizeTouchEventOptions options = {},
+                               optional VoidFunction callback);
 
   [Pure, ChromeOnly]
   readonly attribute WindowGlobalChild? windowGlobalChild;

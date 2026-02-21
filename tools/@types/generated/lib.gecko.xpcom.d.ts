@@ -14496,10 +14496,6 @@ interface nsIPipe extends nsISupports {
   readonly outputStream: nsIAsyncOutputStream;
 }
 
-interface nsISearchableInputStream extends nsISupports {
-  search(forString: string, ignoreCase: boolean, found: OutParam<boolean>, offsetSearchedTo: OutParam<u32>): void;
-}
-
 // https://searchfox.org/mozilla-central/source/xpcom/io/nsIRandomAccessStream.idl
 
 interface nsIRandomAccessStream extends nsISeekableStream {
@@ -16473,7 +16469,6 @@ interface nsIXPCComponents_Interfaces {
   nsIObjectOutputStream: nsJSIID<nsIObjectOutputStream>;
   nsIOutputStream: nsJSIID<nsIOutputStream>;
   nsIPipe: nsJSIID<nsIPipe>;
-  nsISearchableInputStream: nsJSIID<nsISearchableInputStream>;
   nsIRandomAccessStream: nsJSIID<nsIRandomAccessStream>;
   nsISafeOutputStream: nsJSIID<nsISafeOutputStream>;
   nsIScriptableBase64Encoder: nsJSIID<nsIScriptableBase64Encoder>;

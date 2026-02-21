@@ -207,7 +207,6 @@ class WebIDLCodegenManager(LoggingMixin):
         "GeneratedEventList.h",
         "PrototypeList.h",
         "RegisterBindings.h",
-        "RegisterShadowRealmBindings.h",
         "RegisterWorkerBindings.h",
         "RegisterWorkerDebuggerBindings.h",
         "RegisterWorkletBindings.h",
@@ -220,7 +219,6 @@ class WebIDLCodegenManager(LoggingMixin):
     GLOBAL_DEFINE_FILES = {
         "BindingNames.cpp",
         "RegisterBindings.cpp",
-        "RegisterShadowRealmBindings.cpp",
         "RegisterWorkerBindings.cpp",
         "RegisterWorkerDebuggerBindings.cpp",
         "RegisterWorkletBindings.cpp",
@@ -246,7 +244,8 @@ class WebIDLCodegenManager(LoggingMixin):
 
         config_path refers to a WebIDL config file (e.g. Bindings.conf).
         inputs is a 4-tuple describing the input .webidl files and how to
-        process them. Members are:
+        process them. Members are::
+
             (set(.webidl files), set(basenames of exported files),
                 set(basenames of generated events files),
                 set(example interface names))

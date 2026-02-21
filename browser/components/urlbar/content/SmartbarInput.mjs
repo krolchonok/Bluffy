@@ -395,6 +395,7 @@ export class SmartbarInput extends HTMLElement {
         this
       );
       this._inputCta.addEventListener("aiwindow-input-cta:on-action", this);
+      this.addEventListener("ai-website-chip:remove", this);
       this.#findWebsiteContextChipsContainer();
       this.#updateContextChips();
     }
@@ -612,6 +613,7 @@ export class SmartbarInput extends HTMLElement {
         this
       );
       this._inputCta.removeEventListener("aiwindow-input-cta:on-action", this);
+      this.removeEventListener("ai-website-chip:remove", this);
     }
 
     this._resizeObserver?.disconnect();
@@ -1234,6 +1236,13 @@ export class SmartbarInput extends HTMLElement {
       return;
     }
 
+    // Handle website chip remove events.
+    if (event.type === "ai-website-chip:remove") {
+      const { url } = /** @type {CustomEvent} */ (event).detail;
+      this.removeContextMention(url);
+      return;
+    }
+
     let methodName = "_on_" + event.type;
     if (methodName in this) {
       try {
@@ -1300,12 +1309,13 @@ export class SmartbarInput extends HTMLElement {
   _handleSmartbarOnChangeAction(event, triggeringPrincipal) {
     const committedValue = this.untrimmedValue;
     const action = this.smartbarAction;
+    const contextMentions = this.#getResolvedContextWebsites();
 
     this.dispatchEvent(
       new CustomEvent("smartbar-commit", {
         bubbles: true,
         composed: true,
-        detail: { value: committedValue, event, action },
+        detail: { value: committedValue, event, action, contextMentions },
       })
     );
 
@@ -6202,14 +6212,12 @@ export class SmartbarInput extends HTMLElement {
   }
 
   /**
-   * Updates the website context chips shown in the Smartbar.
+   * Returns the resolved, deduped list of context websites including the
+   * implicit current-tab entry when in sidebar mode.
    *
-   * - In sidebar mode, include the current tab as implicit context
-   * - Always include explicitly added context websites.
-   * - Keeping a stable ordering prevents chips from reordering on navigation
-   *   updates.
+   * @returns {ContextWebsite[]}
    */
-  #updateContextChips() {
+  #getResolvedContextWebsites() {
     /** @type {ContextWebsite[]} */
     const candidates = [...this.#contextWebsites];
 
@@ -6229,19 +6237,18 @@ export class SmartbarInput extends HTMLElement {
       }
     }
 
-    /** @type {Map<string, ContextWebsite>} */
-    const uniqueByUrl = new Map();
+    const seen = new Set();
+    return candidates
+      .filter(site => site.url && !seen.has(site.url) && seen.add(site.url))
+      .slice(0, MAX_CONTEXT_WEBSITES);
+  }
 
-    for (const site of candidates) {
-      if (!site.url || uniqueByUrl.has(site.url)) {
-        continue;
-      }
-      uniqueByUrl.set(site.url, site);
-    }
-
-    const finalWebsites = [...uniqueByUrl.values()]
-      .slice(0, MAX_CONTEXT_WEBSITES)
-      .map(site => this.#ensureWebsiteIcon(site));
+  /**
+   * Updates the website context chips shown in the Smartbar header.
+   */
+  #updateContextChips() {
+    const finalWebsites = this.#getResolvedContextWebsites();
+    finalWebsites.forEach(site => this.#ensureWebsiteIcon(site));
 
     const container = this.#findWebsiteContextChipsContainer();
     if (container) {
@@ -6259,20 +6266,14 @@ export class SmartbarInput extends HTMLElement {
   }
 
   /**
-   * Ensures a website context entry has an icon source.
-   * If an icon source is already present, the site is returned unchanged.
+   * Ensures a website context entry has an icon source, mutating it in place.
    *
    * @param {ContextWebsite} site
    */
   #ensureWebsiteIcon(site) {
-    if (site.iconSrc) {
-      return site;
+    if (!site.iconSrc) {
+      site.iconSrc = site.url ? lazy.UrlbarUtils.getIconForUrl(site.url) : "";
     }
-
-    return {
-      ...site,
-      iconSrc: site.url ? lazy.UrlbarUtils.getIconForUrl(site.url) : "",
-    };
   }
 
   // Cache the container reference to avoid repeated querySelector calls
@@ -6307,6 +6308,40 @@ export class SmartbarInput extends HTMLElement {
   setAndUpdateContextWebsites(websites) {
     this.#contextWebsites = websites;
     this.#updateContextChips();
+  }
+
+  /**
+   * Add a website to the context chips.
+   *
+   * @param {object} mention - The mention to add
+   * @param {string} mention.type - The type of context
+   * @param {string} mention.url - The mention URL
+   * @param {string} mention.label - The mention label
+   */
+  addContextMention(mention) {
+    const hasMention = this.#contextWebsites.some(
+      site => site.url === mention.url
+    );
+    if (hasMention) {
+      return;
+    }
+    this.#contextWebsites = [...this.#contextWebsites, mention];
+    this.#updateContextChips();
+  }
+
+  /**
+   * Remove a context mention.
+   *
+   * @param {string} url - The URL of the mention
+   */
+  removeContextMention(url) {
+    const originalLength = this.#contextWebsites.length;
+    this.#contextWebsites = this.#contextWebsites.filter(
+      site => site.url !== url
+    );
+    if (this.#contextWebsites.length !== originalLength) {
+      this.#updateContextChips();
+    }
   }
 }
 

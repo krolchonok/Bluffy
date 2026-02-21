@@ -139,7 +139,7 @@ class IPPProxyManagerSingleton extends EventTarget {
   #networkErrorObserver = null;
   // If this is set, we're awaiting a proxy pass rotation
   #rotateProxyPassPromise = null;
-  #activatedAt = false;
+  #activatedAt = 0;
 
   #rotationTimer = 0;
   #usageRefreshAbortController = null;
@@ -366,7 +366,7 @@ class IPPProxyManagerSingleton extends EventTarget {
       if (usage) {
         this.#setUsage(usage);
         if (this.#usage.remaining <= 0) {
-          this.#pass == null;
+          this.#pass = null;
           this.#setState(IPPProxyStates.PAUSED);
           return false;
         }
@@ -441,7 +441,9 @@ class IPPProxyManagerSingleton extends EventTarget {
 
     lazy.logConsole.info("Stopped");
 
-    const sessionLength = ChromeUtils.now() - this.#activatedAt;
+    const sessionLength = this.#activatedAt
+      ? ChromeUtils.now() - this.#activatedAt
+      : 0;
 
     Glean.ipprotection.toggled.record({
       userAction,
@@ -452,20 +454,6 @@ class IPPProxyManagerSingleton extends EventTarget {
       this.#setState(IPPProxyStates.NOT_READY);
     } else {
       this.#setState(IPPProxyStates.READY);
-    }
-
-    if (userAction) {
-      this.#reloadCurrentTab();
-    }
-  }
-
-  /**
-   * Gets the current window and reloads the selected tab.
-   */
-  #reloadCurrentTab() {
-    let win = Services.wm.getMostRecentBrowserWindow();
-    if (win) {
-      win.gBrowser.reloadTab(win.gBrowser.selectedTab);
     }
   }
 

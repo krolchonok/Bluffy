@@ -179,8 +179,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(ScriptLoader)
       mLoadedAsyncRequests, mDeferRequests, mXSLTRequests,
       mParserBlockingRequest, mOffThreadCompilingRequests,
       mDiskCacheableDependencyModules, mDiskCacheQueue, mPreloads,
-      mPendingChildLoaders, mModuleLoader, mWebExtModuleLoaders,
-      mShadowRealmModuleLoaders)
+      mPendingChildLoaders, mModuleLoader, mWebExtModuleLoaders)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(ScriptLoader)
@@ -189,8 +188,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(ScriptLoader)
       mLoadedAsyncRequests, mDeferRequests, mXSLTRequests,
       mParserBlockingRequest, mOffThreadCompilingRequests,
       mDiskCacheableDependencyModules, mDiskCacheQueue, mPreloads,
-      mPendingChildLoaders, mModuleLoader, mWebExtModuleLoaders,
-      mShadowRealmModuleLoaders)
+      mPendingChildLoaders, mModuleLoader, mWebExtModuleLoaders)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(ScriptLoader)
@@ -349,13 +347,6 @@ void ScriptLoader::RegisterContentScriptModuleLoader(ModuleLoader* aLoader) {
   MOZ_ASSERT(aLoader->GetScriptLoader() == this);
 
   mWebExtModuleLoaders.AppendElement(aLoader);
-}
-
-void ScriptLoader::RegisterShadowRealmModuleLoader(ModuleLoader* aLoader) {
-  MOZ_ASSERT(aLoader);
-  MOZ_ASSERT(aLoader->GetScriptLoader() == this);
-
-  mShadowRealmModuleLoaders.AppendElement(aLoader);
 }
 
 // Collect telemtry data about the cache information, and the kind of source
@@ -1029,6 +1020,11 @@ nsresult ScriptLoader::StartLoadInternal(
     // resource.
     aRequest->GetScriptLoadContext()->NotifyStart(channel);
     aRequest->GetScriptLoadContext()->NotifyStop(rv);
+    // If this was a preload that failed to start, deregister it so a
+    // subsequent attempt to load the same URL can succeed.
+    if (aRequest->GetScriptLoadContext()->IsPreload()) {
+      mDocument->Preloads().DeregisterPreload(key);
+    }
   }
 
   NS_ENSURE_SUCCESS(rv, rv);
@@ -1905,10 +1901,6 @@ void ScriptLoader::CancelAndClearScriptLoadRequests() {
   }
 
   for (ModuleLoader* loader : mWebExtModuleLoaders) {
-    loader->CancelAndClearDynamicImports();
-  }
-
-  for (ModuleLoader* loader : mShadowRealmModuleLoaders) {
     loader->CancelAndClearDynamicImports();
   }
 
@@ -3925,12 +3917,6 @@ bool ScriptLoader::HasPendingDynamicImports() const {
   }
 
   for (ModuleLoader* loader : mWebExtModuleLoaders) {
-    if (loader->HasPendingDynamicImports()) {
-      return true;
-    }
-  }
-
-  for (ModuleLoader* loader : mShadowRealmModuleLoaders) {
     if (loader->HasPendingDynamicImports()) {
       return true;
     }

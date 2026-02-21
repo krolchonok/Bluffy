@@ -2184,6 +2184,11 @@ void Http3Session::CloseTransaction(nsAHttpTransaction* aTransaction,
 
 void Http3Session::CloseStream(Http3StreamBase* aStream, nsresult aResult) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  if (aStream->Closed()) {
+    LOG(("Http3Session::CloseStream aStream %p already closed", aStream));
+    return;
+  }
+
   RefPtr<Http3WebTransportStream> wtStream =
       aStream->GetHttp3WebTransportStream();
   if (wtStream) {

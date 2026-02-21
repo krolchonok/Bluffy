@@ -3123,7 +3123,9 @@ class nsContentUtils {
       const nsPoint& aWidgetOffset, const nsAString& aType,
       const nsTArray<mozilla::dom::SynthesizeTouchEventData>& aTouches,
       const int32_t aModifiers,
-      const mozilla::dom::SynthesizeTouchEventOptions& aOptions);
+      const mozilla::dom::SynthesizeTouchEventOptions& aOptions,
+      const mozilla::dom::Optional<
+          mozilla::OwningNonNull<mozilla::dom::VoidFunction>>& aCallback);
 
   static void FirePageShowEventForFrameLoaderSwap(
       nsIDocShellTreeItem* aItem,

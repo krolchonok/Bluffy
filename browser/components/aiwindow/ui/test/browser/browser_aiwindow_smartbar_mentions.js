@@ -16,12 +16,42 @@ const { SmartbarMentionsPanelSearch, MENTION_TYPE } =
   );
 
 let providerStub;
+const DEFAULT_PROVIDER_STUB_RETURN = [
+  {
+    url: "https://example.com/1",
+    title: "Page 1",
+    icon: "",
+    type: MENTION_TYPE.TAB_OPEN,
+    timestamp: Date.now(),
+  },
+  {
+    url: "https://example.com/2",
+    title: "Page 2",
+    icon: "",
+    type: MENTION_TYPE.TAB_RECENTLY_CLOSED,
+    timestamp: Date.now(),
+  },
+  {
+    url: "https://example.com/3",
+    title: "Page 3",
+    icon: "",
+    type: MENTION_TYPE.TAB_RECENTLY_CLOSED,
+    timestamp: Date.now() - 1000,
+  },
+  {
+    url: "https://example.com/4",
+    title: "Page 4",
+    icon: "",
+    type: MENTION_TYPE.TAB_RECENTLY_CLOSED,
+    timestamp: Date.now() - 2000,
+  },
+];
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.search.suggest.enabled", false],
-      ["browser.urlbar.suggest.searches", false],
+      ["browser.smartwindow.endpoint", "http://localhost:0/v1"],
     ],
   });
 
@@ -29,36 +59,7 @@ add_setup(async function () {
     SmartbarMentionsPanelSearch.prototype,
     "startQuery"
   );
-  providerStub.returns([
-    {
-      url: "https://example.com/1",
-      title: "Page 1",
-      icon: "",
-      type: MENTION_TYPE.TAB_OPEN,
-      timestamp: Date.now(),
-    },
-    {
-      url: "https://example.com/2",
-      title: "Page 2",
-      icon: "",
-      type: MENTION_TYPE.TAB_RECENTLY_CLOSED,
-      timestamp: Date.now(),
-    },
-    {
-      url: "https://example.com/3",
-      title: "Page 3",
-      icon: "",
-      type: MENTION_TYPE.TAB_RECENTLY_CLOSED,
-      timestamp: Date.now() - 1000,
-    },
-    {
-      url: "https://example.com/4",
-      title: "Page 4",
-      icon: "",
-      type: MENTION_TYPE.TAB_RECENTLY_CLOSED,
-      timestamp: Date.now() - 2000,
-    },
-  ]);
+  providerStub.returns(DEFAULT_PROVIDER_STUB_RETURN);
 
   registerCleanupFunction(() => {
     providerStub.restore();
@@ -231,9 +232,10 @@ add_task(async function test_mentions_insert_on_enter() {
     const panelList = smartbar.querySelector("smartwindow-panel-list");
     const panel = panelList.shadowRoot.querySelector("panel-list");
 
-    await ContentTaskUtils.waitForCondition(
-      () => panel.querySelector("panel-item:not(.panel-section-header)"),
-      "Wait for panel items to be available"
+    await ContentTaskUtils.waitForMutationCondition(
+      panel,
+      { childList: true, subtree: true },
+      () => panel.querySelector("panel-item:not(.panel-section-header)")
     );
   });
   await typeInSmartbar(browser, "@");
@@ -263,28 +265,30 @@ add_task(async function test_mentions_insert_from_context_button() {
 
     const panelList = smartbar.querySelector("smartwindow-panel-list");
     const panel = panelList.shadowRoot.querySelector("panel-list");
-    await ContentTaskUtils.waitForCondition(
-      () => panel.querySelector("panel-item:not(.panel-section-header)"),
-      "Wait for panel items to be available"
+    await ContentTaskUtils.waitForMutationCondition(
+      panel,
+      { childList: true, subtree: true },
+      () => panel.querySelector("panel-item:not(.panel-section-header)")
     );
     const firstItem = panel.querySelector(
       "panel-item:not(.panel-section-header)"
     );
     firstItem.click();
-  });
 
-  const hasMention = await waitForMentionInserted(browser);
-  Assert.ok(
-    hasMention,
-    "Editor should contain a mention after selecting from context button menu"
-  );
+    const chipContainer = smartbar.querySelector(
+      ".smartbar-context-chips-header"
+    );
+    Assert.equal(
+      chipContainer.websites.length,
+      1,
+      "Context mention should be in smartbar header in fullpage mode"
+    );
+  });
 
   await BrowserTestUtils.closeWindow(win);
 });
 
 add_task(async function test_panel_shows_unified_group() {
-  const originalReturn = providerStub.returnValue;
-
   providerStub.returns([
     {
       url: "https://example.com/1",
@@ -343,12 +347,10 @@ add_task(async function test_panel_shows_unified_group() {
   );
 
   await BrowserTestUtils.closeWindow(win);
-  providerStub.returns(originalReturn);
+  providerStub.returns(DEFAULT_PROVIDER_STUB_RETURN);
 });
 
 add_task(async function test_deduplication_by_url() {
-  const originalReturn = providerStub.returnValue;
-
   // Simulate duplicate URLs across open and closed tabs
   providerStub.returns([
     {
@@ -421,12 +423,10 @@ add_task(async function test_deduplication_by_url() {
   );
 
   await BrowserTestUtils.closeWindow(win);
-  providerStub.returns(originalReturn);
+  providerStub.returns(DEFAULT_PROVIDER_STUB_RETURN);
 });
 
 add_task(async function test_maxResults_total_limit() {
-  const originalReturn = providerStub.returnValue;
-
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.mentions.maxResults", 3]],
   });
@@ -485,7 +485,7 @@ add_task(async function test_maxResults_total_limit() {
 
   await BrowserTestUtils.closeWindow(win);
   await SpecialPowers.popPrefEnv();
-  providerStub.returns(originalReturn);
+  providerStub.returns(DEFAULT_PROVIDER_STUB_RETURN);
 });
 
 add_task(async function test_default_context_chip_sidebar_mode() {
@@ -524,3 +524,200 @@ add_task(async function test_default_context_chip_sidebar_mode() {
 
   await BrowserTestUtils.closeWindow(win);
 });
+
+add_task(async function test_no_default_context_chip_fullpage_mode() {
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    const aiWindowElement = content.document.querySelector("ai-window");
+    const smartbar = aiWindowElement.shadowRoot.querySelector(
+      "#ai-window-smartbar"
+    );
+
+    const chipContainer = smartbar.querySelector(
+      ".smartbar-context-chips-header"
+    );
+    Assert.equal(
+      chipContainer.websites.length,
+      0,
+      "No default context mention should be in smartbar header in fullpage mode"
+    );
+  });
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(async function test_context_mentions_added_smartbar_header_fullpage() {
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    const aiWindowElement = content.document.querySelector("ai-window");
+    const smartbar = aiWindowElement.shadowRoot.querySelector(
+      "#ai-window-smartbar"
+    );
+    const contextButton = smartbar.querySelector("context-icon-button");
+    const button = contextButton.shadowRoot.querySelector("moz-button");
+    button.click();
+
+    const panelList = smartbar.querySelector("smartwindow-panel-list");
+    const panel = panelList.shadowRoot.querySelector("panel-list");
+    await ContentTaskUtils.waitForMutationCondition(
+      panel,
+      { childList: true, subtree: true },
+      () => panel.querySelector("panel-item:not(.panel-section-header)")
+    );
+
+    const chipContainer = smartbar.querySelector(
+      ".smartbar-context-chips-header"
+    );
+    const firstItem = panel.querySelector(
+      "panel-item:not(.panel-section-header)"
+    );
+    firstItem.click();
+
+    Assert.equal(
+      chipContainer.websites.length,
+      1,
+      "Context mention should be added to smartbar header in fullpage mode"
+    );
+  });
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(async function test_context_mentions_added_smartbar_header_sidebar() {
+  const win = await openAIWindow();
+  AIWindowUI.toggleSidebar(win);
+  const browser = win.document.getElementById("ai-window-browser");
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    const smartbar = await ContentTaskUtils.waitForCondition(() => {
+      const aiWindowElement = content.document.querySelector("ai-window");
+      return aiWindowElement?.shadowRoot?.querySelector("#ai-window-smartbar");
+    }, "Sidebar smartbar should be loaded");
+    const contextButton = smartbar.querySelector("context-icon-button");
+    const button = contextButton.shadowRoot.querySelector("moz-button");
+
+    const chipContainer = smartbar.querySelector(
+      ".smartbar-context-chips-header"
+    );
+    Assert.equal(
+      chipContainer.websites.length,
+      1,
+      "Should have default tab mention in smartbar header in sidebar mode"
+    );
+    button.click();
+
+    const panelList = smartbar.querySelector("smartwindow-panel-list");
+    const panel = panelList.shadowRoot.querySelector("panel-list");
+    await ContentTaskUtils.waitForMutationCondition(
+      panel,
+      { childList: true, subtree: true },
+      () => panel.querySelector("panel-item:not(.panel-section-header)")
+    );
+    const firstItem = panel.querySelector(
+      "panel-item:not(.panel-section-header)"
+    );
+    firstItem.click();
+
+    Assert.equal(
+      chipContainer.websites.length,
+      2,
+      "Context mention should be added to smartbar header in sidebar mode"
+    );
+  });
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(
+  async function test_context_mentions_not_duplicated_in_smartbar_header() {
+    const win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const aiWindowElement = content.document.querySelector("ai-window");
+      const smartbar = aiWindowElement.shadowRoot.querySelector(
+        "#ai-window-smartbar"
+      );
+      const chipContainer = smartbar.querySelector(
+        ".smartbar-context-chips-header"
+      );
+
+      smartbar.addContextMention({
+        type: "tab",
+        url: "https://example.com/1",
+        label: "Page 1",
+      });
+      smartbar.addContextMention({
+        type: "tab",
+        url: "https://example.com/1",
+        label: "Page 1",
+      });
+
+      Assert.equal(
+        chipContainer.websites.length,
+        1,
+        "Duplicate context mention should not be added to smartbar header"
+      );
+    });
+
+    await BrowserTestUtils.closeWindow(win);
+  }
+);
+
+add_task(
+  async function test_context_mentions_can_be_removed_from_smartbar_header() {
+    const win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    await BrowserTestUtils.browserLoaded(browser, false, AIWINDOW_URL);
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      const aiWindowElement = content.document.querySelector("ai-window");
+      const smartbar = aiWindowElement.shadowRoot.querySelector(
+        "#ai-window-smartbar"
+      );
+
+      const testUrl = "https://example.com/";
+      smartbar.addContextMention({
+        type: "tab",
+        url: testUrl,
+        label: "Removable Page",
+      });
+      const chipContainer = smartbar.querySelector(
+        ".smartbar-context-chips-header"
+      );
+      Assert.equal(
+        chipContainer.websites.length,
+        1,
+        "Should have context mention in smartbar header"
+      );
+      await ContentTaskUtils.waitForMutationCondition(
+        chipContainer.shadowRoot,
+        { childList: true, subtree: true },
+        () => chipContainer.shadowRoot.querySelector("ai-website-chip")
+      );
+      const websiteChip =
+        chipContainer.shadowRoot.querySelector("ai-website-chip");
+      const removeButton = websiteChip.shadowRoot.querySelector(".chip-remove");
+      removeButton.click();
+
+      Assert.equal(
+        chipContainer.websites.length,
+        0,
+        "Context mention should be removed from smartbar header"
+      );
+    });
+
+    await BrowserTestUtils.closeWindow(win);
+  }
+);

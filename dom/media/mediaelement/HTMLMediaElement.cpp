@@ -4077,16 +4077,22 @@ void HTMLMediaElement::UpdateOutputTrackSources() {
   }
 }
 
-bool HTMLMediaElement::CanBeCaptured(StreamCaptureType aCaptureType) {
-  // Don't bother capturing when the document has gone away
-  nsPIDOMWindowInner* window = OwnerDoc()->GetInnerWindow();
-  if (!window) {
+bool HTMLMediaElement::CanBeCaptured(StreamCaptureType aCaptureType,
+                                     ErrorResult& aRv) {
+  // Don't bother capturing when the document has gone away. This can't surface
+  // to JS since there is no execution context without a window, so a typed
+  // DOMException is not needed here.
+  if (!OwnerDoc()->GetInnerWindow()) {
+    aRv.Throw(NS_ERROR_FAILURE);
     return false;
   }
 
-  // Prevent capturing restricted video
+  // Prevent capturing restricted video. See
+  // https://github.com/w3c/mediacapture-fromelement/issues/20
   if (aCaptureType == StreamCaptureType::CAPTURE_ALL_TRACKS &&
       ContainsRestrictedContent()) {
+    aRv.ThrowNotSupportedError(
+        "Capture of media from an EME-protected element is not supported");
     return false;
   }
   return true;
@@ -4095,7 +4101,8 @@ bool HTMLMediaElement::CanBeCaptured(StreamCaptureType aCaptureType) {
 already_AddRefed<DOMMediaStream> HTMLMediaElement::CaptureStreamInternal(
     StreamCaptureBehavior aFinishBehavior, StreamCaptureType aStreamCaptureType,
     AudioOutputConfig aAudioOutputConfig, MediaTrackGraph* aGraph) {
-  MOZ_ASSERT(CanBeCaptured(aStreamCaptureType));
+  IgnoredErrorResult rv;
+  MOZ_ASSERT(CanBeCaptured(aStreamCaptureType, rv));
 
   LogVisibility(CallerAPI::CAPTURE_STREAM);
   MarkAsTainted();
@@ -4215,8 +4222,7 @@ already_AddRefed<DOMMediaStream> HTMLMediaElement::CaptureAudio(
     ErrorResult& aRv, MediaTrackGraph* aGraph) {
   MOZ_RELEASE_ASSERT(aGraph);
 
-  if (!CanBeCaptured(StreamCaptureType::CAPTURE_AUDIO)) {
-    aRv.Throw(NS_ERROR_FAILURE);
+  if (!CanBeCaptured(StreamCaptureType::CAPTURE_AUDIO, aRv)) {
     return nullptr;
   }
 
@@ -4253,8 +4259,7 @@ already_AddRefed<DOMMediaStream> HTMLMediaElement::MozCaptureStream(
     ReportToConsole(nsIScriptError::warningFlag,
                     "MozCaptureStreamDeprecatedWarning");
   }
-  if (!CanBeCaptured(StreamCaptureType::CAPTURE_ALL_TRACKS)) {
-    aRv.Throw(NS_ERROR_FAILURE);
+  if (!CanBeCaptured(StreamCaptureType::CAPTURE_ALL_TRACKS, aRv)) {
     return nullptr;
   }
 
@@ -4285,8 +4290,7 @@ already_AddRefed<DOMMediaStream> HTMLMediaElement::MozCaptureStreamUntilEnded(
     ReportToConsole(nsIScriptError::warningFlag,
                     "MozCaptureStreamDeprecatedWarning");
   }
-  if (!CanBeCaptured(StreamCaptureType::CAPTURE_ALL_TRACKS)) {
-    aRv.Throw(NS_ERROR_FAILURE);
+  if (!CanBeCaptured(StreamCaptureType::CAPTURE_ALL_TRACKS, aRv)) {
     return nullptr;
   }
 
@@ -4315,8 +4319,7 @@ already_AddRefed<DOMMediaStream> HTMLMediaElement::CaptureStream(
     ErrorResult& aRv) {
   // Spec issue https://github.com/w3c/mediacapture-fromelement/issues/20
   // We began blocking the capture of encrypted playback in bug 1071482.
-  if (!CanBeCaptured(StreamCaptureType::CAPTURE_ALL_TRACKS)) {
-    aRv.Throw(NS_ERROR_FAILURE);
+  if (!CanBeCaptured(StreamCaptureType::CAPTURE_ALL_TRACKS, aRv)) {
     return nullptr;
   }
 

@@ -72,7 +72,6 @@ class nsIFragmentContentSink : public nsISupports {
   NS_IMETHOD SetPreventScriptExecution(bool aPreventScriptExecution) = 0;
 };
 
-nsresult NS_NewXMLFragmentContentSink(
-    nsIFragmentContentSink** aInstancePtrResult);
+nsresult NS_NewXMLFragmentContentSink(nsIFragmentContentSink** aResult);
 
 #endif

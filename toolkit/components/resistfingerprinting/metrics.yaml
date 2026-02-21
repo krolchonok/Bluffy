@@ -1655,8 +1655,7 @@ characteristics:
       - interaction
 
   timezone_offset_web:
-    type: quantity
-    unit: minutes
+    type: string
     description: >
       The timezone offset in minutes exposed to web content via getTimezoneOffset()
     lifetime: application

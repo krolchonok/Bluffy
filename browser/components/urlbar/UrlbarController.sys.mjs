@@ -1528,6 +1528,8 @@ class TelemetryEvent {
       return "dismiss";
     }
     if (MouseEvent.isInstance(event)) {
+      // TODO (Bug 2018250): Don’t rely on `event` and use `selType` or
+      // `details.element` if possible.
       return /** @type {HTMLElement} */ (event.target).classList.contains(
         "urlbar-go-button"
       )

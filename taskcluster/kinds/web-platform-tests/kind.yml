@@ -242,6 +242,7 @@ tasks:
             chunked: true
             extra-options:
                 - --test-type=testharness
+                - --test-type=crashtest
                 - --default-exclude
                 - --tag=webcodecs
                 - --no-update-status-on-crash

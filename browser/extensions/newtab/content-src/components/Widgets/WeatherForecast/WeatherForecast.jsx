@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useRef } from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { useIntersectionObserver } from "../../../lib/utils";
@@ -21,8 +21,6 @@ function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
   const prefs = useSelector(state => state.Prefs.values);
   const weatherData = useSelector(state => state.Weather);
   const impressionFired = useRef(false);
-  const errorTelemetrySent = useRef(false);
-  const errorRef = useRef(null);
 
   const isSmallSize = !isMaximized && widgetsMayBeMaximized;
   const widgetSize = isSmallSize ? "small" : "medium";
@@ -48,44 +46,6 @@ function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
   const forecastRef = useIntersectionObserver(handleIntersection);
 
   const WEATHER_SUGGESTION = weatherData.suggestions?.[0];
-  const HOURLY_FORECASTS = weatherData.hourlyForecasts ?? [];
-
-  const hasError =
-    !WEATHER_SUGGESTION?.current_conditions ||
-    !WEATHER_SUGGESTION?.forecast ||
-    !HOURLY_FORECASTS[0];
-
-  const handleErrorIntersection = useCallback(
-    entries => {
-      const entry = entries.find(e => e.isIntersecting);
-      if (entry && !errorTelemetrySent.current) {
-        dispatch(
-          ac.AlsoToMain({
-            type: at.WIDGETS_ERROR,
-            data: {
-              widget_name: "weather",
-              widget_size: widgetsMayBeMaximized ? widgetSize : "medium",
-              error_type: "load_error",
-            },
-          })
-        );
-        errorTelemetrySent.current = true;
-      }
-    },
-    [dispatch, widgetSize, widgetsMayBeMaximized]
-  );
-
-  useEffect(() => {
-    if (errorRef.current && !errorTelemetrySent.current) {
-      const observer = new IntersectionObserver(handleErrorIntersection);
-      observer.observe(errorRef.current);
-
-      return () => {
-        observer.disconnect();
-      };
-    }
-    return undefined;
-  }, [handleErrorIntersection, hasError]);
 
   const nimbusWeatherDisplay = prefs.trainhopConfig?.weather?.display;
   const showDetailedView =
@@ -294,187 +254,181 @@ function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
     );
   }
 
-  function renderContextMenu() {
-    return (
-      <div className="weather-forecast-context-menu-wrapper">
-        <moz-button
-          className="weather-forecast-context-menu-button"
-          iconSrc="chrome://global/skin/icons/more.svg"
-          menuId="weather-forecast-context-menu"
-          type="ghost"
-          size={`${isSmallSize ? "small" : "default"}`}
-          onClick={e => e.preventDefault()}
-        />
-        <panel-list
-          id="weather-forecast-context-menu"
-          onClick={e => e.preventDefault()}
-        >
-          {prefs["weather.locationSearchEnabled"] && (
-            <panel-item
-              data-l10n-id="newtab-weather-menu-change-location"
-              onClick={handleChangeLocation}
-            />
-          )}
-          {isOptInEnabled && (
-            <panel-item
-              data-l10n-id="newtab-weather-menu-detect-my-location"
-              onClick={handleDetectLocation}
-            />
-          )}
-          {prefs["weather.temperatureUnits"] === "f" ? (
-            <panel-item
-              data-l10n-id="newtab-weather-menu-change-temperature-units-celsius"
-              onClick={() => handleChangeTempUnit("c")}
-            />
-          ) : (
-            <panel-item
-              data-l10n-id="newtab-weather-menu-change-temperature-units-fahrenheit"
-              onClick={() => handleChangeTempUnit("f")}
-            />
-          )}
-          {!showDetailedView ? (
-            <panel-item
-              data-l10n-id="newtab-weather-menu-change-weather-display-detailed"
-              onClick={() => handleChangeDisplay("detailed")}
-            />
-          ) : (
-            <panel-item
-              data-l10n-id="newtab-weather-menu-change-weather-display-simple"
-              onClick={() => handleChangeDisplay("simple")}
-            />
-          )}
-          <panel-item
-            data-l10n-id="newtab-weather-menu-hide-weather-v2"
-            onClick={handleHideWeather}
-          />
-          <panel-item
-            data-l10n-id="newtab-weather-menu-learn-more"
-            onClick={handleLearnMore}
-          />
-        </panel-list>
-      </div>
-    );
-  }
-
   return (
-    <a
-      href={hasError ? "#" : WEATHER_SUGGESTION?.forecast?.url || "#"}
-      className="forecast-anchor"
+    <article
+      className={`weather-forecast-widget${isSmallSize ? " small-widget" : ""}`}
+      ref={el => {
+        forecastRef.current = [el];
+      }}
     >
-      <article
-        className={`weather-forecast-widget${isSmallSize ? " small-widget" : ""} ${hasError ? "forecast-error-state" : ""}`}
-        ref={el => {
-          forecastRef.current = [el];
-        }}
-      >
-        <div className="city-wrapper">
-          <div className="city-name">
-            {searchActive ? (
-              <LocationSearch outerClassName="" />
+      <div className="city-wrapper">
+        <div className="city-name">
+          {searchActive ? (
+            <LocationSearch outerClassName="" />
+          ) : (
+            <h3>{weatherData.locationData.city}</h3>
+          )}
+        </div>
+        <div className="weather-forecast-context-menu-wrapper">
+          <moz-button
+            className="weather-forecast-context-menu-button"
+            iconSrc="chrome://global/skin/icons/more.svg"
+            menuId="weather-forecast-context-menu"
+            type="ghost"
+            size={`${isSmallSize ? "small" : "default"}`}
+          />
+          <panel-list id="weather-forecast-context-menu">
+            {prefs["weather.locationSearchEnabled"] && (
+              <panel-item
+                data-l10n-id="newtab-weather-menu-change-location"
+                onClick={handleChangeLocation}
+              />
+            )}
+            {isOptInEnabled && (
+              <panel-item
+                data-l10n-id="newtab-weather-menu-detect-my-location"
+                onClick={handleDetectLocation}
+              />
+            )}
+            {prefs["weather.temperatureUnits"] === "f" ? (
+              <panel-item
+                data-l10n-id="newtab-weather-menu-change-temperature-units-celsius"
+                onClick={() => handleChangeTempUnit("c")}
+              />
             ) : (
-              <h3>{weatherData.locationData.city}</h3>
+              <panel-item
+                data-l10n-id="newtab-weather-menu-change-temperature-units-fahrenheit"
+                onClick={() => handleChangeTempUnit("f")}
+              />
             )}
-          </div>
-          {renderContextMenu()}
-        </div>
-        {!isSmallSize && !hasError && (
-          <>
-            <div className="current-weather-wrapper">
-              <div className="weather-icon-column">
-                <span
-                  className={`weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`}
-                ></span>
-              </div>
-              <div className="weather-info-column">
-                <span className="temperature-unit">
-                  {
-                    WEATHER_SUGGESTION.current_conditions.temperature[
-                      prefs["weather.temperatureUnits"]
-                    ]
-                  }
-                  &deg;{prefs["weather.temperatureUnits"]}
-                </span>
-                <span className="temperature-description">
-                  {WEATHER_SUGGESTION.current_conditions.summary}
-                </span>
-              </div>
-              <div className="high-low-column">
-                <span className="high-temperature">
-                  <span className="arrow-icon arrow-up" />
-                  {
-                    WEATHER_SUGGESTION.forecast.high[
-                      prefs["weather.temperatureUnits"]
-                    ]
-                  }
-                  &deg;
-                </span>
-
-                <span className="low-temperature">
-                  <span className="arrow-icon arrow-down" />
-                  {
-                    WEATHER_SUGGESTION.forecast.low[
-                      prefs["weather.temperatureUnits"]
-                    ]
-                  }
-                  &deg;
-                </span>
-              </div>
-            </div>
-            <hr />
-          </>
-        )}
-
-        {/* Error state for medium sized card */}
-        {hasError && (
-          <>
-            <div className="forecast-error" ref={errorRef}>
-              <span className="icon icon-info-warning" />{" "}
-              <p data-l10n-id="newtab-weather-error-not-available"></p>
-            </div>
-          </>
-        )}
-        {!hasError && (
-          <div className="forecast-row">
-            {!isSmallSize && (
-              <p
-                className="today-forecast"
-                data-l10n-id="newtab-weather-todays-forecast"
-              ></p>
+            {!showDetailedView ? (
+              <panel-item
+                data-l10n-id="newtab-weather-menu-change-weather-display-detailed"
+                onClick={() => handleChangeDisplay("detailed")}
+              />
+            ) : (
+              <panel-item
+                data-l10n-id="newtab-weather-menu-change-weather-display-simple"
+                onClick={() => handleChangeDisplay("simple")}
+              />
             )}
-            <ul className="forecast-row-items">
-              {HOURLY_FORECASTS.map(slot => (
-                <li key={slot.epoch_date_time}>
-                  <span>
-                    {slot.temperature[prefs["weather.temperatureUnits"]]}&deg;
-                  </span>
-                  <span className={`weather-icon iconId${slot.icon_id}`}></span>
-                  <span>
-                    {(() => {
-                      const date = new Date(slot.date_time);
-                      const hours = date.getHours() % 12 || 12; // displays a 12-hour format
-                      return `${hours}:${String(date.getMinutes()).padStart(2, "0")}`; // gets rid of the extra :00 at the end
-                    })()}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <div className="forecast-footer">
-          <span
-            className="sponsored-text"
-            data-l10n-id="newtab-weather-sponsored"
-            data-l10n-args='{"provider": "AccuWeather®"}'
-          ></span>
-          <span
-            className="full-forecast"
-            data-l10n-id="newtab-weather-see-full-forecast"
-            onClick={handleProviderLinkClick}
-          ></span>
+            <panel-item
+              data-l10n-id="newtab-weather-menu-hide-weather-v2"
+              onClick={handleHideWeather}
+            />
+            <panel-item
+              data-l10n-id="newtab-weather-menu-learn-more"
+              onClick={handleLearnMore}
+            />
+          </panel-list>
         </div>
-      </article>
-    </a>
+      </div>
+      {!isSmallSize && (
+        <>
+          <div className="current-weather-wrapper">
+            <div className="weather-icon-column">
+              <span
+                className={`weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`}
+              ></span>
+            </div>
+            <div className="weather-info-column">
+              <span className="temperature-unit">
+                {
+                  WEATHER_SUGGESTION.current_conditions.temperature[
+                    prefs["weather.temperatureUnits"]
+                  ]
+                }
+                &deg;{prefs["weather.temperatureUnits"]}
+              </span>
+              <span className="temperature-description">
+                {WEATHER_SUGGESTION.current_conditions.summary}
+              </span>
+            </div>
+            <div className="high-low-column">
+              <span className="high-temperature">
+                <span className="arrow-icon arrow-up" />
+                {
+                  WEATHER_SUGGESTION.forecast.high[
+                    prefs["weather.temperatureUnits"]
+                  ]
+                }
+                &deg;
+              </span>
+
+              <span className="low-temperature">
+                <span className="arrow-icon arrow-down" />
+                {
+                  WEATHER_SUGGESTION.forecast.low[
+                    prefs["weather.temperatureUnits"]
+                  ]
+                }
+                &deg;
+              </span>
+            </div>
+          </div>
+          <hr />
+        </>
+      )}
+      <div className="forecast-row">
+        {!isSmallSize && (
+          <p
+            className="today-forecast"
+            data-l10n-id="newtab-weather-todays-forecast"
+          ></p>
+        )}
+        <ul className="forecast-row-items">
+          <li>
+            <span>80&deg;</span>
+            <span
+              className={`weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`}
+            ></span>
+            <span>7:00</span>
+          </li>
+          <li>
+            <span>80&deg;</span>
+            <span
+              className={`weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`}
+            ></span>
+            <span>7:00</span>
+          </li>
+          <li>
+            <span>80&deg;</span>
+            <span
+              className={`weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`}
+            ></span>
+            <span>7:00</span>
+          </li>
+          <li>
+            <span>80&deg;</span>
+            <span
+              className={`weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`}
+            ></span>
+            <span>7:00</span>
+          </li>
+          <li>
+            <span>80&deg;</span>
+            <span
+              className={`weather-icon iconId${WEATHER_SUGGESTION.current_conditions.icon_id}`}
+            ></span>
+            <span>7:00</span>
+          </li>
+        </ul>
+      </div>
+
+      <div className="forecast-footer">
+        <a
+          href={WEATHER_SUGGESTION.forecast.url}
+          className="full-forecast"
+          data-l10n-id="newtab-weather-see-full-forecast"
+          onClick={handleProviderLinkClick}
+        ></a>
+        <span
+          className="sponsored-text"
+          data-l10n-id="newtab-weather-sponsored"
+          data-l10n-args='{"provider": "AccuWeather®"}'
+        ></span>
+      </div>
+    </article>
   );
 }
 

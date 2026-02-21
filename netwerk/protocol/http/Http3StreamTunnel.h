@@ -122,7 +122,6 @@ class Http3StreamTunnel final : public Http3Stream {
   nsresult BufferInput();
 
   RefPtr<Http3TransportLayer> mTransport;
-  bool mClosed = false;
   SimpleBuffer mSimpleBuffer;
 };
 

@@ -101,7 +101,7 @@ MultiTouchInput::MultiTouchInput()
 
 MultiTouchInput::MultiTouchInput(const WidgetTouchEvent& aTouchEvent)
     : InputData(MULTITOUCH_INPUT, aTouchEvent.mTimeStamp,
-                aTouchEvent.mModifiers),
+                aTouchEvent.mCallbackId, aTouchEvent.mModifiers),
       mHandledByAPZ(aTouchEvent.mFlags.mHandledByAPZ),
       mButton(aTouchEvent.mButton),
       mButtons(aTouchEvent.mButtons),

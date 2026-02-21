@@ -41,7 +41,7 @@ export default class IPProtectionMessageBarElement extends MozLitElement {
     super();
 
     this.handleDismiss = this.handleDismiss.bind(this);
-    this.handleClickSetingsLink = this.handleClickSettingsLink.bind(this);
+    this.handleClickSettingsLink = this.handleClickSettingsLink.bind(this);
   }
 
   connectedCallback() {
@@ -118,13 +118,12 @@ export default class IPProtectionMessageBarElement extends MozLitElement {
   }
 
   render() {
-    let messageBarTemplate = this.#MESSAGE_TYPE_MAP.get(this.type)();
-
-    if (!messageBarTemplate) {
+    let templateFn = this.#MESSAGE_TYPE_MAP.get(this.type);
+    if (!templateFn) {
       return null;
     }
 
-    return html` ${messageBarTemplate} `;
+    return html` ${templateFn()} `;
   }
 }
 

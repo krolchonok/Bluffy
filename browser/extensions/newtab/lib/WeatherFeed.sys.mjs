@@ -18,16 +18,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 ChromeUtils.defineLazyGetter(lazy, "MerinoClient", () => {
-  // @backward-compat { version 150 }
-  // Use our local copy until fetchWeatherReport() and fetchHourlyForecasts()
-  // with the new endpoint URL support land in the tree.
-  // TODO: Update the version below once those changes
-  // ship in release and remove the local copy.
-  if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "150.0a1") < 0) {
-    return ChromeUtils.importESModule(
-      "resource://newtab/lib/TemporaryMerinoClientShim.sys.mjs"
-    ).TemporaryMerinoClientShim;
-  }
   try {
     return ChromeUtils.importESModule(
       "moz-src:///browser/components/urlbar/MerinoClient.sys.mjs"
@@ -76,7 +66,6 @@ export class WeatherFeed {
     this.loaded = false;
     this.merino = null;
     this.suggestions = [];
-    this.hourlyForecasts = [];
     this.lastUpdated = null;
     this.locationData = {};
     this.fetchTimer = null;
@@ -97,7 +86,6 @@ export class WeatherFeed {
   async resetWeather() {
     await this.resetCache();
     this.suggestions = [];
-    this.hourlyForecasts = [];
     this.lastUpdated = null;
     this.loaded = false;
   }
@@ -123,7 +111,6 @@ export class WeatherFeed {
     this.clearTimeout(this.retryTimer);
     this.merino = null;
     this.suggestions = null;
-    this.hourlyForecasts = null;
     this.fetchTimer = 0;
     this.retryTimer = 0;
   }
@@ -138,24 +125,20 @@ export class WeatherFeed {
     }
 
     // @backward-compat { version 149 }
-    // MerinoClient.fetchWeatherReport() and MerinoClient.fetchHourlyForecast() were introduced in 149 Nightly.
+    // MerinoClient.fetchWeather() was introduced in 149 Nightly.
     // The fetchHelperUntil_149() does not use the function.
     if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "149.0a1") >= 0) {
-      const { suggestions, hourlyForecasts } = await this._fetchHelper();
-      this.suggestions = suggestions;
-      this.hourlyForecasts = hourlyForecasts;
+      this.suggestions = await this._fetchHelper();
     } else {
       this.suggestions = await this._fetchHelperUntil_149();
-      this.hourlyForecasts = [];
     }
 
-    if (this.suggestions.length || this.hourlyForecasts.length) {
+    if (this.suggestions.length) {
       const hasLocationData =
         !this.store.getState().Prefs.values[PREF_WEATHER_QUERY];
       this.lastUpdated = this.Date().now();
       await this.cache.set("weather", {
         suggestions: this.suggestions,
-        hourlyForecasts: this.hourlyForecasts,
         lastUpdated: this.lastUpdated,
       });
 
@@ -190,7 +173,6 @@ export class WeatherFeed {
       await this.fetch(isStartup);
     } else if (!this.lastUpdated) {
       this.suggestions = weather.suggestions;
-      this.hourlyForecasts = weather.hourlyForecasts || [];
       this.lastUpdated = weather.lastUpdated;
       this.update();
     }
@@ -203,7 +185,6 @@ export class WeatherFeed {
         type: at.WEATHER_UPDATE,
         data: {
           suggestions: this.suggestions,
-          hourlyForecasts: this.hourlyForecasts,
           lastUpdated: this.lastUpdated,
           locationData: this.locationData,
         },
@@ -272,13 +253,6 @@ export class WeatherFeed {
           await this.loadWeather();
         } else if (!enabled && this.loaded) {
           await this.resetWeather();
-        }
-        break;
-      }
-      case "weather.display":
-      case "widgets.system.weatherForecast.enabled": {
-        if (!this.hourlyForecasts?.length) {
-          await this.fetch();
         }
         break;
       }
@@ -380,77 +354,19 @@ export class WeatherFeed {
         // we want to ensure if it was called later after a teardown,
         // we don't throw. If we throw, we end up in another retry.
         if (!this.merino) {
-          return { suggestions: [], hourlyForecasts: [] };
+          return [];
         }
-
-        // Resolve geolocation once before the parallel fetch so both
-        // fetchWeatherReport() and fetchHourlyForecasts() share the same
-        // result, avoiding concurrent Merino requests that can result in a race condition.
-        let city;
-        let country;
-        let region;
-        if (!locationName) {
-          const geolocation = await lazy.GeolocationUtils.geolocation();
-          if (!geolocation) {
-            return { suggestions: [], hourlyForecasts: [] };
-          }
-          country = geolocation.country_code;
-          region =
-            geolocation.region_code || geolocation.region || geolocation.city;
-          city = geolocation.city || geolocation.region;
-          if (!country || !region || !city) {
-            return { suggestions: [], hourlyForecasts: [] };
-          }
-        }
-
-        const { values } = this.store.getState().Prefs;
-
-        const weatherForecastWidgetEnabled =
-          (values["weather.display"] === "detailed" ||
-            values.trainhopConfig?.weather?.display === "detailed") &&
-          (values["widgets.system.weatherForecast.enabled"] ||
-            values.trainhopConfig?.widgets?.weatherForecastEnabled);
-
-        // @backward-compat { version 150 }
-        // Read endpoint URLs from ActivityStream prefs so they can be
-        // configured without a tree change.
-        // TODO: Remove once the tree version ships.
-        // TODO: remove endpointUrl keys below, as the MerinoClient will have the
-        // endpoints defined via UrlbarPrefs
-        const reportEndpointUrl = values["weather.reportEndpoint"];
-        const hourlyEndpointUrl = values["weather.hourlyEndpoint"];
-
-        const [reportResult, hourlyResult] = await Promise.all([
-          this.merino.fetchWeatherReport({
-            source: "newtab",
-            locationName,
-            city,
-            region,
-            country,
-            timeoutMs: 7000,
-            endpointUrl: reportEndpointUrl,
-          }),
-          weatherForecastWidgetEnabled
-            ? this.merino.fetchHourlyForecasts({
-                source: "newtab",
-                locationName,
-                city,
-                region,
-                country,
-                endpointUrl: hourlyEndpointUrl,
-              })
-            : Promise.resolve(null),
-        ]);
-
-        return {
-          suggestions: reportResult ? [reportResult] : [],
-          hourlyForecasts: hourlyResult ?? [],
-        };
+        const result = await this.merino.fetchWeather({
+          source: "newtab",
+          locationName,
+          timeoutMs: 7000,
+        });
+        return result ? [result] : [];
       } catch (e) {
         // If we get an error, we try again in 1 minute,
         // and give up if we try more than maxRetries number of times.
         if (retry >= maxRetries) {
-          return { suggestions: [], hourlyForecasts: [] };
+          return [];
         }
         await new Promise(res => {
           // store the timeout so it can be cancelled elsewhere
@@ -470,7 +386,7 @@ export class WeatherFeed {
   /**
    * @backward-compat { version 149 }
    *
-   * MerinoClient.fetchWeatherReport() was introduced in 149 Nightly.
+   * MerinoClient.fetchWeather() was introduced in 149 Nightly.
    * This function does not use it.
    */
   async _fetchHelperUntil_149(maxRetries = 1, queryOverride = null) {

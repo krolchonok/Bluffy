@@ -36,7 +36,7 @@ export class WebsiteChipContainer extends MozLitElement {
       new CustomEvent("ai-website-chip:remove", {
         bubbles: true,
         composed: true,
-        detail: { label: website.label },
+        detail: { url: website.url, label: website.label },
       })
     );
   }
@@ -62,7 +62,8 @@ export class WebsiteChipContainer extends MozLitElement {
                 .label=${website.label}
                 .href=${website.url}
                 .iconSrc=${website.iconSrc ?? ""}
-                @remove=${e => this.#onRemoveWebsite(website, e)}
+                @ai-website-chip:remove=${e =>
+                  this.#onRemoveWebsite(website, e)}
               ></ai-website-chip>
             `
           )}

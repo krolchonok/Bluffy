@@ -9665,11 +9665,11 @@ LayoutDeviceIntPoint nsContentUtils::ToWidgetPoint(
 
 namespace {
 
-class SynthesizedMouseEventCallback final : public nsISynthesizedEventCallback {
+class SynthesizedEventCallback final : public nsISynthesizedEventCallback {
   NS_DECL_ISUPPORTS
 
  public:
-  explicit SynthesizedMouseEventCallback(VoidFunction& aCallback)
+  explicit SynthesizedEventCallback(VoidFunction& aCallback)
       : mCallback(&aCallback) {}
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD OnCompleteDispatch() override {
@@ -9685,12 +9685,12 @@ class SynthesizedMouseEventCallback final : public nsISynthesizedEventCallback {
   }
 
  private:
-  virtual ~SynthesizedMouseEventCallback() = default;
+  virtual ~SynthesizedEventCallback() = default;
 
   const RefPtr<VoidFunction> mCallback;
 };
 
-NS_IMPL_ISUPPORTS(SynthesizedMouseEventCallback, nsISynthesizedEventCallback)
+NS_IMPL_ISUPPORTS(SynthesizedEventCallback, nsISynthesizedEventCallback)
 
 }  // namespace
 
@@ -9785,7 +9785,7 @@ Result<bool, nsresult> nsContentUtils::SynthesizeMouseEvent(
 
   nsCOMPtr<nsISynthesizedEventCallback> callback;
   if (aCallback.WasPassed()) {
-    callback = MakeAndAddRef<SynthesizedMouseEventCallback>(aCallback.Value());
+    callback = MakeAndAddRef<SynthesizedEventCallback>(aCallback.Value());
   }
 
   mozilla::widget::AutoSynthesizedEventCallbackNotifier notifier(callback);
@@ -9850,10 +9850,46 @@ mozilla::Result<bool, nsresult> nsContentUtils::SynthesizeTouchEvent(
     nsPresContext* aPresContext, nsIWidget* aWidget,
     const nsPoint& aWidgetOffset, const nsAString& aType,
     const nsTArray<SynthesizeTouchEventData>& aTouches,
-    const int32_t aModifiers, const SynthesizeTouchEventOptions& aOptions) {
+    const int32_t aModifiers, const SynthesizeTouchEventOptions& aOptions,
+    const Optional<OwningNonNull<VoidFunction>>& aCallback) {
   MOZ_ASSERT(aPresContext);
   MOZ_ASSERT(aWidget);
   AUTO_PROFILER_LABEL("nsContentUtils::SynthesizeTouchEvent", OTHER);
+
+  if (aCallback.WasPassed()) {
+    if (!XRE_IsParentProcess()) {
+      // TODO(edgar): There is currently no real use case for synthesizing a
+      // touch event with a callback from the content process. For now, throw an
+      // error in this case. We can add support later if a valid use case
+      // arises.
+      NS_WARNING(
+          "nsContentUtils::SynthesizeTouchEvent() does not support being "
+          "called in the content process with a callback");
+      return Err(NS_ERROR_FAILURE);
+    }
+
+    if (!aOptions.mIsDOMEventSynthesized) {
+      // TODO(edgar): There is currently no real use case for synthesizing a
+      // touch event with a callback that could be coalesced. For now, throw an
+      // error. We can add support later if a need arises.
+      NS_WARNING(
+          "nsContentUtils::SynthesizeTouchEvent() does not support being "
+          "called in the parent process with isDOMEventSynthesized=false, due "
+          "to the callback doesn't not support on coalesced events");
+      return Err(NS_ERROR_FAILURE);
+    }
+  }
+
+  if (XRE_IsParentProcess() && !aOptions.mIsAsyncEnabled &&
+      !StaticPrefs::test_events_async_enabled()) {
+    // TODO(edgar): Currently, dispatching touch event from parent process
+    // without going through APZ would cause content process crash on debug
+    // build.
+    NS_WARNING(
+        "nsContentUtils::SynthesizeTouchEvent() does not support being "
+        "called in the parent process without going through APZ");
+    return Err(NS_ERROR_FAILURE);
+  }
 
   EventMessage msg;
   if (aType.EqualsLiteral("touchstart")) {
@@ -9868,12 +9904,20 @@ mozilla::Result<bool, nsresult> nsContentUtils::SynthesizeTouchEvent(
     return Err(NS_ERROR_UNEXPECTED);
   }
 
+  nsCOMPtr<nsISynthesizedEventCallback> callback;
+  if (aCallback.WasPassed()) {
+    callback = MakeAndAddRef<SynthesizedEventCallback>(aCallback.Value());
+  }
+
+  mozilla::widget::AutoSynthesizedEventCallbackNotifier notifier(callback);
+
   WidgetTouchEvent event(true, msg, aWidget);
   event.mFlags.mIsSynthesizedForTests = aOptions.mIsDOMEventSynthesized;
   event.mModifiers = nsContentUtils::GetWidgetModifiers(aModifiers);
   if (aOptions.mIsPen) {
     event.mInputSource = MouseEvent_Binding::MOZ_SOURCE_PEN;
   }
+  event.mCallbackId = notifier.SaveCallback();
 
   uint32_t count = aTouches.Length();
   event.mTouches.SetCapacity(count);
@@ -9915,6 +9959,14 @@ mozilla::Result<bool, nsresult> nsContentUtils::SynthesizeTouchEvent(
     status = aWidget->DispatchInputEvent(&event).mContentStatus;
   } else {
     status = aWidget->DispatchEvent(&event);
+  }
+
+  // The callback ID may be cleared when the event also needs to be dispatched
+  // to a content process. In such cases, the callback will be notified after
+  // the event has been dispatched in the target content process.
+  if (event.mCallbackId.isSome()) {
+    mozilla::widget::AutoSynthesizedEventCallbackNotifier::NotifySavedCallback(
+        event.mCallbackId.ref());
   }
 
   return status == nsEventStatus_eConsumeNoDefault;

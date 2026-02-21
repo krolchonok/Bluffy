@@ -412,12 +412,16 @@ class LoggingManager:
         if self.terminal_handler:
             self.terminal_handler.addFilter(self.structured_filter)
             self.root_logger.addHandler(self.terminal_handler)
+            for logger in self.structured_loggers:
+                logger.propagate = False
 
     def disable_unstructured(self):
         """Disable logging of unstructured messages."""
         if self.terminal_handler:
             self.terminal_handler.removeFilter(self.structured_filter)
             self.root_logger.removeHandler(self.terminal_handler)
+            for logger in self.structured_loggers:
+                logger.propagate = True
 
     def register_structured_logger(self, logger, terminal=True, file=True):
         """Register a structured logger.

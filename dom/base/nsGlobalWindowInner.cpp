@@ -2694,6 +2694,7 @@ bool nsGlobalWindowInner::SynthesizeMouseEvent(
 bool nsGlobalWindowInner::SynthesizeTouchEvent(
     const nsAString& aType, const nsTArray<SynthesizeTouchEventData>& aTouches,
     const int32_t aModifiers, const SynthesizeTouchEventOptions& aOptions,
+    const Optional<OwningNonNull<VoidFunction>>& aCallback,
     mozilla::ErrorResult& aError) {
   nsIDocShell* docShell = GetDocShell();
   RefPtr<PresShell> presShell = docShell ? docShell->GetPresShell() : nullptr;
@@ -2716,7 +2717,8 @@ bool nsGlobalWindowInner::SynthesizeTouchEvent(
   }
 
   auto result = nsContentUtils::SynthesizeTouchEvent(
-      presContext, widget, offset, aType, aTouches, aModifiers, aOptions);
+      presContext, widget, offset, aType, aTouches, aModifiers, aOptions,
+      aCallback);
   if (result.isErr()) {
     aError.Throw(result.unwrapErr());
     return false;

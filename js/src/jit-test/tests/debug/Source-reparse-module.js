@@ -45,7 +45,14 @@ g.eval(`
   assertThrowsInstanceOf(() => gw.createSource({}).reparse(true), Error);
   assertThrowsInstanceOf(() => gw.createSource({ startLine: 0 }).reparse(true), Error);
 `);
-let script1 = gw.createSource({ startLine: 1 }).reparse(true);
+let script1 = gw.createSource({ startLine: 1 }).reparse(/* asModule */ true);
 assertEq(script1.startLine, 1);
-let script2 = gw.createSource({ startLine: 2 }).reparse(true);
+let script2 = gw.createSource({ startLine: 2 }).reparse(/* asModule */ true);
 assertEq(script2.startLine, 2);
+
+// reparse module throws when filename is null
+g.scripts = scripts;
+g.eval(`
+  evaluate("var x = 1;", {fileName: null});
+  assertThrowsInstanceOf(() => scripts.at(-1).source.reparse(/* asModule */ true), Error);
+`);

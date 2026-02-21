@@ -539,6 +539,11 @@ class EngineDispatcher {
           break;
         }
         case "EnginePort:Run": {
+          const resourcesBefore = {
+            cpuTime: ChromeUtils.cpuTimeSinceProcessStart,
+            memory: ChromeUtils.currentProcessMemoryUsage,
+          };
+
           const { requestId, request, engineRunOptions } = data;
           try {
             await this.isReady();
@@ -563,12 +568,26 @@ class EngineDispatcher {
 
           this.#status = "RUNNING";
           const engine = await this.#engine;
+
           try {
+            const response = await engine.run(
+              request,
+              requestId,
+              engineRunOptions
+            );
+
+            const resourcesAfter = {
+              cpuTime: ChromeUtils.cpuTimeSinceProcessStart,
+              memory: ChromeUtils.currentProcessMemoryUsage,
+            };
+
             port.postMessage({
               type: "EnginePort:RunResponse",
               requestId,
-              response: await engine.run(request, requestId, engineRunOptions),
+              response,
               error: null,
+              resourcesBefore,
+              resourcesAfter,
             });
           } catch (error) {
             port.postMessage({

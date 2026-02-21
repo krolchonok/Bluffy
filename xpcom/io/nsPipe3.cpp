@@ -234,7 +234,6 @@ struct nsPipeReadState {
 // an input end of a pipe (maintained as a list of refs within the pipe)
 class nsPipeInputStream final : public nsIAsyncInputStream,
                                 public nsITellableStream,
-                                public nsISearchableInputStream,
                                 public nsICloneableInputStream,
                                 public nsIClassInfo,
                                 public nsIBufferedInputStream,
@@ -244,7 +243,6 @@ class nsPipeInputStream final : public nsIAsyncInputStream,
   NS_DECL_NSIINPUTSTREAM
   NS_DECL_NSIASYNCINPUTSTREAM
   NS_DECL_NSITELLABLESTREAM
-  NS_DECL_NSISEARCHABLEINPUTSTREAM
   NS_DECL_NSICLONEABLEINPUTSTREAM
   NS_DECL_NSICLASSINFO
   NS_DECL_NSIBUFFEREDINPUTSTREAM
@@ -1235,7 +1233,6 @@ NS_INTERFACE_TABLE_HEAD(nsPipeInputStream)
   NS_INTERFACE_TABLE_BEGIN
     NS_INTERFACE_TABLE_ENTRY(nsPipeInputStream, nsIAsyncInputStream)
     NS_INTERFACE_TABLE_ENTRY(nsPipeInputStream, nsITellableStream)
-    NS_INTERFACE_TABLE_ENTRY(nsPipeInputStream, nsISearchableInputStream)
     NS_INTERFACE_TABLE_ENTRY(nsPipeInputStream, nsICloneableInputStream)
     NS_INTERFACE_TABLE_ENTRY(nsPipeInputStream, nsIBufferedInputStream)
     NS_INTERFACE_TABLE_ENTRY(nsPipeInputStream, nsIClassInfo)
@@ -1249,8 +1246,7 @@ NS_INTERFACE_TABLE_TAIL
 
 NS_IMPL_CI_INTERFACE_GETTER(nsPipeInputStream, nsIInputStream,
                             nsIAsyncInputStream, nsITellableStream,
-                            nsISearchableInputStream, nsICloneableInputStream,
-                            nsIBufferedInputStream)
+                            nsICloneableInputStream, nsIBufferedInputStream)
 
 NS_IMPL_THREADSAFE_CI(nsPipeInputStream)
 
@@ -1505,88 +1501,6 @@ nsPipeInputStream::Tell(int64_t* aOffset) {
 
   *aOffset = mLogicalOffset;
   return NS_OK;
-}
-
-static bool strings_equal(bool aIgnoreCase, const char* aS1, const char* aS2,
-                          uint32_t aLen) {
-  return aIgnoreCase ? !nsCRT::strncasecmp(aS1, aS2, aLen)
-                     : !strncmp(aS1, aS2, aLen);
-}
-
-NS_IMETHODIMP
-nsPipeInputStream::Search(const char* aForString, bool aIgnoreCase,
-                          bool* aFound, uint32_t* aOffsetSearchedTo) {
-  LOG(("III Search [for=%s ic=%u]\n", aForString, aIgnoreCase));
-
-  ReentrantMonitorAutoEnter mon(mPipe->mReentrantMonitor);
-
-  char* cursor1;
-  char* limit1;
-  uint32_t index = 0, offset = 0;
-  uint32_t strLen = strlen(aForString);
-
-  mPipe->PeekSegment(mReadState, 0, cursor1, limit1);
-  if (cursor1 == limit1) {
-    *aFound = false;
-    *aOffsetSearchedTo = 0;
-    LOG(("  result [aFound=%u offset=%u]\n", *aFound, *aOffsetSearchedTo));
-    return NS_OK;
-  }
-
-  while (true) {
-    uint32_t i, len1 = limit1 - cursor1;
-
-    // check if the string is in the buffer segment
-    for (i = 0; i < len1 - strLen + 1; i++) {
-      if (strings_equal(aIgnoreCase, &cursor1[i], aForString, strLen)) {
-        *aFound = true;
-        *aOffsetSearchedTo = offset + i;
-        LOG(("  result [aFound=%u offset=%u]\n", *aFound, *aOffsetSearchedTo));
-        return NS_OK;
-      }
-    }
-
-    // get the next segment
-    char* cursor2;
-    char* limit2;
-    uint32_t len2;
-
-    index++;
-    offset += len1;
-
-    mPipe->PeekSegment(mReadState, index, cursor2, limit2);
-    if (cursor2 == limit2) {
-      *aFound = false;
-      *aOffsetSearchedTo = offset - strLen + 1;
-      LOG(("  result [aFound=%u offset=%u]\n", *aFound, *aOffsetSearchedTo));
-      return NS_OK;
-    }
-    len2 = limit2 - cursor2;
-
-    // check if the string is straddling the next buffer segment
-    uint32_t lim = XPCOM_MIN(strLen, len2 + 1);
-    for (i = 0; i < lim; ++i) {
-      uint32_t strPart1Len = strLen - i - 1;
-      uint32_t strPart2Len = strLen - strPart1Len;
-      const char* strPart2 = &aForString[strLen - strPart2Len];
-      uint32_t bufSeg1Offset = len1 - strPart1Len;
-      if (strings_equal(aIgnoreCase, &cursor1[bufSeg1Offset], aForString,
-                        strPart1Len) &&
-          strings_equal(aIgnoreCase, cursor2, strPart2, strPart2Len)) {
-        *aFound = true;
-        *aOffsetSearchedTo = offset - strPart1Len;
-        LOG(("  result [aFound=%u offset=%u]\n", *aFound, *aOffsetSearchedTo));
-        return NS_OK;
-      }
-    }
-
-    // finally continue with the next buffer
-    cursor1 = cursor2;
-    limit1 = limit2;
-  }
-
-  MOZ_ASSERT_UNREACHABLE("can't get here");
-  return NS_ERROR_UNEXPECTED;  // keep compiler happy
 }
 
 NS_IMETHODIMP

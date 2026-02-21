@@ -15,6 +15,11 @@ let gDummyHandlers = [];
 let gOriginalPreferredMailHandler;
 let gOriginalPreferredPDFHandler;
 
+/**
+ * @type {Promise<void>}
+ */
+let appHandlerInitialized;
+
 registerCleanupFunction(function () {
   function removeDummyHandlers(handlers) {
     // Remove any of the dummy handlers we created.
@@ -102,7 +107,10 @@ add_setup(async function () {
   gOriginalPreferredPDFHandler = pdfHandlerInfo.preferredApplicationHandler;
   substituteWebHandlers(pdfHandlerInfo);
 
+  appHandlerInitialized = TestUtils.topicObserved("app-handler-loaded");
+
   await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
+
   info("Preferences page opened on the general pane.");
 
   await gBrowser.selectedBrowser.contentWindow.promiseLoadHandlersList;
@@ -232,6 +240,8 @@ async function selectStandardOptions(itemToUse) {
 }
 
 add_task(async function checkDropdownBehavior() {
+  await appHandlerInitialized;
+
   let win = gBrowser.selectedBrowser.contentWindow;
 
   let container = win.document.getElementById("handlersView");

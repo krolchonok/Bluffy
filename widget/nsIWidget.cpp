@@ -1185,6 +1185,10 @@ class DispatchEventOnMainThread : public Runnable {
   NS_IMETHOD Run() override {
     EventType event = mInput.ToWidgetEvent(mWidget);
     mWidget->ProcessUntransformedAPZEvent(&event, mAPZResult);
+    if (event.mCallbackId.isSome()) {
+      mozilla::widget::AutoSynthesizedEventCallbackNotifier::
+          NotifySavedCallback(event.mCallbackId.ref());
+    }
     return NS_OK;
   }
 
@@ -1214,20 +1218,6 @@ NS_IMETHODIMP DispatchEventOnMainThread<MouseInput, WidgetPointerEvent>::Run() {
       mInput.IsPointerEventType(),
       "Please use DispatchEventOnMainThread<MouseInput, WidgetMouseEvent>");
   WidgetPointerEvent event = mInput.ToWidgetEvent<WidgetPointerEvent>(mWidget);
-  mWidget->ProcessUntransformedAPZEvent(&event, mAPZResult);
-  if (event.mCallbackId.isSome()) {
-    mozilla::widget::AutoSynthesizedEventCallbackNotifier::NotifySavedCallback(
-        event.mCallbackId.ref());
-  }
-  return NS_OK;
-}
-
-// XXX: This can be remove once callback is also supported sythesized Touch
-// event (bug 1968861).
-template <>
-NS_IMETHODIMP
-DispatchEventOnMainThread<ScrollWheelInput, WidgetWheelEvent>::Run() {
-  WidgetWheelEvent event = mInput.ToWidgetEvent(mWidget);
   mWidget->ProcessUntransformedAPZEvent(&event, mAPZResult);
   if (event.mCallbackId.isSome()) {
     mozilla::widget::AutoSynthesizedEventCallbackNotifier::NotifySavedCallback(
@@ -1386,6 +1376,7 @@ nsIWidget::ContentAndAPZEventStatus nsIWidget::DispatchInputEvent(
             new DispatchInputOnControllerThread<MultiTouchInput,
                                                 WidgetTouchEvent>(*touchEvent,
                                                                   mAPZC, this);
+        touchEvent->mCallbackId.reset();
         APZThreadUtils::RunOnControllerThread(std::move(r));
         status.mContentStatus = nsEventStatus_eConsumeDoDefault;
         return status;

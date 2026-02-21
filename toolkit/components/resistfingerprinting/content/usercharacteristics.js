@@ -1555,12 +1555,12 @@ async function populateTimezoneWeb() {
     const offset = new Date().getTimezoneOffset();
     return {
       timezoneWeb: timezone || "",
-      timezoneOffsetWeb: offset,
+      timezoneOffsetWeb: String(offset),
     };
   } catch (e) {
     return {
       timezoneWeb: "",
-      timezoneOffsetWeb: 0,
+      timezoneOffsetWeb: "0",
     };
   }
 }

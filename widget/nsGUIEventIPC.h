@@ -364,6 +364,9 @@ struct ParamTraits<mozilla::WidgetTouchEvent> {
     WriteParam(aWriter, aParam.mInputSource);
     WriteParam(aWriter, aParam.mButton);
     WriteParam(aWriter, aParam.mButtons);
+    WriteParam(aWriter, aParam.mCallbackId);
+    // Mark the event as stopped to notify callback.
+    const_cast<mozilla::WidgetTouchEvent&>(aParam).mCallbackId.reset();
     // Sigh, Touch bites us again!  We want to be able to do
     //   WriteParam(aWriter, aParam.mTouches);
     const paramType::TouchArray& touches = aParam.mTouches;
@@ -387,6 +390,7 @@ struct ParamTraits<mozilla::WidgetTouchEvent> {
         !ReadParam(aReader, &aResult->mInputSource) ||
         !ReadParam(aReader, &aResult->mButton) ||
         !ReadParam(aReader, &aResult->mButtons) ||
+        !ReadParam(aReader, &aResult->mCallbackId) ||
         !ReadParam(aReader, &numTouches)) {
       return false;
     }

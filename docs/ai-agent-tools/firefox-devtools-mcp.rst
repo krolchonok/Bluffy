@@ -20,8 +20,8 @@ DevTools capabilities such as page navigation, DOM inspection, network
 monitoring, console logs, user input simulation, and Firefox logging. It isn't
 complete yet, but can already be useful.
 
-This documentation refers to a Mozilla-specific fork with enhanced logging
-capabilities: https://github.com/padenot/firefox-devtools-mcp
+This documentation refers to a Mozilla-specific fork with more features for
+Firefox development: https://github.com/padenot/firefox-devtools-mcp
 
 Key Features
 ------------
@@ -51,7 +51,12 @@ Required Software
 Installation and Configuration
 ===============================
 
-Claude Code can install and configure the MCP server with a single command:
+The Firefox DevTools MCP server is **automatically configured** when using
+Claude Code in the Firefox repository, via the ``.mcp.json`` file at the root
+of the repository.
+
+For installation in other projects or at user scope, Claude Code can configure
+the MCP server with a single command:
 
 .. code-block:: bash
 
@@ -207,3 +212,21 @@ context APIs. While WebDriver BiDi and Classic are meant to work seamlessly
 together, some WebDriver BiDi features might not work when getting executed for
 chrome browsing contexts. Chrome support for WebDriver BiDi is tracked on the
 following `meta bug <https://bugzilla.mozilla.org/show_bug.cgi?id=1722679>`__.
+
+Troubleshooting
+===============
+
+Try to update to the latest version:
+
+.. code-block:: bash
+
+   ./mach npx @padenot/firefox-devtools-mcp@latest
+
+then quit when seeing "Ready to accept tool requests".
+
+MCP Server Not Working
+-----------------------
+
+1. Verify the ``.mcp.json`` at the root of the repository is present.
+2. Verify Node.js is available via ``./mach npx --version``.
+3. Ask in #ai4dev or #developers on chat.mozilla.org

@@ -785,7 +785,7 @@ already_AddRefed<nsHttpConnection> Http3StreamTunnel::CreateHttpConnection(
 }
 
 void Http3StreamTunnel::CleanupStream(nsresult aReason) {
-  if (mSession) {
+  if (mSession && !mClosed) {
     LOG(("Http3StreamTunnel::CleanupStream %p", this));
     mSession->CloseStream(this, aReason);
   }

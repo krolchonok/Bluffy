@@ -1363,8 +1363,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   // tracks this HTMLMediaElement has.
   StreamCaptureType CaptureTypeForElement();
 
-  // True if this element can be captured, false otherwise.
-  bool CanBeCaptured(StreamCaptureType aCaptureType);
+  // Returns true if capture is allowed. Returns false and sets aRv if capture
+  // is not allowed: NotSupportedError if the element contains restricted
+  // content, or NS_ERROR_FAILURE if the document has no window.
+  bool CanBeCaptured(StreamCaptureType aCaptureType, ErrorResult& aRv);
 
   using nsGenericHTMLElement::DispatchEvent;
   // For nsAsyncEventRunner.

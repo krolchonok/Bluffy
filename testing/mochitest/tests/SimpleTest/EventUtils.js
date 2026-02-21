@@ -886,7 +886,9 @@ function synthesizeMouseAtCenter(aTarget, aEvent, aWindow, aCallback) {
  * @param {number | number[]} aOffsetX - The relative offset from left of aTarget.
  * @param {number | number[]} aOffsetY - The relative offset from top of aTarget.
  * @param {TouchEventData} aEvent - Details of the touch event to dispatch
- * @param {DOMWindow} [aWindow=window] - DOM window used to dispatch the event.
+ * @param {DOMWindow} [aWindow] - DOM window used to dispatch the event.
+ * @param {Function} [aCallback] - A callback function that is invoked when the
+ *                                 touch event is dispatched.
  *
  * @returns true if and only if aEvent.type is specified and default of the
  * event is prevented.
@@ -896,7 +898,8 @@ function synthesizeTouch(
   aOffsetX,
   aOffsetY,
   aEvent = {},
-  aWindow = window
+  aWindow = window,
+  aCallback
 ) {
   let rectX, rectY;
   if (Array.isArray(aTarget)) {
@@ -934,7 +937,7 @@ function synthesizeTouch(
     }
     return aOffsetY + rectY[0];
   })();
-  return synthesizeTouchAtPoint(offsetX, offsetY, aEvent, aWindow);
+  return synthesizeTouchAtPoint(offsetX, offsetY, aEvent, aWindow, aCallback);
 }
 
 /**
@@ -949,11 +952,19 @@ function synthesizeTouch(
  * @param {number | number[]} aTop - The relative offset from top of aTarget.
  * @param {TouchEventData} aEvent - Details of the touch event to dispatch
  * @param {DOMWindow} [aWindow=window] - DOM window used to dispatch the event.
+ * @param {Function} [aCallback] - A callback function that is invoked when the
+ *                                 touch event is dispatched.
  *
  * @returns true if and only if aEvent.type is specified and default of the
  * event is prevented.
  */
-function synthesizeTouchAtPoint(aLeft, aTop, aEvent = {}, aWindow = window) {
+function synthesizeTouchAtPoint(
+  aLeft,
+  aTop,
+  aEvent = {},
+  aWindow = window,
+  aCallback
+) {
   let utils = _getDOMWindowUtils(aWindow);
   if (!utils) {
     return false;
@@ -1068,11 +1079,15 @@ function synthesizeTouchAtPoint(aLeft, aTop, aEvent = {}, aWindow = window) {
   ];
 
   if ("type" in aEvent && aEvent.type) {
-    return _EU_maybeWrap(aWindow).synthesizeTouchEvent(aEvent.type, ...args);
+    return _EU_maybeWrap(aWindow).synthesizeTouchEvent(
+      aEvent.type,
+      ...args,
+      aCallback
+    );
   }
 
   _EU_maybeWrap(aWindow).synthesizeTouchEvent("touchstart", ...args);
-  _EU_maybeWrap(aWindow).synthesizeTouchEvent("touchend", ...args);
+  _EU_maybeWrap(aWindow).synthesizeTouchEvent("touchend", ...args, aCallback);
   return false;
 }
 
@@ -1082,14 +1097,19 @@ function synthesizeTouchAtPoint(aLeft, aTop, aEvent = {}, aWindow = window) {
  * @param {Element | Element[]} aTarget - The target element
  * @param {TouchEventData} aEvent - Details of the touch event to dispatch
  * @param {DOMWindow} [aWindow=window] - DOM window used to dispatch the event.
+ * @param {Function} [aCallback] - A callback function that is invoked when the
+ *                                 touch event is dispatched.
+ *
+ * @returns {boolean} Whether the event had preventDefault() called on it.
  */
-function synthesizeTouchAtCenter(aTarget, aEvent = {}, aWindow = window) {
+function synthesizeTouchAtCenter(aTarget, aEvent, aWindow, aCallback) {
   var rect = aTarget.getBoundingClientRect();
-  synthesizeTouchAtPoint(
+  return synthesizeTouchAtPoint(
     rect.left + rect.width / 2,
     rect.top + rect.height / 2,
     aEvent,
-    aWindow
+    aWindow,
+    aCallback
   );
 }
 

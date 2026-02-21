@@ -155,7 +155,7 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
     if (entitlementError || !entitlement) {
       // Unset the entitlement if not available.
       this.#setEntitlement(null);
-      return { isEnrolledAndEntitled: null, error: entitlementError };
+      return { isEnrolledAndEntitled: false, error: entitlementError };
     }
 
     this.#setEntitlement(entitlement);
@@ -238,7 +238,7 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
    */
   static async #isLinkedToGuardian(useCache = true) {
     try {
-      let isLinked = lazy.IPProtectionService.guardian.isLinkedToGuardian(
+      let isLinked = await lazy.IPProtectionService.guardian.isLinkedToGuardian(
         /* only cache: */ useCache
       );
 
