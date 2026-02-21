@@ -18,10 +18,34 @@ jobs:
     timeout-minutes: 240
 
     steps:
+      - name: Runner diagnostics
+        shell: bash
+        run: |
+          set -eux
+          date -u
+          uname -a
+          nproc
+          df -h
+          free -h
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+          fetch-tags: false
+        env:
+          GIT_TRACE: "1"
+          GIT_TRACE_PERFORMANCE: "1"
+
+      - name: Repository diagnostics
+        shell: bash
+        run: |
+          set -eux
+          git rev-parse --is-shallow-repository
+          git rev-parse HEAD
+          git show -s --oneline --decorate
+          git count-objects -vH
+          du -sh .
 
       - name: Show toolchain versions
         shell: bash
@@ -37,13 +61,21 @@ jobs:
         shell: bash
         run: |
           set -eux
-          ./mach --no-interactive build
+          start="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "Build started: ${start}"
+          time ./mach --no-interactive build
+          end="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "Build finished: ${end}"
 
       - name: Package
         shell: bash
         run: |
           set -eux
-          ./mach --no-interactive package
+          start="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "Package started: ${start}"
+          time ./mach --no-interactive package
+          end="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "Package finished: ${end}"
 
       - name: Collect package artifacts
         shell: bash
