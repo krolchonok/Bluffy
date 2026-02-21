@@ -56,9 +56,12 @@ def create_telemetry_from_environment(settings):
 
     # We must initialize Glean even if telemetry is disabled to ensure a deletion ping is sent.
     # This deletes any previously collected data if the user opts out of telemetry.
-    telemetry_interface = GleanTelemetry(
-        upload_enabled=is_enabled, data_dir=Path(get_state_dir()) / "glean"
-    )
+    try:
+        telemetry_interface = GleanTelemetry(
+            upload_enabled=is_enabled, data_dir=Path(get_state_dir()) / "glean"
+        )
+    except Exception:
+        return NoopTelemetry(is_enabled)
 
     return telemetry_interface
 

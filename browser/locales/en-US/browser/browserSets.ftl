@@ -201,7 +201,7 @@ bidi-switch-direction-shortcut =
     .key = X
 
 private-browsing-shortcut =
-    .key = P
+    .key = N
 
 ## The shortcuts below are for Mac specific
 ## global menu.

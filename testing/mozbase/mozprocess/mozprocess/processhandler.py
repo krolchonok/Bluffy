@@ -142,6 +142,7 @@ class ProcessHandlerMixin:
             if sys.version_info.minor >= 6 and universal_newlines:
                 kwargs["universal_newlines"] = universal_newlines
                 kwargs["encoding"] = encoding
+                kwargs["errors"] = "replace"
             try:
                 subprocess.Popen.__init__(self, args, **kwargs)
             except OSError:

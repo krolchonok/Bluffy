@@ -1,0 +1,63 @@
+name: Linux Self-Hosted Firefox Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/linux-selfhosted-firefox-build.yml"
+      - "browser/**"
+      - "toolkit/**"
+      - "modules/**"
+      - "mozconfig"
+
+jobs:
+  build-linux:
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 240
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Show toolchain versions
+        shell: bash
+        run: |
+          set -eux
+          uname -a
+          python3 --version
+          node --version || true
+          rustc --version || true
+          cargo --version || true
+
+      - name: Build
+        shell: bash
+        run: |
+          set -eux
+          ./mach --no-interactive build
+
+      - name: Package
+        shell: bash
+        run: |
+          set -eux
+          ./mach --no-interactive package
+
+      - name: Collect package artifacts
+        shell: bash
+        run: |
+          set -eux
+          mkdir -p artifacts
+          find . -type f \
+            \( -path "./obj-*/dist/*.tar.bz2" -o -path "./obj-*/dist/*.tar.xz" -o -path "./obj-*/dist/*.installer*.exe" \) \
+            -exec cp -v {} artifacts/ \;
+          ls -la artifacts
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: firefox-linux-build
+          path: artifacts/*
+          if-no-files-found: error
