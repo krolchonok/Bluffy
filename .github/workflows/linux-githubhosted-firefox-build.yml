@@ -57,19 +57,8 @@ jobs:
           set -eux
           ./mach --no-interactive bootstrap --application-choice browser
 
-      - name: Configure artifact build
+      - name: Build (full)
         shell: bash
-        run: |
-          set -eux
-          cat > .ci-artifact-mozconfig <<'EOF'
-          ac_add_options --enable-artifact-builds
-          EOF
-          cat .ci-artifact-mozconfig
-
-      - name: Build
-        shell: bash
-        env:
-          MOZCONFIG: ${{ github.workspace }}/.ci-artifact-mozconfig
         run: |
           set -eux
           start="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -80,8 +69,6 @@ jobs:
 
       - name: Package
         shell: bash
-        env:
-          MOZCONFIG: ${{ github.workspace }}/.ci-artifact-mozconfig
         run: |
           set -eux
           start="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -105,14 +92,16 @@ jobs:
           set -eux
           TOPOBJDIR="$(./mach environment --format json | python3 -c 'import json,sys; print(json.load(sys.stdin)["topobjdir"])')"
           mkdir -p artifacts
+          find "${TOPOBJDIR}/dist" -maxdepth 3 -type f | sort > artifacts/dist-files.txt
           find "${TOPOBJDIR}/dist" -type f \
             \( -name "*.tar.bz2" -o -name "*.tar.xz" -o -name "*.tar.zst" -o -name "*.dmg" -o -name "*.apk" -o -name "*.installer*.exe" \) \
             -exec cp -v {} artifacts/ \;
           ls -la artifacts
 
       - name: Upload artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: firefox-linux-github-hosted-artifact-build
+          name: firefox-linux-github-hosted-full-build
           path: artifacts
-          if-no-files-found: error
+          if-no-files-found: warn
