@@ -103,7 +103,7 @@ add_task(async function basic() {
     Assert.equal(result.suggestedIndex, 1);
 
     const row = element.row;
-
+    Assert.ok(!row.hasAttribute("sponsored"));
     const icon = row.querySelector(".urlbarView-favicon");
     Assert.equal(icon.src, merinoSuggestion.icon);
     const title = row.querySelector(".urlbarView-title");

@@ -1432,7 +1432,7 @@ void nsPresContext::SetOverrideDPPX(float aDPPX) {
                             MediaFeatureChangePropagation::JustThisDocument);
 }
 
-void nsPresContext::UpdateTopInnerSizeForRFP() {
+void nsPresContext::UpdateInnerSizeSpoofedForRFP() {
   if (!mDocument->ShouldResistFingerprinting(RFPTarget::WindowOuterSize) ||
       !mDocument->GetBrowsingContext() ||
       !mDocument->GetBrowsingContext()->IsTop()) {
@@ -1454,7 +1454,7 @@ void nsPresContext::UpdateTopInnerSizeForRFP() {
       break;
   }
 
-  (void)mDocument->GetBrowsingContext()->SetTopInnerSizeForRFP(
+  (void)mDocument->GetBrowsingContext()->SetInnerSizeSpoofedForRFP(
       CSSIntSize{(int)size.width, (int)size.height});
 }
 
@@ -2864,7 +2864,7 @@ void nsPresContext::SetVisibleArea(const nsRect& aRect) {
           MediaFeatureChangePropagation::JustThisDocument);
     }
 
-    UpdateTopInnerSizeForRFP();
+    UpdateInnerSizeSpoofedForRFP();
   }
 }
 

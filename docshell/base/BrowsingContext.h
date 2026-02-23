@@ -290,7 +290,7 @@ struct EmbedderColorSchemes {
   FIELD(ForceOffline, bool)                                                   \
   /* Used to propagate window.top's inner size for RFPTarget::Window*         \
    * protections */                                                           \
-  FIELD(TopInnerSizeForRFP, CSSIntSize)                                       \
+  FIELD(InnerSizeSpoofedForRFP, CSSIntSize)                                   \
   /* Used to propagate document's IPAddressSpace  */                          \
   FIELD(IPAddressSpace, nsILoadInfo::IPAddressSpace)                          \
   /* This is true if we should redirect to an error page when inserting *     \
@@ -718,6 +718,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
       return true;
     }
     return false;
+  }
+
+  CSSIntSize TopInnerSizeSpoofedForRFP() const {
+    return Top()->GetInnerSizeSpoofedForRFP();
   }
 
   [[nodiscard]] nsresult SetScreenAreaOverride(uint64_t aScreenWidth,
@@ -1479,7 +1483,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   bool CanSet(FieldIndex<IDX_ForceOffline>, bool aNewValue,
               ContentParent* aSource);
 
-  bool CanSet(FieldIndex<IDX_TopInnerSizeForRFP>, bool, ContentParent*) {
+  bool CanSet(FieldIndex<IDX_InnerSizeSpoofedForRFP>, bool, ContentParent*) {
     return IsTop();
   }
 

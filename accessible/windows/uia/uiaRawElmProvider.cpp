@@ -524,6 +524,13 @@ uiaRawElmProvider::GetPatternProvider(
         text.forget(aPatternProvider);
       }
       return S_OK;
+    case UIA_TextPattern2Id:
+      if (HasTextPattern(acc)) {
+        RefPtr<ITextProvider2> text =
+            new UiaText(static_cast<MsaaAccessible*>(this));
+        text.forget(aPatternProvider);
+      }
+      return S_OK;
     case UIA_TogglePatternId:
       if (HasTogglePattern()) {
         RefPtr<IToggleProvider> toggle = this;

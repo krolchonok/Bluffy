@@ -80,8 +80,23 @@ void CSSUnitValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
   // and fully spec-compliant manner. See bug 2005142
   const bool isValueOutOfRange = [](NonCustomCSSPropertyId aId, double aValue) {
     switch (aId) {
+      case eCSSProperty_font_stretch:
       case eCSSProperty_column_width:
+      case eCSSProperty_flex_basis:
+      case eCSSProperty_font_size:
       case eCSSProperty_perspective:
+      case eCSSProperty_max_block_size:
+      case eCSSProperty_max_height:
+      case eCSSProperty_max_inline_size:
+      case eCSSProperty_max_width:
+      case eCSSProperty_block_size:
+      case eCSSProperty_height:
+      case eCSSProperty_inline_size:
+      case eCSSProperty_min_block_size:
+      case eCSSProperty_min_height:
+      case eCSSProperty_min_inline_size:
+      case eCSSProperty_min_width:
+      case eCSSProperty_width:
       case eCSSProperty_border_block_end_width:
       case eCSSProperty_border_block_start_width:
       case eCSSProperty_border_bottom_width:
@@ -91,6 +106,26 @@ void CSSUnitValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
       case eCSSProperty_border_right_width:
       case eCSSProperty_border_top_width:
       case eCSSProperty_outline_width:
+      case eCSSProperty_padding_block_end:
+      case eCSSProperty_padding_block_start:
+      case eCSSProperty_padding_bottom:
+      case eCSSProperty_padding_inline_end:
+      case eCSSProperty_padding_inline_start:
+      case eCSSProperty_padding_left:
+      case eCSSProperty_padding_right:
+      case eCSSProperty_padding_top:
+      case eCSSProperty_r:
+      case eCSSProperty_shape_margin:
+      case eCSSProperty_rx:
+      case eCSSProperty_ry:
+      case eCSSProperty_scroll_padding_block_end:
+      case eCSSProperty_scroll_padding_block_start:
+      case eCSSProperty_scroll_padding_bottom:
+      case eCSSProperty_scroll_padding_inline_end:
+      case eCSSProperty_scroll_padding_inline_start:
+      case eCSSProperty_scroll_padding_left:
+      case eCSSProperty_scroll_padding_right:
+      case eCSSProperty_scroll_padding_top:
         return aValue < 0;
 
       default:

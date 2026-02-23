@@ -380,7 +380,9 @@ void nsMathMLmoFrame::ProcessOperatorData() {
       // tuning if we don't want too much extra space when we are a script.
       // (with its fonts, TeX sets lspace=0 & rspace=0 as soon as scriptlevel>0.
       // Our fonts can be anything, so...)
-      if (StyleFont()->mMathDepth > 0 &&
+      if (!StaticPrefs::
+              mathml_adjust_default_lspace_rspace_for_positive_scriptlevel_disabled() &&
+          StyleFont()->mMathDepth > 0 &&
           !mFlags.Booleans().contains(OperatorBoolean::HasEmbellishAncestor)) {
         mEmbellishData.leadingSpace /= 2;
         mEmbellishData.trailingSpace /= 2;

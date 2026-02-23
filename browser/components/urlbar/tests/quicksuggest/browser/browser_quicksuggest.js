@@ -81,6 +81,10 @@ add_task(async function nonSponsored() {
     isSponsored: false,
     url: "https://example.com/wikipedia",
   });
+
+  let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
+  Assert.ok(!row.hasAttribute("sponsored"));
+
   await UrlbarTestUtils.promisePopupClose(window);
 });
 
@@ -103,6 +107,7 @@ add_task(async function sponsoredPriority() {
   });
 
   let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
+  Assert.ok(row.hasAttribute("sponsored"));
 
   // Group label.
   let before = window.getComputedStyle(row, "::before");

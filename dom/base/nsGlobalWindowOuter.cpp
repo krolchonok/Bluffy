@@ -3491,7 +3491,7 @@ CSSIntSize nsGlobalWindowOuter::GetOuterSize(CallerType aCallerType,
   if (nsIGlobalObject::ShouldResistFingerprinting(aCallerType,
                                                   RFPTarget::WindowOuterSize)) {
     if (BrowsingContext* bc = GetBrowsingContext()) {
-      return bc->Top()->GetTopInnerSizeForRFP();
+      return bc->TopInnerSizeSpoofedForRFP();
     }
     return {};
   }

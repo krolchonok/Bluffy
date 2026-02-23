@@ -269,7 +269,7 @@ void CanonicalBrowsingContext::ReplacedBy(
   txn.SetHasRestoreData(GetHasRestoreData());
   txn.SetShouldDelayMediaFromStart(GetShouldDelayMediaFromStart());
   txn.SetForceOffline(GetForceOffline());
-  txn.SetTopInnerSizeForRFP(GetTopInnerSizeForRFP());
+  txn.SetInnerSizeSpoofedForRFP(GetInnerSizeSpoofedForRFP());
   txn.SetIPAddressSpace(GetIPAddressSpace());
   txn.SetParentalControlsEnabled(GetParentalControlsEnabled());
 

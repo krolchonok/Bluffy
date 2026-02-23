@@ -2576,6 +2576,10 @@ inline mozilla::dom::Element* nsINode::GetParentElement() const {
 }
 
 inline mozilla::dom::Element* nsINode::GetPreviousElementSibling() const {
+  auto* parent = GetParentNode();
+  if (!parent || !parent->HasFlag(NODE_MAY_HAVE_ELEMENT_CHILDREN)) {
+    return nullptr;
+  }
   nsIContent* previousSibling = GetPreviousSibling();
   while (previousSibling) {
     if (previousSibling->IsElement()) {
@@ -2597,6 +2601,10 @@ inline mozilla::dom::Element* nsINode::GetAsElementOrParentElement() const {
 }
 
 inline mozilla::dom::Element* nsINode::GetNextElementSibling() const {
+  auto* parent = GetParentNode();
+  if (!parent || !parent->HasFlag(NODE_MAY_HAVE_ELEMENT_CHILDREN)) {
+    return nullptr;
+  }
   nsIContent* nextSibling = GetNextSibling();
   while (nextSibling) {
     if (nextSibling->IsElement()) {

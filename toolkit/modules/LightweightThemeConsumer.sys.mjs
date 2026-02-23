@@ -339,14 +339,14 @@ LightweightThemeConsumer.prototype = {
       }
 
       // AI windows: use color scheme from original user's theme
-      if (this._isAIWindow && originalThemeColorScheme) {
+      if (this._isAIWindow) {
         switch (originalThemeColorScheme) {
-          case "light":
-            return false;
           case "dark":
             return true;
-          default:
+          case "system":
             break;
+          default:
+            return false;
         }
       }
 

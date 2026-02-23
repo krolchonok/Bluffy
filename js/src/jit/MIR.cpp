@@ -1553,11 +1553,9 @@ bool MConstant::valueToBoolean(bool* res) const {
       *res = toString()->length() != 0;
       return true;
     case MIRType::Object:
-      // TODO(Warp): Lazy groups have been removed.
-      // We have to call EmulatesUndefined but that reads obj->group->clasp
-      // and so it's racy when the object has a lazy group. The main callers
-      // of this (MTest, MNot) already know how to fold the object case, so
-      // just give up.
+      // Calling EmulatesUndefined here is racy if we're compiling off-thread
+      // because it reads obj->shape->base->clasp, so just give up.
+      // Note that we could use fuses to optimize this (bug 1874905).
       return false;
     default:
       MOZ_ASSERT(IsMagicType(type()));

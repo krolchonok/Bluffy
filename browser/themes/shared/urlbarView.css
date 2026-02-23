@@ -1834,6 +1834,7 @@
       color: var(--text-color-deemphasized);
     }
 
+    .urlbarView-row[sponsored] &,
     .urlbarView-row:not([selected], :hover) & {
       display: none;
     }
@@ -1845,6 +1846,7 @@
     line-height: inherit;
     text-wrap: nowrap;
 
+    .urlbarView-row[sponsored] &,
     .urlbarView-row:not([selected], :hover) & {
       display: none;
     }

@@ -7423,7 +7423,7 @@ int16_t nsGlobalWindowInner::Orientation(CallerType aCallerType) {
   uint16_t screenAngle = Screen()->GetOrientationAngle();
   if (nsIGlobalObject::ShouldResistFingerprinting(
           aCallerType, RFPTarget::ScreenOrientation)) {
-    CSSIntSize size = mBrowsingContext->GetTopInnerSizeForRFP();
+    CSSIntSize size = mBrowsingContext->TopInnerSizeSpoofedForRFP();
     screenAngle = nsRFPService::ViewportSizeToAngle(size.width, size.height);
   }
   int16_t angle = AssertedCast<int16_t>(screenAngle);

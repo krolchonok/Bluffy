@@ -51,6 +51,7 @@ add_task(async function basic() {
     Assert.equal(result.payload.provider, "Mdn");
 
     const row = element.row;
+    Assert.ok(!row.hasAttribute("sponsored"));
     const icon = row.querySelector(".urlbarView-favicon");
     Assert.equal(icon.src, "chrome://global/skin/icons/mdn.svg");
     const title = row.querySelector(".urlbarView-title");

@@ -424,8 +424,8 @@ void TraceManuallyBarrieredGCCellPtr(JSTracer* trc, JS::GCCellPtr* thingp,
 
 namespace gc {
 
-// Trace through a shape or group iteratively during cycle collection to avoid
-// deep or infinite recursion.
+// Trace through a shape iteratively during cycle collection to avoid deep or
+// infinite recursion.
 void TraceCycleCollectorChildren(JS::CallbackTracer* trc, Shape* shape);
 
 /**

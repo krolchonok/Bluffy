@@ -67,6 +67,7 @@ add_task(async function basic() {
     );
 
     const { row } = element;
+    Assert.ok(row.hasAttribute("sponsored"));
     const icon = row.querySelector(".urlbarView-favicon");
     Assert.equal(icon.src, "chrome://global/skin/icons/defaultFavicon.svg");
     const title = row.querySelector(".urlbarView-title");

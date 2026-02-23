@@ -565,7 +565,7 @@ class nsPresContext : public nsISupports,
   void SetFullZoom(float aZoom);
   void SetOverrideDPPX(float);
   void SetInRDMPane(bool aInRDMPane);
-  void UpdateTopInnerSizeForRFP();
+  void UpdateInnerSizeSpoofedForRFP();
   void UpdateForcedColors(bool aNotify = true);
 
  public:

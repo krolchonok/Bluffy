@@ -2103,12 +2103,6 @@ export class UrlbarView {
     item._content.id = item.id + "-inner";
 
     if (result.isNovaSuggestion) {
-      item.toggleAttribute("nova", true);
-      item.toggleAttribute("rich-suggestion", true);
-      item.setAttribute(
-        "type",
-        lazy.UrlbarUtils.searchEngagementTelemetryType(result)
-      );
       this.#updateRowContentForNova(item, result);
       return;
     }
@@ -2619,6 +2613,14 @@ export class UrlbarView {
   }
 
   #updateRowContentForNova(item, result) {
+    item.toggleAttribute("nova", true);
+    item.toggleAttribute("rich-suggestion", true);
+    item.setAttribute(
+      "type",
+      lazy.UrlbarUtils.searchEngagementTelemetryType(result)
+    );
+    item.toggleAttribute("sponsored", result.payload.isSponsored);
+
     this.#setRowSelectable(item, true);
 
     let favicon = item._elements.get("favicon");

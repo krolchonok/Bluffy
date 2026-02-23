@@ -1336,12 +1336,6 @@ static bool IsWindowProxyForScriptGlobal(JSScript* script, JSObject* obj) {
 
   JSObject* window = ToWindowIfWindowProxy(obj);
 
-  // Ion relies on the WindowProxy's group changing (and the group getting
-  // marked as having unknown properties) on navigation. If we ever stop
-  // transplanting same-compartment WindowProxies, this assert will fail and we
-  // need to fix that code.
-  MOZ_ASSERT(window == &obj->nonCCWGlobal());
-
   // This must be a WindowProxy for a global in this compartment. Else it would
   // be a cross-compartment wrapper and IsWindowProxy returns false for
   // those.

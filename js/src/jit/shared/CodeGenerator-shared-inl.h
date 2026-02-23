@@ -369,9 +369,9 @@ void CodeGeneratorShared::restoreLiveVolatile(LInstruction* ins) {
 }
 
 inline bool CodeGeneratorShared::isGlobalObject(JSObject* object) {
-  // Calling object->is<GlobalObject>() is racy because this relies on
-  // checking the group and this can be changed while we are compiling off the
-  // main thread. Note that we only check for the script realm's global here.
+  // Calling object->is<GlobalObject>() is racy because it reads object->shape
+  // and that can change while we are compiling off the main thread. Note that
+  // we only check for the script realm's global here.
   return object == gen->realm->maybeGlobal();
 }
 
