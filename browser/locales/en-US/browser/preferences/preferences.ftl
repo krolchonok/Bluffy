@@ -1697,7 +1697,7 @@ address-moz-box-item =
 history-group =
     .label = History
 
-history-remember-option-all =
+history-remember-option-all2 =
     .label = Remember history
 history-remember-option-never2 =
     .label = Never remember history

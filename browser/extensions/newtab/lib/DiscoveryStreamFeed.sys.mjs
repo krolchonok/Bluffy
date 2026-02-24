@@ -1226,8 +1226,12 @@ export class DiscoveryStreamFeed {
             }
           }
 
+          const adsBackendConfig =
+            this.store.getState().Prefs.values?.adsBackendConfig || {};
+
           body = {
             context_id: await lazy.ContextId.request(),
+            flags: adsBackendConfig,
             placements: unifiedAdsPlacements,
             blocks: blockedSponsors.split(","),
           };

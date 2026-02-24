@@ -91,7 +91,7 @@ interface AwesomeBar {
          * An ordered map of the currently visible [SuggestionProviderGroup]s, and the visible [Suggestion]s in each
          * group. The groups and their suggestions are ordered top to bottom.
          */
-        val visibleProviderGroups: Map<SuggestionProviderGroup, List<Suggestion>> = emptyMap(),
+        val visibleProviderGroups: Map<SuggestionProviderGroup, List<SuggestionItem>> = emptyMap(),
     )
 
     /**
@@ -99,9 +99,70 @@ interface AwesomeBar {
      * [Suggestion] should be shown.
      */
     data class GroupedSuggestion(
-        val suggestion: Suggestion,
+        val suggestion: SuggestionItem,
         val groupId: String,
     )
+
+    /**
+     * This interface decouples the [StocksOnlineSuggestionProvider] from the
+     * underlying data source (e.g. mocked data, network API, local cache, etc.).
+     */
+    interface StocksSuggestionDataSource {
+        /**
+         * Fetch stock suggestions for the given [query].
+         *
+         * @param query The current user input from the address/search bar.
+         *
+         * @return A list of [StockItem] representing stock suggestions relevant to the query.
+         * Implementations may return an empty list if no matches are found.
+         */
+        suspend fun fetch(query: String): List<StockItem>
+    }
+
+    /**
+     * Domain model representing a single stock suggestion result.
+     *
+     * This model is independent of UI classes and is used as an intermediate
+     * data representation before being mapped into an AwesomeBar-specific
+     * suggestion type (e.g. [AwesomeBar.StockSuggestion]).
+     *
+     * @property query The full query string that triggered this suggestion.
+     * @property name The full display name of the stock or fund.
+     * @property ticker The stock ticker symbol.
+     * @property changePercToday The percentage change today.
+     * @property lastPrice The last traded price, including currency.
+     * @property exchange The index the stock belongs to.
+     * @property currency The currency symbol associated with the stock.
+     */
+    data class StockItem(
+        val query: String,
+        val name: String,
+        val ticker: String,
+        val changePercToday: String,
+        val lastPrice: String,
+        val exchange: String,
+        val imageUrl: String?,
+    )
+
+    /**
+     * Represents the change percent used by the Stocks Suggestion.
+     */
+    sealed class ChangePercent(val value: String) {
+        /**
+         * Represents a positive percentage change.
+         */
+        class Positive(value: String) : ChangePercent(value)
+
+        /**
+         * Represents a negative percentage change.
+         */
+        class Negative(value: String) : ChangePercent(value)
+
+        /**
+         * Represents a neutral (zero) percentage change.
+         */
+        object Neutral : ChangePercent(value = "0")
+    }
 
     /**
      * Interface to be implemented by suggestion implementations.
@@ -216,7 +277,6 @@ interface AwesomeBar {
      * @property name The full name of the stock.
      * @property index The stock index or exchange where the stock is listed (e.g., "NASDAQ", "NYSE").
      * @property lastPrice The ask price from the most recent quote for this ticker.
-     * @property currency The currency of the stock.
      * @property changePercToday The percentage change since the previous day.
      */
     data class StockSuggestion(
@@ -229,8 +289,7 @@ interface AwesomeBar {
         val name: String,
         val index: String,
         val lastPrice: String,
-        val currency: String,
-        val changePercToday: String,
+        val changePercToday: ChangePercent,
     ) : SuggestionItem
 
     /**
@@ -271,7 +330,7 @@ interface AwesomeBar {
          * @param text The current user input in the toolbar.
          * @return A list of suggestions to be displayed by the [AwesomeBar].
          */
-        suspend fun onInputChanged(text: String): List<Suggestion>
+        suspend fun onInputChanged(text: String): List<SuggestionItem>
 
         /**
          * Fired when the user has cancelled their interaction with the awesome bar.

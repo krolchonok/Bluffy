@@ -332,11 +332,19 @@ void nsHTMLFramesetFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
 void nsHTMLFramesetFrame::SetInitialChildList(ChildListID aListID,
                                               nsFrameList&& aChildList) {
-  // We do this weirdness where we create our child frames in Init().  On the
-  // other hand, we're going to get a SetInitialChildList() with an empty list
-  // and null list name after the frame constructor is done creating us.  So
-  // just ignore that call.
-  if (aListID == FrameChildListID::Principal && aChildList.IsEmpty()) {
+  if (aListID == FrameChildListID::Principal) {
+    // We do this weirdness where we create our child frames in Init().
+    // We're going to get a SetInitialChildList() after the frame constructor is
+    // done creating us. So deal with that like an append, it should only have
+    // placeholders anyways.
+    if (!aChildList.IsEmpty()) [[unlikely]] {
+#ifdef DEBUG
+      for (auto* frame : aChildList) {
+        MOZ_ASSERT(frame->IsPlaceholderFrame());
+      }
+#endif
+      mFrames.AppendFrames(nullptr, std::move(aChildList));
+    }
     return;
   }
 
@@ -1258,12 +1266,6 @@ void nsHTMLFramesetFrame::EndMouseDrag(nsPresContext* aPresContext) {
 
 nsIFrame* NS_NewHTMLFramesetFrame(PresShell* aPresShell,
                                   ComputedStyle* aStyle) {
-#ifdef DEBUG
-  const nsStyleDisplay* disp = aStyle->StyleDisplay();
-  NS_ASSERTION(!disp->IsAbsolutelyPositionedStyle() && !disp->IsFloatingStyle(),
-               "Framesets should not be positioned and should not float");
-#endif
-
   return new (aPresShell)
       nsHTMLFramesetFrame(aStyle, aPresShell->GetPresContext());
 }

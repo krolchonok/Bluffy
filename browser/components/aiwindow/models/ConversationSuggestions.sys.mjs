@@ -197,6 +197,10 @@ export async function generateConversationStartersSidebar(
       MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER
     );
 
+    const conversationStarterSystemPrompt = await engineInstance.loadPrompt(
+      MODEL_FEATURES.CONVERSATION_STARTERS_SIDEBAR_SYSTEM
+    );
+
     const conversationStarterPrompt = await engineInstance.loadPrompt(
       MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER
     );
@@ -230,7 +234,7 @@ export async function generateConversationStartersSidebar(
       args: [
         {
           role: "system",
-          content: "Return only the requested suggestions, one per line.",
+          content: conversationStarterSystemPrompt,
         },
         { role: "user", content: filled },
       ],

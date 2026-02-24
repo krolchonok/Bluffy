@@ -20,7 +20,10 @@ import java.util.concurrent.atomic.AtomicReference
  *
  * All the preference files that are parsed and indexed are listed in the companion object.
  */
-class DefaultFenixSettingsIndexer(private val context: Context) : SettingsIndexer {
+class DefaultFenixSettingsIndexer(
+    private val context: Context,
+    private val preferenceFileInformationList: List<PreferenceFileInformation> = defaultPreferenceFileInformationList,
+) : SettingsIndexer {
     private val settings = AtomicReference<List<SettingsSearchItem>>(emptyList())
 
     /**
@@ -325,7 +328,7 @@ class DefaultFenixSettingsIndexer(private val context: Context) : SettingsIndexe
          * All the preference xml files to load with information for the indexer.
          * In a [List] of [PreferenceFileInformation]s.
          */
-        val preferenceFileInformationList = listOf(
+        val defaultPreferenceFileInformationList = listOf(
             PreferenceFileInformation.GeneralPreferences,
             PreferenceFileInformation.AccessibilityPreferences,
             PreferenceFileInformation.AutofillPreferences,

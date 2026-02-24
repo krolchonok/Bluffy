@@ -631,6 +631,16 @@ export class AIWindow extends MozLitElement {
    * @private
    */
   #handleSmartbarCommit = event => {
+    Glean.smartWindow.chatSubmit.record({
+      chat_id: this.conversationId,
+    });
+
+    lazy.log.debug(
+      "chatId[%s]: %s",
+      this.#handleSmartbarCommit.name,
+      this.conversationId
+    );
+
     const { value, action, contextMentions } = event.detail;
     if (action === "chat") {
       // Disable suggestions after the first chat message.
@@ -653,6 +663,17 @@ export class AIWindow extends MozLitElement {
   }
 
   #handleMemoriesToggle = event => {
+    Glean.smartWindow.memoriesToggle.record({
+      chat_id: this.conversationId,
+      toggle: event.detail.pressed,
+    });
+
+    lazy.log.debug(
+      "chatId[%s]: %s",
+      this.#handleMemoriesToggle.name,
+      this.conversationId
+    );
+
     this.#memoriesToggled = event.detail.pressed;
     this.#syncMemoriesButtonUI();
   };
@@ -664,6 +685,16 @@ export class AIWindow extends MozLitElement {
    * @private
    */
   #handlePromptSelected = event => {
+    Glean.smartWindow.quickPromptClicked.record({
+      chat_id: this.conversationId,
+    });
+
+    lazy.log.debug(
+      "chatId[%s]: %s",
+      this.#handlePromptSelected.name,
+      this.conversationId
+    );
+
     const { text } = event.detail;
     this.#fetchAIResponse(text, this.#createUserRoleOpts());
   };

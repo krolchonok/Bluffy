@@ -290,6 +290,8 @@
     <string name="browser_menu_translate_page_2">Translate page</string>
     <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
     <string name="browser_menu_summarize_page">Summarize page</string>
+    <!-- Browser menu badge text for summarization feature -->
+    <string name="browser_menu_summarize_page_badge">New</string>
     <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
     <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Report broken site…</string>
     <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -912,7 +914,7 @@
     <string name="preferences_downloads_default_location_title">Default download location</string>
     <!-- Message shown as the summary of the download location preference when the
            app has lost the permission to access a previously selected custom folder. -->
-    <string name="preference_downloads_folder_permission_lost">You don’t have permission to use this folder. Try choosing a different one.</string>
+    <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">You don’t have permission to use this folder. Try choosing a different one.</string>
     <!-- Preference title for choosing an app to handle downloads -->
     <string name="preferences_choose_app_for_downloads">Manage downloads with another app</string>
     <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1519,6 +1521,10 @@
     <string name="create_tab_group_title">Create tab group</string>
     <string name="create_tab_group_save_button">Save</string>
     <string name="edit_tab_group_bottom_sheet_close_content_description">Close Edit Tab Group</string>
+    <!-- Default tab group name when creating a tab group -->
+    <string name="create_tab_group_default_name">Group</string>
+    <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+    <string name="create_tab_group_name_label">Name</string>
 
     <!-- History -->
     <!-- Text for the button to search all history -->

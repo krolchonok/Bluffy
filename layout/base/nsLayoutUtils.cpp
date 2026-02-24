@@ -4660,7 +4660,7 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
   // so we work in the parent's writing mode; but if aFrame is orthogonal to
   // its parent, we'll need to look at its BSize instead of min/pref-ISize.
   const nsStylePosition* stylePos = aFrame->StylePosition();
-  StyleBoxSizing boxSizing = stylePos->mBoxSizing;
+  const StyleBoxSizing boxSizing = stylePos->mBoxSizing;
   PhysicalAxis ourInlineAxis =
       aFrame->GetWritingMode().PhysicalAxis(LogicalAxis::Inline);
   const bool isInlineAxis = aAxis == ourInlineAxis;
@@ -4810,18 +4810,11 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
   // don't even bother getting the frame's intrinsic width, because in
   // this case GetAbsoluteSize(styleISize) will always succeed, so
   // we'll never need the intrinsic dimensions.
-  if (styleISize->IsMaxContent() || styleISize->IsMinContent()) {
-    MOZ_ASSERT(isInlineAxis);
-    // -moz-fit-content and -moz-available enumerated widths compute intrinsic
-    // widths just like auto.
-    // For max-content and min-content, we handle them like
-    // specified widths, but ignore box-sizing.
-    boxSizing = StyleBoxSizing::ContentBox;
-  } else if (!styleISize->ConvertsToLength() &&
-             !(styleISize->IsFitContentFunction() &&
-               styleISize->AsFitContentFunction().ConvertsToLength()) &&
-             !(fixedMaxISize && fixedMinISize &&
-               *fixedMaxISize <= *fixedMinISize)) {
+  if (!styleISize->ConvertsToLength() && !styleISize->IsMinContent() &&
+      !styleISize->IsMaxContent() &&
+      !(styleISize->IsFitContentFunction() &&
+        styleISize->AsFitContentFunction().ConvertsToLength()) &&
+      !(fixedMaxISize && fixedMinISize && *fixedMaxISize <= *fixedMinISize)) {
     if (MOZ_UNLIKELY(!isInlineAxis)) {
       IntrinsicSize intrinsicSize = aFrame->GetIntrinsicSize();
       const auto& intrinsicBSize =
@@ -4953,16 +4946,11 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
        nsIFrame::IsIntrinsicKeyword(*styleMinISize) ||
        nsIFrame::IsIntrinsicKeyword(*styleMaxISize))) {
     if (Maybe<nscoord> bSize = GetBSize(styleBSize)) {
-      // We cannot reuse |boxSizing| because it may be updated to content-box
-      // in the above if-branch.
-      const StyleBoxSizing boxSizingForAR = stylePos->mBoxSizing;
       if (!contentEdgeToBoxSizing) {
-        contentEdgeToBoxSizing.emplace(
-            GetContentEdgeToBoxSizing(boxSizingForAR));
+        contentEdgeToBoxSizing.emplace(GetContentEdgeToBoxSizing(boxSizing));
       }
-      nscoord bSizeTakenByBoxSizing =
-          GetDefiniteSizeTakenByBoxSizing(boxSizingForAR, aFrame, !isInlineAxis,
-                                          ignorePadding, aPercentageBasis);
+      nscoord bSizeTakenByBoxSizing = GetDefiniteSizeTakenByBoxSizing(
+          boxSizing, aFrame, !isInlineAxis, ignorePadding, aPercentageBasis);
 
       *bSize -= bSizeTakenByBoxSizing;
       iSizeFromAspectRatio.emplace(ar.ComputeRatioDependentSize(

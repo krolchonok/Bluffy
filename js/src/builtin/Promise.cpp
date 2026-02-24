@@ -740,20 +740,24 @@ class MicroTaskEntry : public NativeObject {
     return getFixedSlot(Slots::Promise).toObjectOrNull();
   }
 
-  void setPromise(JSObject* obj) {
-    setFixedSlot(Slots::Promise, ObjectOrNullValue(obj));
+  void initPromise(JSObject* obj) {
+    initFixedSlot(Slots::Promise, ObjectOrNullValue(obj));
   }
 
   Value getHostDefinedData() const {
     return getFixedSlot(Slots::HostDefinedData);
   }
 
-  void setHostDefinedData(const Value& val) {
-    setFixedSlot(Slots::HostDefinedData, val);
+  void initHostDefinedData(const Value& val) {
+    initFixedSlot(Slots::HostDefinedData, val);
   }
 
   JSObject* allocationStack() const {
     return getFixedSlot(Slots::AllocationStack).toObjectOrNull();
+  }
+
+  void initAllocationStack(JSObject* stack) {
+    initFixedSlot(Slots::AllocationStack, ObjectOrNullValue(stack));
   }
 
   void setAllocationStack(JSObject* stack) {
@@ -763,6 +767,11 @@ class MicroTaskEntry : public NativeObject {
   JSObject* hostDefinedGlobalRepresentative() const {
     Value v = getFixedSlot(Slots::HostDefinedGlobalRepresentative);
     return v.isObjectOrNull() ? v.toObjectOrNull() : nullptr;
+  }
+
+  void initHostDefinedGlobalRepresentative(JSObject* global) {
+    initFixedSlot(Slots::HostDefinedGlobalRepresentative,
+                  ObjectOrNullValue(global));
   }
 
   void setHostDefinedGlobalRepresentative(JSObject* global) {
@@ -1112,19 +1121,20 @@ class ThenableJob : public MicroTaskEntry {
 
   Value thenable() const { return getFixedSlot(Slots::Thenable); }
 
-  void setThenable(const Value& val) { setFixedSlot(Slots::Thenable, val); }
+  void initThenable(const Value& val) { initFixedSlot(Slots::Thenable, val); }
 
   JSObject* then() const { return getFixedSlot(Slots::Then).toObjectOrNull(); }
 
-  void setThen(JSObject* obj) {
-    setFixedSlot(Slots::Then, ObjectOrNullValue(obj));
+  void initThen(JSObject* obj) {
+    initFixedSlot(Slots::Then, ObjectOrNullValue(obj));
   }
 
   TargetFunction targetFunction() const {
     return static_cast<TargetFunction>(getFixedSlot(Slots::Callback).toInt32());
   }
-  void setTargetFunction(TargetFunction target) {
-    setFixedSlot(Slots::Callback, JS::Int32Value(static_cast<int32_t>(target)));
+  void initTargetFunction(TargetFunction target) {
+    initFixedSlot(Slots::Callback,
+                  JS::Int32Value(static_cast<int32_t>(target)));
   }
 };
 
@@ -1153,12 +1163,12 @@ ThenableJob* NewThenableJob(JSContext* cx, ThenableJob::TargetFunction target,
   if (!job) {
     return nullptr;
   }
-  job->setPromise(promise);
-  job->setThen(then);
-  job->setThenable(thenable);
-  job->setTargetFunction(target);
-  job->setHostDefinedData(ObjectOrNullValue(hostDefined));
-  job->setAllocationStack(stack);
+  job->initPromise(promise);
+  job->initThen(then);
+  job->initThenable(thenable);
+  job->initTargetFunction(target);
+  job->initHostDefinedData(ObjectOrNullValue(hostDefined));
+  job->initAllocationStack(stack);
 
   return job;
 }
@@ -2838,7 +2848,7 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
     return false;
   }
 
-  thenableJob->setHostDefinedGlobalRepresentative(
+  thenableJob->initHostDefinedGlobalRepresentative(
       hostDefinedGlobalRepresentative);
   return EnqueueJob(cx, thenableJob);
 }

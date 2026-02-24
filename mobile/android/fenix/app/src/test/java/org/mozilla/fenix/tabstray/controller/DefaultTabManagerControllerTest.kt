@@ -322,7 +322,6 @@ class DefaultTabManagerControllerTest {
                 "1" to DownloadState(
                     "https://mozilla.org/download",
                     private = true,
-                    destinationDirectory = "Download",
                     status = DownloadState.Status.DOWNLOADING,
                 ),
             )
@@ -1439,7 +1438,6 @@ class DefaultTabManagerControllerTest {
             "1" to DownloadState(
                 "https://mozilla.org/download",
                 private = false,
-                destinationDirectory = "Download",
                 status = DownloadState.Status.DOWNLOADING,
             ),
         )
@@ -1460,7 +1458,6 @@ class DefaultTabManagerControllerTest {
             "1" to DownloadState(
                 "https://mozilla.org/download",
                 private = true,
-                destinationDirectory = "Download",
                 status = DownloadState.Status.DOWNLOADING,
             ),
         )
@@ -1482,7 +1479,6 @@ class DefaultTabManagerControllerTest {
             "1" to DownloadState(
                 "https://mozilla.org/download",
                 private = true,
-                destinationDirectory = "Download",
                 status = DownloadState.Status.DOWNLOADING,
             ),
         )
@@ -1517,7 +1513,6 @@ class DefaultTabManagerControllerTest {
             "1" to DownloadState(
                 "https://mozilla.org/download",
                 private = false,
-                destinationDirectory = "Download",
                 status = DownloadState.Status.DOWNLOADING,
             ),
         )

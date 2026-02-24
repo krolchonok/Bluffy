@@ -57,6 +57,7 @@ import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.HomeFragment
 import org.mozilla.fenix.nimbus.FxNimbus
+import org.mozilla.fenix.settings.downloads.DownloadLocationManager
 import org.mozilla.fenix.settings.quicksettings.protections.cookiebanners.getCookieBannerUIMode
 import org.mozilla.fenix.shortcut.PwaOnboardingObserver
 import org.mozilla.fenix.telemetry.ACTION_SHARE_CLICKED
@@ -708,11 +709,14 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
         )
 
         return ContextMenuCandidate.defaultCandidates(
-            context,
-            context.components.useCases.tabsUseCases,
-            context.components.useCases.contextMenuUseCases,
-            view,
-            ContextMenuSnackbarDelegate(),
+            context = context,
+            tabsUseCases = context.components.useCases.tabsUseCases,
+            contextMenuUseCases = context.components.useCases.contextMenuUseCases,
+            snackBarParentView = view,
+            snackbarDelegate = ContextMenuSnackbarDelegate(),
+            downloadsLocation = {
+                DownloadLocationManager(requireContext()).defaultLocation
+            },
         ) + ContextMenuCandidate.createOpenInExternalAppCandidate(
             requireContext(),
             contextMenuCandidateAppLinksUseCases,

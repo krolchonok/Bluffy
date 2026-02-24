@@ -102,7 +102,7 @@ Var ArchToInstall
 ; the stub installer
 ;!define STUB_DEBUG
 
-!define StubURLVersion "v12"
+!define StubURLVersion "v13"
 
 ; Successful install exit code
 !define ERR_SUCCESS 0
@@ -160,6 +160,14 @@ Var ArchToInstall
 ; of progress steps defined in InstallTotalSteps and the install timer
 ; interval defined in InstallIntervalMS
 !define ERR_INSTALL_TIMEOUT 30
+
+!define DESKTOP_LAUNCHER_STATUS_UNKNOWN 0
+!define DESKTOP_LAUNCHER_STATUS_NOT_ENABLED 1
+!define DESKTOP_LAUNCHER_STATUS_NOT_CHECKED 2
+!define DESKTOP_LAUNCHER_STATUS_NOT_INSTALLED 3
+!define DESKTOP_LAUNCHER_STATUS_INSTALLED 4
+!define DESKTOP_LAUNCHER_STATUS_REINSTALLED 5
+!define DESKTOP_LAUNCHER_STATUS_REMOVED 6
 
 ; Maximum times to retry the download before displaying an error
 !define DownloadMaxRetries 9
@@ -936,6 +944,9 @@ Function SendPing
 
     StrCpy $R3 "1"
 
+    Call GetDesktopLauncherStatus
+    Pop $R9
+
 ; Note: ExitCode gets parsed here to determine values for "succeeded",
 ; "user_cancelled", etc.
 ; https://github.com/mozilla/gcp-ingestion/blob/1d9dc42384ebe3b0c7b0b2c193416d1534b7e444/ingestion-beam/src/main/java/com/mozilla/telemetry/decoder/ParseUri.java#L266
@@ -978,15 +989,18 @@ Function SendPing
                       $\nDefault Status = $R2 \
                       $\nSet As Sefault Status = $R3 \
                       $\nDownload Server IP = $DownloadServerIP \
-                      $\nPost-Signing Data = $PostSigningData \
-                      $\nProfile cleanup prompt shown = $ProfileCleanupPromptType \
+                      $\nPost-Signing Data = $PostSigningData"
+
+    ; Reached the message box line limit, remaining values shown in a second one
+    MessageBox MB_OK "Profile cleanup prompt shown = $ProfileCleanupPromptType \
                       $\nDid profile cleanup = $CheckboxCleanupProfile \
                       $\nDistribution ID = $DistributionID \
                       $\nDistribution Version = $DistributionVersion \
                       $\nWindows UBR = $WindowsUBR \
                       $\nStub Installer Build ID = $StubBuildID \
                       $\nLaunched by = $R4 \
-                      $\nCount of rejected download requests = $DownloadRequestsBlockedByServer"
+                      $\nCount of rejected download requests = $DownloadRequestsBlockedByServer \
+                      $\nDesktop Launcher Status = $R9"
     ; The following will exit the installer
     SetAutoClose true
     StrCpy $R9 "2"
@@ -995,7 +1009,7 @@ Function SendPing
     ${StartTimer} ${DownloadIntervalMS} OnPing
     ; See https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/data/install-ping.html#stub-ping
     ; for instructions on how to make changes to data being reported in this ping
-    InetBgDL::Get "${BaseURLStubPing}/${StubURLVersion}${StubURLVersionAppend}/${Channel}/${UpdateChannel}/${AB_CD}/$R0/$R1/$5/$6/$7/$8/$9/$ExitCode/$FirefoxLaunchCode/$DownloadRetryCount/$DownloadedBytes/$DownloadSizeBytes/$IntroPhaseSeconds/$OptionsPhaseSeconds/$0/$1/$DownloadFirstTransferSeconds/$2/$3/$4/$InitialInstallRequirementsCode/$OpenedDownloadPage/$ExistingProfile/$ExistingVersion/$ExistingBuildID/$R5/$R6/$R7/$R8/$R2/$R3/$DownloadServerIP/$PostSigningData/$ProfileCleanupPromptType/$CheckboxCleanupProfile/$DistributionID/$DistributionVersion/$WindowsUBR/$StubBuildID/$R4/$DownloadRequestsBlockedByServer" \
+    InetBgDL::Get "${BaseURLStubPing}/${StubURLVersion}${StubURLVersionAppend}/${Channel}/${UpdateChannel}/${AB_CD}/$R0/$R1/$5/$6/$7/$8/$9/$ExitCode/$FirefoxLaunchCode/$DownloadRetryCount/$DownloadedBytes/$DownloadSizeBytes/$IntroPhaseSeconds/$OptionsPhaseSeconds/$0/$1/$DownloadFirstTransferSeconds/$2/$3/$4/$InitialInstallRequirementsCode/$OpenedDownloadPage/$ExistingProfile/$ExistingVersion/$ExistingBuildID/$R5/$R6/$R7/$R8/$R2/$R3/$DownloadServerIP/$PostSigningData/$ProfileCleanupPromptType/$CheckboxCleanupProfile/$DistributionID/$DistributionVersion/$WindowsUBR/$StubBuildID/$R4/$DownloadRequestsBlockedByServer/$R9" \
                   "$PLUGINSDIR\_temp" /END
 !endif
   ${Else}
@@ -1007,6 +1021,107 @@ Function SendPing
     SetAutoClose true
     StrCpy $R9 "2"
     Call RelativeGotoPage
+  ${EndIf}
+FunctionEnd
+
+Function GetDesktopLauncherStatus
+  Push $0
+
+  Call IsInstallationSuccessful
+  Pop $0
+  ${If} $0 == 0
+    Pop $0
+    Push ${DESKTOP_LAUNCHER_STATUS_UNKNOWN}
+    Return
+  ${EndIf}
+
+  Call IsDesktopLauncherEnabled
+  Pop $0
+  ${If} $0 == 0
+    Pop $0
+    Push ${DESKTOP_LAUNCHER_STATUS_NOT_ENABLED}
+    Return
+  ${EndIf}
+
+  Call IsShortcutInstallationChecked
+  Pop $0
+  ${If} $0 == 0
+    Pop $0
+    Push ${DESKTOP_LAUNCHER_STATUS_NOT_CHECKED}
+    Return
+  ${EndIf}
+
+  Call IsDesktopLauncherInstalled
+  Pop $0
+  ${If} $0 == 0
+    Call WasDesktopLauncherPreviouslyInstalled
+    Pop $0
+    ${If} $0 == 0
+      Pop $0
+      Push ${DESKTOP_LAUNCHER_STATUS_NOT_INSTALLED}
+    ${Else}
+      Pop $0
+      Push ${DESKTOP_LAUNCHER_STATUS_REMOVED}
+    ${EndIf}
+  ${Else}
+    Call IsFreshInstall
+    Pop $0
+    ${If} $0 == 0
+      Pop $0
+      Push ${DESKTOP_LAUNCHER_STATUS_REINSTALLED}
+    ${Else}
+      Pop $0
+      Push ${DESKTOP_LAUNCHER_STATUS_INSTALLED}
+    ${EndIf}
+  ${EndIf}
+FunctionEnd
+
+Function IsInstallationSuccessful
+  ${If} $ExitCode == ${ERR_SUCCESS}
+    Push 1
+  ${Else}
+    Push 0
+  ${EndIf}
+FunctionEnd
+
+Function IsDesktopLauncherEnabled
+  !ifdef DESKTOP_LAUNCHER_ENABLED
+    Push 1
+  !else
+    Push 0
+  !endif
+FunctionEnd
+
+Function IsShortcutInstallationChecked
+  ${If} $CheckboxShortcuts != 0
+    Push 1
+  ${Else}
+    Push 0
+  ${EndIf}
+FunctionEnd
+
+Function IsDesktopLauncherInstalled
+  ${If} ${FileExists} "$DESKTOP\${BrandShortName}.exe"
+    Push 1
+  ${Else}
+    Push 0
+  ${EndIf}
+FunctionEnd
+
+Function IsFreshInstall
+  ${If} $ExistingVersion == 0
+    Push 1
+  ${Else}
+    Push 0
+  ${EndIf}
+FunctionEnd
+
+Function WasDesktopLauncherPreviouslyInstalled
+  ReadRegDWORD $0 HKCU "Software\Mozilla\${BrandFullNameInternal}" "DesktopLauncherAppInstalled"
+  ${If} $0 == 1
+    Push 1
+  ${Else}
+    Push 0
   ${EndIf}
 FunctionEnd
 
@@ -1091,7 +1206,46 @@ Function FinishInstall
   ${CopyPostSigningData}
   Pop $PostSigningData
 
+  Call IsInstallerLaunchedByDesktopLauncher
+  Pop $0
+  ${If} $0 == 1
+    Push "desktoplauncher"
+    Call SetDlsourceFieldInPostSigningData
+    Call UpdateInstalledPostSigningDataFile
+  ${EndIf}
+
   Call LaunchApp
+FunctionEnd
+
+Function IsInstallerLaunchedByDesktopLauncher
+  ${GetParameters} $0
+  ClearErrors
+  StrCpy $1 ""
+  ${GetOptions} "$0" "/LaunchedBy:" "$1"
+  ${IfNot} ${Errors}
+  ${AndIf} $1 == "desktoplauncher"
+    Push 1
+  ${Else}
+    Push 0
+  ${EndIf}
+FunctionEnd
+
+Function SetDlsourceFieldInPostSigningData
+  Pop $R0
+  StrCpy $R1 "dlsource"
+  StrCpy $R2 "%3D" ; =
+  StrCpy $PostSigningData "$R1$R2$R0"
+FunctionEnd
+
+Function UpdateInstalledPostSigningDataFile
+  ClearErrors
+  FileOpen $R0 "$INSTDIR\postSigningData" w
+  ${If} ${Errors}
+    StrCpy $PostSigningData "error:filewrite"
+    Return
+  ${EndIf}
+  FileWrite $R0 "$PostSigningData"
+  FileClose $R0
 FunctionEnd
 
 Function RelativeGotoPage

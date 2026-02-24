@@ -8342,9 +8342,9 @@ void Document::SetScriptGlobalObject(
       do_QueryInterface(GetChannel());
   if (internalChannel) {
     nsCOMArray<nsISecurityConsoleMessage> messages;
-    DebugOnly<nsresult> rv = internalChannel->TakeAllSecurityMessages(messages);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-    SendToConsole(messages);
+    if (NS_SUCCEEDED(internalChannel->TakeAllSecurityMessages(messages))) {
+      SendToConsole(messages);
+    }
   }
 
   // Set our visibility state, but do not fire the event.  This is correct

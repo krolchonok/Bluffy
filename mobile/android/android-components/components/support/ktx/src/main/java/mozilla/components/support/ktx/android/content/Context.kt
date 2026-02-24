@@ -25,7 +25,6 @@ import android.content.pm.PackageManager
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.hardware.camera2.CameraManager
 import android.net.Uri
-import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import android.os.Build.VERSION_CODES
 import android.os.Process
@@ -164,6 +163,19 @@ fun Context.shareLocalPdf(
 ): Boolean = shareMedia(filePath.toUri(), contentType, subject, message)
 
 /**
+ * Shares a file using a content URI via [ACTION_SEND] intent.
+ *
+ * @param contentUri URI of the file to share.
+ * @param contentType Content type (MIME type) to indicate the media type of the resource.
+ *
+ * @return true if the share intent was successfully started, false otherwise.
+ */
+fun Context.shareFile(
+    contentUri: Uri,
+    contentType: String?,
+): Boolean = shareMedia(contentUri = contentUri, contentType = contentType)
+
+/**
  * Shares content via [ACTION_SEND] intent.
  *
  * @param contentUri URI of the file to share.
@@ -191,7 +203,7 @@ internal fun Context.shareMedia(
         if (message != null) {
             putExtra(EXTRA_TEXT, message)
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (SDK_INT >= VERSION_CODES.Q) {
             // Android Q allows us to show a thumbnail preview of the file to be shared.
             clipData = ClipData.newRawUri(contentUri.toString(), contentUri)
         }

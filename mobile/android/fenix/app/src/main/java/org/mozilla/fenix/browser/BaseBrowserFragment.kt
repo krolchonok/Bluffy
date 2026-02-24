@@ -11,7 +11,6 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.os.storage.StorageManager
 import android.provider.Settings
 import android.util.Log
@@ -243,6 +242,7 @@ import org.mozilla.fenix.search.awesomebar.AwesomeBarComposable
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.biometric.BiometricPromptFeature
 import org.mozilla.fenix.settings.deletebrowsingdata.DefaultDeleteBrowsingDataController
+import org.mozilla.fenix.settings.downloads.DownloadLocationManager
 import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
 import org.mozilla.fenix.snackbar.SnackbarBinding
 import org.mozilla.fenix.tabstray.Page
@@ -799,20 +799,20 @@ abstract class BaseBrowserFragment :
             },
         )
 
+        val downloadFileUtils = DefaultDownloadFileUtils(
+            context = context.applicationContext,
+            downloadLocation = {
+                DownloadLocationManager(requireContext()).defaultLocation
+            },
+        )
+
         val downloadFeature = DownloadsFeature(
             context.applicationContext,
             store = store,
             useCases = context.components.useCases.downloadUseCases,
             fragmentManager = childFragmentManager,
             tabId = customTabSessionId,
-            downloadFileUtils = DefaultDownloadFileUtils(
-                context = context.applicationContext,
-                downloadLocation = {
-                    Environment.getExternalStoragePublicDirectory(
-                        Environment.DIRECTORY_DOWNLOADS,
-                    ).path
-                },
-            ),
+            downloadFileUtils = downloadFileUtils,
             downloadManager = FetchDownloadManager(
                 context.applicationContext,
                 store,
@@ -1009,6 +1009,7 @@ abstract class BaseBrowserFragment :
                     browserToolbarView,
                     _bottomToolbarContainerView?.toolbarContainerView,
                 ),
+                downloadFileUtils = downloadFileUtils,
             )
         }
 

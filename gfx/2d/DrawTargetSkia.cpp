@@ -14,7 +14,9 @@
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/Vector.h"
 
+#include "skia/include/core/SkAnnotation.h"
 #include "skia/include/core/SkBitmap.h"
+#include "skia/include/core/SkData.h"
 #include "skia/include/core/SkCanvas.h"
 #include "skia/include/core/SkFont.h"
 #include "skia/include/core/SkSurface.h"
@@ -336,6 +338,27 @@ DrawTargetSkia::~DrawTargetSkia() {
     mColorSpace = nullptr;
   }
 #endif
+}
+
+void DrawTargetSkia::Link(const char* aDest, const char* aURI,
+                          const Rect& aRect) {
+  if (aURI && *aURI) {
+    SkAnnotateRectWithURL(mCanvas, RectToSkRect(aRect),
+                          SkData::MakeWithCString(aURI).get());
+  }
+  if (aDest && *aDest) {
+    SkAnnotateLinkToDestination(mCanvas, RectToSkRect(aRect),
+                                SkData::MakeWithCString(aDest).get());
+  }
+}
+
+void DrawTargetSkia::Destination(const char* aDestination,
+                                 const Point& aPoint) {
+  if (!aDestination || !*aDestination) {
+    return;
+  }
+  SkAnnotateNamedDestination(mCanvas, PointToSkPoint(aPoint),
+                             SkData::MakeWithCString(aDestination).get());
 }
 
 already_AddRefed<SourceSurface> DrawTargetSkia::Snapshot(

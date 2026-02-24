@@ -1354,6 +1354,12 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         waitForAppWindowToBeUpdated()
     }
 
+    fun verifyETPShieldIconIsDisplayed(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "verifyETPShieldIconIsDisplayed: Trying to verify that the \"Shield icon\" is displayed")
+        composeTestRule.onNodeWithContentDescription(getStringResource(toolbarR.string.mozac_browser_toolbar_content_description_site_info)).assertIsDisplayed()
+        Log.i(TAG, "verifyETPShieldIconIsDisplayed: Verified that the \"Shield icon\" was displayed")
+    }
+
     class Transition(private val composeTestRule: ComposeTestRule) {
         fun openThreeDotMenu(interact: ThreeDotMenuMainRobot.() -> Unit): ThreeDotMenuMainRobot.Transition {
             Log.i(TAG, "openThreeDotMenu: Trying to click main menu button")

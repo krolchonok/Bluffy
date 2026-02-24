@@ -586,9 +586,7 @@ class DefaultTabManagerController(
                     ),
                 )
 
-                if (!settings.tabManagerOpeningAnimationEnabled) {
-                    handleNavigationRequested()
-                }
+                handleNavigationRequested()
             }
 
             tab.id in selected.map { it.id } -> {

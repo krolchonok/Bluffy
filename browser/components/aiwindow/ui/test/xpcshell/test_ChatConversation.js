@@ -26,7 +26,7 @@ add_task(function test_ChatConversation_constructor_defaults() {
   const conversation = new ChatConversation({});
 
   Assert.withSoftAssertions(function (soft) {
-    soft.equal(conversation.id.length, 12);
+    soft.equal(conversation.id.length, 36);
     soft.ok(Array.isArray(conversation.messages));
     soft.ok(!isNaN(conversation.createdDate));
     soft.ok(!isNaN(conversation.updatedDate));

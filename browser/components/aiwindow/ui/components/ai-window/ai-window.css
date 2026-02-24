@@ -97,8 +97,6 @@ smartwindow-prompts {
   box-sizing: border-box;
   grid-area: sidebar-header;
   padding: var(--space-small);
-  display: flex;
-  justify-content: flex-end;
   width: 100%;
 }
 

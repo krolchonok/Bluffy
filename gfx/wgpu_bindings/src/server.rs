@@ -145,7 +145,6 @@ pub extern "C" fn wgpu_server_new(owner: WebGPUParentPtr) -> *mut Global {
 
     let dx12_shader_compiler = wgt::Dx12Compiler::DynamicDxc {
         dxc_path: "dxcompiler.dll".into(),
-        max_shader_model: wgt::DxcShaderModel::V6_6,
     };
 
     let global = wgc::global::Global::new(
@@ -157,6 +156,7 @@ pub extern "C" fn wgpu_server_new(owner: WebGPUParentPtr) -> *mut Global {
                 gl: wgt::GlBackendOptions {
                     gles_minor_version: wgt::Gles3MinorVersion::Automatic,
                     fence_behavior: wgt::GlFenceBehavior::Normal,
+                    debug_fns: wgt::GlDebugFns::Auto,
                 },
                 dx12: wgt::Dx12BackendOptions {
                     shader_compiler: dx12_shader_compiler,
@@ -507,6 +507,7 @@ unsafe fn adapter_request_device(
                     None,
                     &enabled_extensions,
                     desc.required_features,
+                    &desc.required_limits,
                     &desc.memory_hints,
                     family_info.queue_family_index,
                     0,
@@ -701,9 +702,13 @@ impl From<Result<(), BufferAccessError>> for BufferMapAsyncStatus {
             | Err(BufferAccessError::UnalignedOffset { .. }) => {
                 BufferMapAsyncStatus::InvalidAlignment
             }
-            Err(BufferAccessError::OutOfBoundsUnderrun { .. })
-            | Err(BufferAccessError::OutOfBoundsOverrun { .. })
-            | Err(BufferAccessError::NegativeRange { .. }) => BufferMapAsyncStatus::InvalidRange,
+            Err(BufferAccessError::OutOfBoundsStartOffsetUnderrun { .. })
+            | Err(BufferAccessError::OutOfBoundsStartOffsetOverrun { .. })
+            | Err(BufferAccessError::OutOfBoundsEndOffsetOverrun { .. })
+            | Err(BufferAccessError::MapStartOffsetOverrun { .. })
+            | Err(BufferAccessError::MapEndOffsetOverrun { .. }) => {
+                BufferMapAsyncStatus::InvalidRange
+            }
             Err(BufferAccessError::Failed)
             | Err(BufferAccessError::NotMapped)
             | Err(BufferAccessError::MapAborted) => BufferMapAsyncStatus::Error,
@@ -2419,6 +2424,73 @@ pub unsafe extern "C" fn wgpu_server_messages(
     }
 }
 
+fn process_buffer_map(
+    global: &Global,
+    msg: Message,
+    response_byte_buf: &mut ByteBuf,
+    error_buf: &mut OwnedErrorBuffer,
+) {
+    let Message::BufferMap {
+        device_id,
+        buffer_id,
+        mode,
+        offset,
+        size,
+    } = msg else {
+        unreachable!();
+    };
+    let mode = match mode {
+        /* GPUMapMode.READ */ 1 => wgc::device::HostMap::Read,
+        /* GPUMapMode.WRITE */ 2 => wgc::device::HostMap::Write,
+        _ => {
+            let message = concat!(
+                "GPUBuffer.mapAsync 'mode' argument must be ",
+                "either GPUMapMode.READ or GPUMapMode.WRITE"
+            );
+
+            error_buf.init(ErrMsg {
+                    message: message.into(),
+                    r#type: ErrorType::Validation,
+                },
+                device_id,
+            );
+
+            // Synthesize the `BufferMapResponse` that is normally
+            // generated in the callback set up below.
+            let response = BufferMapResult::Error(message.into());
+            *response_byte_buf =
+                make_byte_buf(&ServerMessage::BufferMapResponse(buffer_id, response));
+            return;
+        }
+    };
+
+    let closure = unsafe {
+        let closure = wgpu_parent_build_buffer_map_closure(
+            global.owner,
+            device_id,
+            buffer_id,
+            mode,
+            offset,
+            size,
+        );
+
+        Box::new(move |result| {
+            let _ = &closure;
+            (closure.callback)(closure.user_data, BufferMapAsyncStatus::from(result))
+        })
+    };
+
+    let operation = wgc::resource::BufferMapOperation {
+        host: mode,
+        callback: Some(closure),
+    };
+    let result = global.buffer_map_async(buffer_id, offset, Some(size), operation);
+
+    if let Err(error) = result {
+        error_buf.init(error, device_id);
+    }
+}
+
 unsafe fn process_message(
     global: &Global,
     data_buffers: &[ByteBuf],
@@ -2621,57 +2693,8 @@ unsafe fn process_message(
                 error_buf.init(err, device_id);
             }
         }
-        Message::BufferMap {
-            device_id,
-            buffer_id,
-            mode,
-            offset,
-            size,
-        } => {
-            let mode = match mode {
-                /* GPUMapMode.READ */ 1 => wgc::device::HostMap::Read,
-                /* GPUMapMode.WRITE */ 2 => wgc::device::HostMap::Write,
-                _ => {
-                    let message = concat!(
-                        "GPUBuffer.mapAsync 'mode' argument must be ",
-                        "either GPUMapMode.READ or GPUMapMode.WRITE"
-                    );
-                    error_buf.init(
-                        ErrMsg {
-                            message: message.into(),
-                            r#type: ErrorType::Validation,
-                        },
-                        device_id,
-                    );
-                    let response = BufferMapResult::Error(message.into());
-                    *response_byte_buf =
-                        make_byte_buf(&ServerMessage::BufferMapResponse(buffer_id, response));
-                    return;
-                }
-            };
-
-            let closure = wgpu_parent_build_buffer_map_closure(
-                global.owner,
-                device_id,
-                buffer_id,
-                mode,
-                offset,
-                size,
-            );
-
-            let closure = Box::new(move |result| {
-                let _ = &closure;
-                (closure.callback)(closure.user_data, BufferMapAsyncStatus::from(result))
-            });
-            let operation = wgc::resource::BufferMapOperation {
-                host: mode,
-                callback: Some(closure),
-            };
-            let result = global.buffer_map_async(buffer_id, offset, Some(size), operation);
-
-            if let Err(error) = result {
-                error_buf.init(error, device_id);
-            }
+        msg @ Message::BufferMap { .. } => {
+            process_buffer_map(global, msg, response_byte_buf, error_buf);
         }
         Message::BufferUnmap(device_id, buffer_id, flush) => {
             wgpu_parent_buffer_unmap(global.owner, device_id, buffer_id, flush);

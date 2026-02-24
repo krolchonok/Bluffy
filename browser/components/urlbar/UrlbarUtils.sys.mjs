@@ -1892,6 +1892,7 @@ export var UrlbarUtils = {
     const MAX_SIG_FIGURES = 10;
     const FULL_NUMBER_MAX_THRESHOLD = 1 * 10 ** 10;
     const FULL_NUMBER_MIN_THRESHOLD = 10 ** -5;
+    const MAX_FLOAT_PRECISION = 15;
 
     let locale = Services.locale.appLocaleAsBCP47;
 
@@ -1912,6 +1913,8 @@ export var UrlbarUtils = {
       return new Intl.NumberFormat(locale, {
         style: "decimal",
         maximumFractionDigits: DECIMAL_PRECISION,
+        maximumSignificantDigits: MAX_FLOAT_PRECISION,
+        roundingPriority: "lessPrecision",
         numberingSystem: "latn",
       }).format(result);
     }

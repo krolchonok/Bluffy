@@ -92,6 +92,7 @@
 
 /* FOCUSED_KEYBOARD_EMPTY: Show outline only for keyboard focus on empty input */
 .smartbar:focus-within:not([usertyping]):not([suppress-focus-border]) > .urlbar-background {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   outline: var(--smartbar-outline);
   outline-offset: var(--focus-outline-offset);
 }

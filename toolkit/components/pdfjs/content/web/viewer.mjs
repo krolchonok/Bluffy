@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.70
- * pdfjsBuild = 30ed527a8
+ * pdfjsVersion = 5.5.135
+ * pdfjsBuild = 909a700af
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -9494,6 +9494,25 @@ class PDFThumbnailViewer {
             this.#goToPage(e);
           }
           break;
+        case "c":
+          if (this.#enableSplitMerge && (e.ctrlKey || e.metaKey) && this.#selectedPages?.size) {
+            this.#copyPages();
+            stopEvent(e);
+          }
+          break;
+        case "x":
+          if (this.#enableSplitMerge && (e.ctrlKey || e.metaKey) && this.#selectedPages?.size) {
+            this.#cutPages();
+            stopEvent(e);
+          }
+          break;
+        case "Delete":
+        case "Backspace":
+          if (this.#enableSplitMerge && this.#selectedPages?.size) {
+            this.#deletePages();
+            stopEvent(e);
+          }
+          break;
       }
     });
     this.container.addEventListener("click", e => {
@@ -12391,7 +12410,7 @@ class PDFViewer {
   #viewerAlert = null;
   #copiedPageViews = null;
   constructor(options) {
-    const viewerVersion = "5.5.70";
+    const viewerVersion = "5.5.135";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -13739,7 +13758,7 @@ class PDFViewer {
     this._setCurrentPageNumber(pageNumber, true);
     this.update();
   }
-  _getPageAdvance(currentPageNumber, previous = false) {
+  #getPageAdvance(currentPageNumber, previous = false) {
     switch (this._scrollMode) {
       case ScrollMode.WRAPPED:
         {
@@ -13756,11 +13775,7 @@ class PDFViewer {
             if (percent === 0 || widthPercent < 100) {
               continue;
             }
-            let yArray = pageLayout.get(y);
-            if (!yArray) {
-              pageLayout.set(y, yArray ||= []);
-            }
-            yArray.push(id);
+            pageLayout.getOrInsert(y, []).push(id);
           }
           for (const yArray of pageLayout.values()) {
             const currentIndex = yArray.indexOf(currentPageNumber);
@@ -13847,7 +13862,7 @@ class PDFViewer {
     if (currentPageNumber >= pagesCount) {
       return false;
     }
-    const advance = this._getPageAdvance(currentPageNumber, false) || 1;
+    const advance = this.#getPageAdvance(currentPageNumber, false) || 1;
     this.currentPageNumber = Math.min(currentPageNumber + advance, pagesCount);
     return true;
   }
@@ -13856,7 +13871,7 @@ class PDFViewer {
     if (currentPageNumber <= 1) {
       return false;
     }
-    const advance = this._getPageAdvance(currentPageNumber, true) || 1;
+    const advance = this.#getPageAdvance(currentPageNumber, true) || 1;
     this.currentPageNumber = Math.max(currentPageNumber - advance, 1);
     return true;
   }
@@ -15388,6 +15403,14 @@ class Toolbar {
         value: this.value
       });
     });
+    eventBus._on("pagesedited", ({
+      pagesMapper
+    }) => {
+      const pagesCount = pagesMapper.pagesNumber;
+      if (pagesCount !== this.pagesCount) {
+        this.setPagesCount(pagesCount, this.hasPageLabels);
+      }
+    });
     scaleSelect.addEventListener("change", function () {
       if (this.value === "custom") {
         return;
@@ -15609,7 +15632,8 @@ class ViewsManager extends Sidebar {
       viewsManagerCurrentOutlineButton,
       viewsManagerSelectorButton,
       viewsManagerSelectorOptions,
-      viewsManagerHeaderLabel
+      viewsManagerHeaderLabel,
+      viewsManagerStatus
     },
     eventBus,
     l10n
@@ -15639,6 +15663,7 @@ class ViewsManager extends Sidebar {
     this.layersView = layersView;
     this.viewsManagerCurrentOutlineButton = viewsManagerCurrentOutlineButton;
     this.viewsManagerHeaderLabel = viewsManagerHeaderLabel;
+    this.viewsManagerStatus = viewsManagerStatus;
     this.eventBus = eventBus;
     this.menu = new Menu(viewsManagerSelectorOptions, viewsManagerSelectorButton, [thumbnailButton, outlineButton, attachmentsButton, layersButton]);
     ViewsManager.#l10nDescription ||= Object.freeze({
@@ -15714,6 +15739,7 @@ class ViewsManager extends Sidebar {
         console.error(`PDFSidebar.switchView: "${view}" is not a valid view.`);
         return;
     }
+    this.viewsManagerStatus.hidden = view !== SidebarView.THUMBS;
     this.viewsManagerCurrentOutlineButton.hidden = view !== SidebarView.OUTLINE;
     this.viewsManagerHeaderLabel.setAttribute("data-l10n-id", ViewsManager.#l10nDescription[titleL10nId] || "");
     this.active = view;
@@ -17983,6 +18009,7 @@ function getViewerConfiguration() {
       viewsManagerAddFileButton: document.getElementById("viewsManagerAddFileButton"),
       viewsManagerCurrentOutlineButton: document.getElementById("viewsManagerCurrentOutlineButton"),
       viewsManagerHeaderLabel: document.getElementById("viewsManagerHeaderLabel"),
+      viewsManagerStatus: document.getElementById("viewsManagerStatus"),
       manageMenu: {
         button: document.getElementById("viewsManagerStatusActionButton"),
         menu: document.getElementById("viewsManagerStatusActionOptions"),

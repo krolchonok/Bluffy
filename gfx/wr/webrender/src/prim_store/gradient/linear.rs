@@ -101,6 +101,7 @@ impl PatternBuilder for LinearGradientTemplate {
     fn build(
         &self,
         _sub_rect: Option<DeviceRect>,
+        offset: LayoutVector2D,
         ctx: &PatternBuilderContext,
         state: &mut PatternBuilderState,
     ) -> Pattern {
@@ -112,7 +113,7 @@ impl PatternBuilder for LinearGradientTemplate {
         // LinearGradientTemplate stores the start and end points relative to the
         // primitive origin, but the shader works with start/end points in "proper"
         // layout coordinates (relative to the primitive's spatial node).
-        let offset = self.common.prim_rect.min.to_vector();
+        let offset = offset + self.common.prim_rect.min.to_vector();
         linear_gradient_pattern(
             start + offset,
             end + offset,
@@ -121,19 +122,6 @@ impl PatternBuilder for LinearGradientTemplate {
             ctx.fb_config.is_software,
             state.frame_gpu_data,
         )
-    }
-
-    fn get_base_color(
-        &self,
-        _ctx: &PatternBuilderContext,
-    ) -> ColorF {
-        ColorF::WHITE
-    }
-
-    fn use_shared_pattern(
-        &self,
-    ) -> bool {
-        true
     }
 }
 
@@ -545,6 +533,7 @@ impl LinearGradientTemplate {
 
             frame_state.resource_cache.request_render_task(
                 Some(RenderTaskCacheKey {
+                    origin: DeviceIntPoint::zero(),
                     size: self.task_size,
                     kind: RenderTaskCacheKeyKind::FastLinearGradient(gradient),
                 }),
@@ -573,6 +562,7 @@ impl LinearGradientTemplate {
 
             frame_state.resource_cache.request_render_task(
                 Some(RenderTaskCacheKey {
+                    origin: DeviceIntPoint::zero(),
                     size: self.task_size,
                     kind: RenderTaskCacheKeyKind::LinearGradient(cache_key),
                 }),

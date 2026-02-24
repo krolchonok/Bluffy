@@ -263,6 +263,7 @@ class SettingsSubMenuCustomizeRobot {
 
     fun selectExpandedToolbarLayout() {
         Log.i(TAG, "selectExpandedToolbarLayout: Trying to click the \"Expanded\" toolbar layout option")
+        scrollToElementByText("Scroll to hide toolbar")
         expandedToolbarLayoutToggle().click()
         Log.i(TAG, "selectExpandedToolbarLayout: Clicked the \"Expanded\" toolbar layout option")
     }
@@ -272,6 +273,12 @@ class SettingsSubMenuCustomizeRobot {
         onView(withText(selectedToolbarLayout))
             .check(matches(hasSibling(allOf(withId(R.id.radio_button), isChecked()))))
         Log.i(TAG, "verifyToolbarLayoutPreference: Verified that the $selectedToolbarLayout toolbar layout option is checked")
+    }
+
+    fun clickShowTabBarToggle() {
+        Log.i(TAG, "clickShowTabBarToggle: Trying to click the \"Show tab bar\" toggle")
+        showTabBarToggle().click()
+        Log.i(TAG, "clickShowTabBarToggle: Clicked the \"Show tab bar\" toggle")
     }
 
     class Transition {
@@ -318,3 +325,6 @@ private fun expandedToolbarLayoutToggle() = onView(withText("Expanded"))
 
 private fun customizeSettingsList() =
     UiScrollable(UiSelector().resourceId("$packageName:id/recycler_view"))
+
+private fun showTabBarToggle() =
+    onView(withText(getStringResource(R.string.preference_tab_strip_show)))

@@ -103,8 +103,9 @@ class DownloadsSettingsFragment : PreferenceFragmentCompat() {
         preference?.summary = try {
             downloadLocationFormatter.getFriendlyPath(locationToFormat)
         } catch (e: MissingUriPermission) {
-            logger.warn("Could not format download location path due to lost permissions.", e)
-            getString(R.string.preference_downloads_folder_permission_lost)
+            logger.warn("Resetting download location to default due to lost permissions.", e)
+            context?.settings()?.downloadsDefaultLocation = defaultLocation
+            downloadLocationFormatter.getFriendlyPath(defaultLocation)
         }
     }
 }

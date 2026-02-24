@@ -13,7 +13,7 @@ import {
   constructRealTimeInfoInjectionMessage,
 } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 
-import { makeGuid, getRoleLabel } from "./ChatUtils.sys.mjs";
+import { getRoleLabel } from "./ChatUtils.sys.mjs";
 import {
   CONVERSATION_STATUS,
   MESSAGE_ROLE,
@@ -58,7 +58,7 @@ export class ChatConversation {
    */
   constructor(params) {
     const {
-      id = makeGuid(),
+      id = crypto.randomUUID(),
       title,
       description,
       pageUrl,

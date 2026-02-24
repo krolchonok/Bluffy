@@ -9,7 +9,7 @@
 //! Conic gradients are rendered via cached render tasks and composited with the image brush.
 
 use euclid::vec2;
-use api::{ColorF, ExtendMode, GradientStop, PremultipliedColorF};
+use api::{ExtendMode, GradientStop, PremultipliedColorF};
 use api::units::*;
 use crate::gpu_types::ImageBrushPrimitiveData;
 use crate::pattern::gradient::{conic_gradient_pattern};
@@ -107,6 +107,7 @@ impl PatternBuilder for ConicGradientTemplate {
     fn build(
         &self,
         _sub_rect: Option<DeviceRect>,
+        offset: LayoutVector2D,
         _ctx: &PatternBuilderContext,
         state: &mut PatternBuilderState,
     ) -> Pattern {
@@ -117,7 +118,7 @@ impl PatternBuilder for ConicGradientTemplate {
         // ConicGradientTemplate stores the center point relative to the primitive
         // origin, but the shader works with start/end points in "proper" layout
         // coordinates (relative to the primitive's spatial node).
-        let center = self.center + self.common.prim_rect.min.to_vector();
+        let center = self.center + self.common.prim_rect.min.to_vector() + offset;
 
         conic_gradient_pattern(
             center,
@@ -129,19 +130,6 @@ impl PatternBuilder for ConicGradientTemplate {
             &self.stops,
             state.frame_gpu_data,
         )
-    }
-
-    fn get_base_color(
-        &self,
-        _ctx: &PatternBuilderContext,
-    ) -> ColorF {
-        ColorF::WHITE
-    }
-
-    fn use_shared_pattern(
-        &self,
-    ) -> bool {
-        true
     }
 }
 
@@ -284,6 +272,7 @@ impl ConicGradientTemplate {
 
         let task_id = frame_state.resource_cache.request_render_task(
             Some(RenderTaskCacheKey {
+                origin: DeviceIntPoint::zero(),
                 size: self.task_size,
                 kind: RenderTaskCacheKeyKind::ConicGradient(cache_key),
             }),

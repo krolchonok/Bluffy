@@ -6,7 +6,6 @@ package org.mozilla.fenix.components
 
 import android.content.Context
 import android.content.res.Configuration
-import android.os.Environment
 import androidx.core.content.ContextCompat
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.CoroutineScope
@@ -105,6 +104,7 @@ import mozilla.components.support.ktx.android.content.res.readJSONObject
 import mozilla.components.support.locale.LocaleManager
 import mozilla.components.support.utils.DateTimeProvider
 import mozilla.components.support.utils.DefaultDateTimeProvider
+import mozilla.components.support.utils.DefaultDownloadFileUtils
 import mozilla.components.support.utils.RunWhenReadyQueue
 import org.mozilla.fenix.AppRequestInterceptor
 import org.mozilla.fenix.BuildConfig
@@ -129,9 +129,12 @@ import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.perf.StrictModeManager
 import org.mozilla.fenix.perf.lazyMonitored
 import org.mozilla.fenix.settings.advanced.getSelectedLocale
+import org.mozilla.fenix.settings.downloads.DownloadLocationManager
 import org.mozilla.fenix.share.DefaultSentFromFirefoxManager
 import org.mozilla.fenix.share.DefaultSentFromStorage
 import org.mozilla.fenix.share.SaveToPDFMiddleware
+import org.mozilla.fenix.summarization.onboarding.FenixSummarizeFeatureDiscoverySettings
+import org.mozilla.fenix.summarization.onboarding.SummarizeFeatureDiscoverySettings
 import org.mozilla.fenix.telemetry.TelemetryMiddleware
 import org.mozilla.fenix.utils.getUndoDelay
 import org.mozilla.geckoview.GeckoRuntime
@@ -201,10 +204,8 @@ class Core(
             crliteChannel = FxNimbus.features.pki.value().crliteChannel,
             downloadDelegate = EngineDownloadDelegate(
                 context = context,
-                downloadLocationGetter = {
-                    Environment.getExternalStoragePublicDirectory(
-                        Environment.DIRECTORY_DOWNLOADS,
-                    ).absolutePath
+                downloadLocation = {
+                    DownloadLocationManager(context).defaultLocation
                 },
             ),
             )
@@ -336,6 +337,12 @@ class Core(
                     deleteFileFromStorage = {
                        context.settings().shouldCleanUpDownloadsAutomatically()
                     },
+                    downloadFileUtils = DefaultDownloadFileUtils(
+                        context = context.applicationContext,
+                        downloadLocation = {
+                            DownloadLocationManager(context.applicationContext).defaultLocation
+                        },
+                    ),
                 ),
                 ReaderViewMiddleware(),
                 TelemetryMiddleware(context, context.settings(), metrics, crashReporter),
@@ -650,6 +657,14 @@ class Core(
     val webAppManifestStorage by lazyMonitored { ManifestStorage(context) }
 
     val loginExceptionStorage by lazyMonitored { LoginExceptionStorage(context) }
+
+    /**
+     * Fenix implementation of [SummarizeFeatureDiscoverySettings]
+     * backed by [org.mozilla.fenix.utils.Settings]
+     */
+    val summarizeFeatureDiscoverySettings: SummarizeFeatureDiscoverySettings by lazyMonitored {
+        FenixSummarizeFeatureDiscoverySettings(settings = context.components.settings)
+    }
 
     /**
      * Shared Preferences that encrypt/decrypt using Android KeyStore and lib-dataprotect for 23+

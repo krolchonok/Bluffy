@@ -20,8 +20,10 @@ import mozilla.components.feature.awesomebar.provider.SearchEngineSuggestionProv
 import mozilla.components.feature.awesomebar.provider.SearchSuggestionProvider
 import mozilla.components.feature.awesomebar.provider.SearchTermSuggestionsProvider
 import mozilla.components.feature.awesomebar.provider.SessionSuggestionProvider
+import mozilla.components.feature.awesomebar.provider.StocksOnlineSuggestionProvider
 import mozilla.components.feature.awesomebar.provider.TrendingSearchProvider
 import mozilla.components.feature.fxsuggest.FxSuggestSuggestionProvider
+import mozilla.components.feature.fxsuggest.MockedStocksSuggestionDataSource
 import mozilla.components.feature.search.SearchUseCases
 import mozilla.components.feature.session.SessionUseCases.LoadUrlUseCase
 import mozilla.components.feature.syncedtabs.DeviceIndicators
@@ -257,6 +259,12 @@ class SearchSuggestionsProvidersBuilder(
                         contextId = components.settings.contileContextId,
                     )
                 },
+            )
+        }
+
+        if (state.showStocksSuggestions) {
+            providersToAdd.add(
+                StocksOnlineSuggestionProvider(MockedStocksSuggestionDataSource()),
             )
         }
 
@@ -515,6 +523,7 @@ class SearchSuggestionsProvidersBuilder(
      * @property showAllSessionSuggestions Whether to show all session suggestions.
      * @property showSponsoredSuggestions Whether to show sponsored suggestions.
      * @property showNonSponsoredSuggestions Whether to show non-sponsored suggestions.
+     * @property showStocksSuggestions Whether to show optimized search suggestion stock cards.
      * @property showTrendingSearches Whether to show trending searches.
      * @property showRecentSearches Whether to show recent searches.
      * @property searchEngineSource Hoe the current search engine was selected.
@@ -533,6 +542,7 @@ class SearchSuggestionsProvidersBuilder(
         val showAllSessionSuggestions: Boolean,
         val showSponsoredSuggestions: Boolean,
         val showNonSponsoredSuggestions: Boolean,
+        val showStocksSuggestions: Boolean,
         val showTrendingSearches: Boolean,
         val showRecentSearches: Boolean,
         val searchEngineSource: SearchEngineSource,

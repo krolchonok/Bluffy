@@ -145,7 +145,7 @@ class NavigationToolbarTest : TestSetup() {
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(
             defaultWebPage.toUri(),
-            ) {
+        ) {
             verifyPageContent("Login Form")
         }.openSiteSecuritySheet {
             verifyQuickActionSheet(defaultWebPage, true)
@@ -170,7 +170,7 @@ class NavigationToolbarTest : TestSetup() {
                 defaultWebPage.title,
                 defaultWebPage.url.toString(),
                 false,
-                )
+            )
         }
     }
 
@@ -228,8 +228,8 @@ class NavigationToolbarTest : TestSetup() {
             createCustomTabIntent(
                 customTabPage.url.toString(),
                 customMenuItem,
-                ),
-            )
+            ),
+        )
 
         customTabScreen(composeTestRule) {
             verifyCustomTabCloseButton()
@@ -326,8 +326,8 @@ class NavigationToolbarTest : TestSetup() {
                 searchSuggestions = arrayOf(
                     firstPageUrl.url.toString(),
                     secondPageUrl.url.toString(),
-                    ),
-                )
+                ),
+            )
         }.clickSearchSuggestion(firstPageUrl.url.toString()) {
             verifyUrl(firstPageUrl.url.toString())
         }
@@ -379,18 +379,18 @@ class NavigationToolbarTest : TestSetup() {
                 searchSuggestions = arrayOf(
                     "test page 1",
                     firstPageUrl.url.toString(),
-                    ),
-                )
-                // 2 search engine suggestions and 2 browser suggestions (1 history, 1 bookmark)
+                ),
+            )
+            // 2 search engine suggestions and 2 browser suggestions (1 history, 1 bookmark)
             verifySearchSuggestionsCount(
                 numberOfSuggestions = 4,
                 searchTerm = "test page",
-                )
+            )
             verifySuggestionsAreNotDisplayed(
-                    searchSuggestions = arrayOf(
-                        "test page 2",
-                    ),
-                )
+                searchSuggestions = arrayOf(
+                    "test page 2",
+                ),
+            )
         }
     }
 
@@ -423,7 +423,7 @@ class NavigationToolbarTest : TestSetup() {
                 shouldBeDisplayed = true,
                 searchTerm = queryString,
                 groupSize = 3,
-                )
+            )
         }
     }
 
@@ -454,7 +454,7 @@ class NavigationToolbarTest : TestSetup() {
                 shouldBeDisplayed = false,
                 searchTerm = queryString,
                 groupSize = 3,
-                )
+            )
         }.openThreeDotMenu {
         }.clickHistoryButton {
             verifyHistoryItemExists(shouldExist = false, item = "3 sites")
@@ -546,7 +546,7 @@ class NavigationToolbarTest : TestSetup() {
                 "https://github.com/mozilla-mobile/focus-android",
                 "focus-android",
                 1u,
-                )
+            )
 
             homeScreen(composeTestRule) {
             }.openSearch {
@@ -559,20 +559,20 @@ class NavigationToolbarTest : TestSetup() {
                 verifyTypedToolbarText(
                     "github.com/mozilla-mobile/fenix",
                     exists = true,
-                    )
+                )
                 // The address bar's autocomplete should also take use of the saved bookmarks
                 // Autocomplete with the bookmarked items url
                 typeSearch("github.com/mozilla-mobile/fo")
                 verifyTypedToolbarText(
                     "github.com/mozilla-mobile/focus-android",
                     exists = true,
-                    )
+                )
                 // It should not autocomplete with links that are not part of browsing history or bookmarks
                 typeSearch("github.com/mozilla-mobile/fi")
                 verifyTypedToolbarText(
                     "github.com/mozilla-mobile/firefox-android",
                     exists = false,
-                    )
+                )
             }
         }
     }
@@ -598,7 +598,7 @@ class NavigationToolbarTest : TestSetup() {
             verifySuggestionsAreNotDisplayed(
                 "Firefox Suggest",
                 websiteURL,
-                )
+            )
         }
     }
 
@@ -626,7 +626,7 @@ class NavigationToolbarTest : TestSetup() {
             verifySuggestionsAreNotDisplayed(
                 "Firefox Suggest",
                 website.title,
-                )
+            )
         }
     }
 
@@ -748,7 +748,7 @@ class NavigationToolbarTest : TestSetup() {
                 "History",
                 "Search settings",
                 isSearchEngineDisplayed = true,
-                )
+            )
         }
     }
 
@@ -787,8 +787,8 @@ class NavigationToolbarTest : TestSetup() {
             createCustomTabIntent(
                 pageUrl = customTabPage.url.toString(),
                 customActionButtonDescription = customTabActionButton,
-                ),
-            )
+            ),
+        )
 
         customTabScreen(composeTestRule) {
             verifyCustomTabCloseButton()
@@ -850,6 +850,119 @@ class NavigationToolbarTest : TestSetup() {
         }.clickTheNewTabButton(isPrivateModeEnabled = true) {
         }.submitQuery(secondPage.url.toString()) {
             verifyTabCounter("2", isPrivateBrowsingEnabled = true)
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3333206
+    @SmokeTest
+    @Test
+    fun verifyHomepageItemsWithTabStripTest() {
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openCustomizeSubMenu {
+            clickShowTabBarToggle()
+            selectExpandedToolbarLayout()
+        }.goBack {
+        }.goBack(composeTestRule) {
+            verifyToolbarPosition(bottomPosition = false)
+        }
+
+        navigationToolbar(composeTestRule) {
+            verifyNavBarPositionWithTabStripEnabled(true)
+            verifyTheTheTabStripPageViewNavigationBarBookmarkButton()
+            verifyTheTabStripNavigationBarShareButton()
+            verifyTheNewTabButton()
+            verifyTheTabCounter("0")
+            verifyTheMainMenuButton()
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3333193
+    @SmokeTest
+    @Test
+    fun verifyTheTabStripUITest() {
+        val defaultWebPage = mockWebServer.getGenericAsset(1)
+
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openCustomizeSubMenu {
+            clickShowTabBarToggle()
+            selectExpandedToolbarLayout()
+        }.goBack {
+        }.goBack(composeTestRule) {
+        }
+
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(defaultWebPage.url) {
+            verifyPageContent(defaultWebPage.content)
+            verifyUrl(defaultWebPage.url.toString())
+            verifyETPShieldIconIsDisplayed(composeTestRule)
+        }
+
+        homeScreen(composeTestRule) {
+            verifyToolbarPosition(bottomPosition = false)
+        }
+
+        navigationToolbar(composeTestRule) {
+            verifyTheTabStripOpenTab("Test_Page_1")
+            verifyTheTabStripCloseTabButton("Test_Page_1")
+            verifyNavBarPositionWithTabStripEnabled(true)
+            verifyTheTheTabStripPageViewNavigationBarBookmarkButton()
+            verifyTheTabStripNavigationBarShareButton()
+            verifyTheNewTabButton(false)
+            verifyTheTabCounter("1")
+            verifyTheMainMenuButton()
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3333195
+    @SmokeTest
+    @Test
+    fun verifyTheNewTabButtonWithTabStripEnabledTest() {
+        val defaultWebPage = mockWebServer.getGenericAsset(1)
+
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openCustomizeSubMenu {
+            clickShowTabBarToggle()
+            selectExpandedToolbarLayout()
+        }.goBack {
+        }.goBack(composeTestRule) {
+        }
+
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(defaultWebPage.url) {
+            verifyTabCounter("1")
+        }
+        navigationToolbar(composeTestRule) {
+            verifyTheNewTabButton(false)
+        }.clickTheNewTabButton(false) {
+            verifySearchBarPlaceholder("Search or enter address")
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3333195
+    @SmokeTest
+    @Test
+    fun verifyTabsTrayWithTabStripEnabledTest() {
+        val defaultWebPage = mockWebServer.getGenericAsset(1)
+
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openCustomizeSubMenu {
+            clickShowTabBarToggle()
+            selectExpandedToolbarLayout()
+        }.goBack {
+        }.goBack(composeTestRule) {
+            navigationToolbar(composeTestRule) {
+            }.enterURLAndEnterToBrowser(defaultWebPage.url) {
+            }.openTabDrawer(composeTestRule) {
+                verifyExistingOpenTabs(defaultWebPage.title)
+            }
         }
     }
 }

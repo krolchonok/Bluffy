@@ -6,6 +6,7 @@ package org.mozilla.fenix.ui
 
 import android.content.res.Configuration
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SkipLeaks
@@ -177,6 +178,7 @@ class SettingsCustomizeTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3333174
+    @Ignore("Failing, see: https://bugzilla.mozilla.org/show_bug.cgi?id=2018626")
     @Test
     fun verifyTheToolbarLayoutSectionTest() {
         homeScreen(composeTestRule) {

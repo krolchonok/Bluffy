@@ -85,6 +85,7 @@ import org.mozilla.fenix.components.menu.store.ExtensionMenuState
 import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.store.MenuState
 import org.mozilla.fenix.components.menu.store.MenuStore
+import org.mozilla.fenix.components.menu.store.SummarizationMenuState
 import org.mozilla.fenix.components.menu.store.TranslationInfo
 import org.mozilla.fenix.components.menu.store.WebExtensionMenuItem
 import org.mozilla.fenix.ext.components
@@ -101,7 +102,10 @@ import org.mozilla.fenix.settings.deletebrowsingdata.DefaultDeleteBrowsingDataCo
 import org.mozilla.fenix.settings.deletebrowsingdata.DefaultDeleteBrowsingDataController.DeleteDataUseCases
 import org.mozilla.fenix.settings.deletebrowsingdata.DefaultDeleteBrowsingDataController.Stores
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataController
+import org.mozilla.fenix.theme.DefaultThemeProvider
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.getThemeProvider
 import org.mozilla.fenix.utils.DELAY_MS_MAIN_MENU
 import org.mozilla.fenix.utils.DELAY_MS_SUB_MENU
 import org.mozilla.fenix.utils.DURATION_MS_MAIN_MENU
@@ -172,7 +176,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
             setOnShowListener {
                 val safeActivity = activity ?: return@setOnShowListener
                 val appStore = safeActivity.components.appStore
-
                 isPrivate = appStore.state.mode.isPrivate
 
                 if (isPrivate && args.accesspoint == MenuAccessPoint.Home) {
@@ -242,7 +245,16 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
         setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
 
         setContent {
-            FirefoxTheme {
+            val theme = if (args.accesspoint == MenuAccessPoint.External) {
+                if (components.settings.openLinksInAPrivateTab) {
+                    Theme.Private
+                } else {
+                    DefaultThemeProvider.provideTheme()
+                }
+            } else {
+                getThemeProvider().provideTheme()
+            }
+            FirefoxTheme(theme = theme) {
                 val context = LocalContext.current
 
                 val components = components
@@ -305,6 +317,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                 appStore = appStore,
                                 addonManager = components.addonManager,
                                 settings = settings,
+                                summarizeMenuSettings = components.core.summarizeFeatureDiscoverySettings,
                                 bookmarksStorage = components.core.bookmarksStorage,
                                 pinnedSiteStorage = components.core.pinnedSiteStorage,
                                 appLinksUseCases = appLinksUseCases,
@@ -366,7 +379,9 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
 
                 var isExtensionsExpanded by remember { mutableStateOf(false) }
 
-                var isMoreMenuExpanded by remember { mutableStateOf(false) }
+                val isMoreMenuExpanded by remember {
+                    store.stateFlow.map { state -> state.isMoreMenuExpanded }
+                }.collectAsState(initial = false)
 
                 MenuDialogBottomSheet(
                     modifier = Modifier
@@ -516,6 +531,10 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                         },
                     )
 
+                    val summarizationMenuState by remember {
+                        store.stateFlow.map { state -> state.summarizationMenuState }
+                    }.collectAsState(initial = SummarizationMenuState.Default)
+
                     val contentState: Route by remember { mutableStateOf(initRoute) }
 
                     var shouldShowMenuBanner by
@@ -630,7 +649,8 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                     isPdf = isPdf,
                                     isPrivate = isPrivate,
                                     isReaderViewActive = isReaderViewActive,
-                                    isMoreMenuHighlighted = isOpenInAppMenuHighlighted,
+                                    isMoreMenuHighlighted = isOpenInAppMenuHighlighted ||
+                                            summarizationMenuState.overflowMenuHighlighted,
                                     canGoBack = selectedTab?.content?.canGoBack ?: true,
                                     canGoForward = selectedTab?.content?.canGoForward ?: true,
                                     extensionsMenuItemDescription = extensionsMenuItemDescription,
@@ -686,7 +706,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                         }
                                     },
                                     onMoreMenuClick = {
-                                        isMoreMenuExpanded = !isMoreMenuExpanded
+                                        store.dispatch(MenuAction.OnMoreMenuClicked)
                                     },
                                     onBookmarksMenuClick = {
                                         store.dispatch(MenuAction.Navigate.Bookmarks)
@@ -738,9 +758,14 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                             translationInfo = translationInfo,
                                             showShortcuts = settings.showTopSitesFeature,
                                             isAndroidAutomotiveAvailable = context.isAndroidAutomotiveAvailable(),
-                                            showSummarization = settings.shakeToSummarizeFeatureEnabled,
+                                            summarizationMenuState = summarizationMenuState,
                                             onWebCompatReporterClick = {
                                                 store.dispatch(MenuAction.Navigate.WebCompatReporter)
+                                            },
+                                            onSummarizePageMenuExposed = {
+                                                store.dispatch(
+                                                    MenuAction.OnSummarizationMenuExposed,
+                                                )
                                             },
                                             onSummarizePageClick = {
                                                 store.dispatch(MenuAction.Navigate.Summarizer)

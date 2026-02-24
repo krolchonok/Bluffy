@@ -53,6 +53,7 @@ class DownloadUIStoreTest {
         filePath = "downloads/1.pdf",
         description = "Completed",
         contentType = "application/pdf",
+        directoryPath = "downloads",
         displayedShortUrl = "mozilla.com",
         status = FileItem.Status.Completed,
         timeCategory = TimeCategory.TODAY,
@@ -64,7 +65,6 @@ class DownloadUIStoreTest {
         fileName = "1.pdf",
         status = DownloadState.Status.COMPLETED,
         contentLength = 77,
-        destinationDirectory = "downloads",
         directoryPath = "downloads",
         contentType = "application/pdf",
     )
@@ -76,6 +76,7 @@ class DownloadUIStoreTest {
         filePath = "downloads/title",
         description = "Completed",
         displayedShortUrl = "mozilla.com",
+        directoryPath = "downloads",
         contentType = "jpg",
         status = FileItem.Status.Completed,
         timeCategory = TimeCategory.OLDER,
@@ -88,7 +89,6 @@ class DownloadUIStoreTest {
         fileName = "title",
         status = DownloadState.Status.COMPLETED,
         contentLength = 77,
-        destinationDirectory = "downloads",
         directoryPath = "downloads",
         contentType = "jpg",
     )
@@ -167,6 +167,7 @@ class DownloadUIStoreTest {
             description = "77 kB",
             displayedShortUrl = "url",
             contentType = "image/jpeg",
+            directoryPath = "downloads",
             status = FileItem.Status.Completed,
             timeCategory = TimeCategory.TODAY,
         )
@@ -178,6 +179,7 @@ class DownloadUIStoreTest {
             filePath = "docPath",
             description = "77 kB",
             displayedShortUrl = "url",
+            directoryPath = "downloads",
             contentType = "application/pdf",
             status = FileItem.Status.Completed,
             timeCategory = TimeCategory.TODAY,
@@ -221,6 +223,7 @@ class DownloadUIStoreTest {
             description = "77",
             displayedShortUrl = "url",
             contentType = "image/jpeg",
+            directoryPath = "downloads",
             status = FileItem.Status.Completed,
             timeCategory = TimeCategory.TODAY,
         )
@@ -233,6 +236,7 @@ class DownloadUIStoreTest {
             description = "1234",
             displayedShortUrl = "image2",
             contentType = "image/jpg",
+            directoryPath = "downloads",
             status = FileItem.Status.Completed,
             timeCategory = TimeCategory.TODAY,
         )
@@ -244,6 +248,7 @@ class DownloadUIStoreTest {
             filePath = "docPath",
             description = "77",
             displayedShortUrl = "url",
+            directoryPath = "downloads",
             contentType = "application/pdf",
             status = FileItem.Status.Completed,
             timeCategory = TimeCategory.TODAY,
@@ -302,7 +307,13 @@ class DownloadUIStoreTest {
         val initialState = oneItemDefaultState()
         val store = DownloadUIStore(initialState)
 
-        store.dispatch(DownloadUIAction.ShareFileClicked(fileItem1.filePath, fileItem1.contentType))
+        store.dispatch(
+            DownloadUIAction.ShareFileClicked(
+            directoryPath = fileItem1.directoryPath,
+            fileName = fileItem1.filePath,
+            contentType = fileItem1.contentType,
+        ),
+        )
         assertSame(initialState, store.state)
     }
 
@@ -470,7 +481,6 @@ class DownloadUIStoreTest {
                 fileName = "1.pdf",
                 status = DownloadState.Status.COMPLETED,
                 contentLength = 10000,
-                destinationDirectory = "",
                 directoryPath = "downloads",
                 contentType = "application/pdf",
             ),
@@ -481,7 +491,6 @@ class DownloadUIStoreTest {
                 fileName = "2.pdf",
                 status = DownloadState.Status.FAILED,
                 contentLength = 10000,
-                destinationDirectory = "",
                 directoryPath = "downloads",
                 contentType = "application/pdf",
             ),
@@ -492,7 +501,6 @@ class DownloadUIStoreTest {
                 fileName = "3.pdf",
                 status = DownloadState.Status.COMPLETED,
                 contentLength = 10000,
-                destinationDirectory = "",
                 directoryPath = "downloads",
                 contentType = "text/plain",
             ),
@@ -503,7 +511,6 @@ class DownloadUIStoreTest {
                 fileName = "4.pdf",
                 status = DownloadState.Status.PAUSED,
                 contentLength = 10000,
-                destinationDirectory = "",
                 directoryPath = "downloads",
                 contentType = "application/pdf",
             ),
@@ -514,7 +521,6 @@ class DownloadUIStoreTest {
                 fileName = "5.pdf",
                 status = DownloadState.Status.DOWNLOADING,
                 contentLength = 10000,
-                destinationDirectory = "",
                 directoryPath = "downloads",
                 contentType = "application/pdf",
             ),
@@ -525,7 +531,6 @@ class DownloadUIStoreTest {
                 fileName = "6.pdf",
                 status = DownloadState.Status.INITIATED,
                 contentLength = 10000,
-                destinationDirectory = "",
                 directoryPath = "downloads",
                 contentType = "application/pdf",
             ),
@@ -556,6 +561,7 @@ class DownloadUIStoreTest {
                     fileName = "6.pdf",
                     filePath = "downloads/6.pdf",
                     displayedShortUrl = "google.com",
+                    directoryPath = "downloads",
                     contentType = "application/pdf",
                     status = FileItem.Status.Initiated,
                     timeCategory = TimeCategory.IN_PROGRESS,
@@ -567,6 +573,7 @@ class DownloadUIStoreTest {
                     fileName = "5.pdf",
                     filePath = "downloads/5.pdf",
                     displayedShortUrl = "google.com",
+                    directoryPath = "downloads",
                     contentType = "application/pdf",
                     status = FileItem.Status.Downloading(progress = 0f),
                     timeCategory = TimeCategory.IN_PROGRESS,
@@ -578,6 +585,7 @@ class DownloadUIStoreTest {
                     fileName = "4.pdf",
                     filePath = "downloads/4.pdf",
                     displayedShortUrl = "google.com",
+                    directoryPath = "downloads",
                     contentType = "application/pdf",
                     status = FileItem.Status.Paused(progress = 0f),
                     timeCategory = TimeCategory.IN_PROGRESS,
@@ -589,6 +597,7 @@ class DownloadUIStoreTest {
                     fileName = "2.pdf",
                     filePath = "downloads/2.pdf",
                     displayedShortUrl = "google.com",
+                    directoryPath = "downloads",
                     contentType = "application/pdf",
                     status = FileItem.Status.Failed,
                     timeCategory = TimeCategory.IN_PROGRESS,
@@ -603,6 +612,7 @@ class DownloadUIStoreTest {
                     description = "Completed",
                     displayedShortUrl = "google.com",
                     contentType = "text/plain",
+                    directoryPath = "downloads",
                     status = FileItem.Status.Completed,
                     timeCategory = TimeCategory.TODAY,
                 ),
@@ -615,6 +625,7 @@ class DownloadUIStoreTest {
                     description = "Completed",
                     displayedShortUrl = "google.com",
                     contentType = "application/pdf",
+                    directoryPath = "downloads",
                     status = FileItem.Status.Completed,
                     timeCategory = TimeCategory.OLDER,
                 ),
@@ -636,7 +647,6 @@ class DownloadUIStoreTest {
                 fileName = "1.pdf",
                 status = DownloadState.Status.CANCELLED,
                 contentLength = 10000,
-                destinationDirectory = "",
                 directoryPath = "downloads",
                 contentType = "application/pdf",
             ),
@@ -646,7 +656,6 @@ class DownloadUIStoreTest {
                 url = "https://www.google.com",
                 fileName = "1.pdf",
                 status = DownloadState.Status.DOWNLOADING,
-                destinationDirectory = "",
                 contentLength = 10000,
                 directoryPath = "downloads",
                 contentType = "application/pdf",
@@ -673,6 +682,7 @@ class DownloadUIStoreTest {
                     fileName = "1.pdf",
                     filePath = "downloads/1.pdf",
                     description = "Downloading",
+                    directoryPath = "downloads",
                     displayedShortUrl = "google.com",
                     contentType = "application/pdf",
                     status = FileItem.Status.Downloading(0f),
@@ -696,7 +706,6 @@ class DownloadUIStoreTest {
                 fileName = "1.pdf",
                 status = DownloadState.Status.COMPLETED,
                 contentLength = 10000,
-                destinationDirectory = "",
                 directoryPath = "downloads",
                 contentType = "application/pdf",
             ),
@@ -706,7 +715,6 @@ class DownloadUIStoreTest {
                 url = "https://www.google.com",
                 fileName = "1.pdf",
                 status = DownloadState.Status.COMPLETED,
-                destinationDirectory = "",
                 contentLength = 10000,
                 directoryPath = "downloads",
                 contentType = "application/pdf",
@@ -728,11 +736,12 @@ class DownloadUIStoreTest {
             listOf(
                 HeaderItem(TimeCategory.OLDER),
                 FileItem(
-                    id = "1",
+                    id = "2",
                     url = "https://www.google.com",
                     fileName = "1.pdf",
                     filePath = "downloads/1.pdf",
                     description = "Completed",
+                    directoryPath = "downloads",
                     displayedShortUrl = "google.com",
                     contentType = "application/pdf",
                     status = FileItem.Status.Completed,
@@ -741,7 +750,137 @@ class DownloadUIStoreTest {
             ),
         )
 
-        testScheduler.advanceUntilIdle()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(expectedList, downloadsStore.state.itemsState)
+    }
+
+    @Test
+    fun `GIVEN two downloads with identical file name and different directory path WHEN getting itemsState THEN both download items should be displayed`() {
+        val downloads = mapOf(
+            "1" to DownloadState(
+                id = "1",
+                createdTime = 1,
+                url = "https://www.google.com",
+                fileName = "1.pdf",
+                status = DownloadState.Status.COMPLETED,
+                contentLength = 10000,
+                directoryPath = "downloads",
+                contentType = "application/pdf",
+            ),
+            "2" to DownloadState(
+                id = "2",
+                createdTime = 2,
+                url = "https://www.google.com",
+                fileName = "1.pdf",
+                status = DownloadState.Status.COMPLETED,
+                contentLength = 10000,
+                directoryPath = "downloads2",
+                contentType = "application/pdf",
+            ),
+        )
+        val browserStore = BrowserStore(initialState = BrowserState(downloads = downloads))
+
+        val downloadsStore = DownloadUIStore(
+            initialState = DownloadUIState.INITIAL,
+            middleware = listOf(
+                DownloadUIMapperMiddleware(
+                    browserStore = browserStore,
+                    fileItemDescriptionProvider = fakeFileItemDescriptionProvider,
+                    scope = testScope,
+                ),
+            ),
+        )
+        val expectedList = DownloadUIState.ItemsState.Items(
+            listOf(
+                HeaderItem(TimeCategory.OLDER),
+                FileItem(
+                    id = "2",
+                    url = "https://www.google.com",
+                    fileName = "1.pdf",
+                    filePath = "downloads2/1.pdf",
+                    description = "Completed",
+                    directoryPath = "downloads2",
+                    displayedShortUrl = "google.com",
+                    contentType = "application/pdf",
+                    status = FileItem.Status.Completed,
+                    timeCategory = TimeCategory.OLDER,
+                ),
+                FileItem(
+                    id = "1",
+                    url = "https://www.google.com",
+                    fileName = "1.pdf",
+                    filePath = "downloads/1.pdf",
+                    description = "Completed",
+                    directoryPath = "downloads",
+                    displayedShortUrl = "google.com",
+                    contentType = "application/pdf",
+                    status = FileItem.Status.Completed,
+                    timeCategory = TimeCategory.OLDER,
+                ),
+            ),
+        )
+
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(expectedList, downloadsStore.state.itemsState)
+    }
+
+    @Test
+    fun `GIVEN two downloads with the same file name ,directory path and status WHEN getting itemsState THEN the newest download item is displayed`() {
+        val downloads = mapOf(
+            "1" to DownloadState(
+                id = "1",
+                createdTime = 1,
+                url = "https://www.google.com",
+                fileName = "1.pdf",
+                status = DownloadState.Status.COMPLETED,
+                contentLength = 10000,
+                directoryPath = "downloads",
+                contentType = "application/pdf",
+            ),
+            "2" to DownloadState(
+                id = "2",
+                createdTime = 2,
+                url = "https://www.google.com",
+                fileName = "1.pdf",
+                status = DownloadState.Status.COMPLETED,
+                contentLength = 10000,
+                directoryPath = "downloads",
+                contentType = "application/pdf",
+            ),
+        )
+        val browserStore = BrowserStore(initialState = BrowserState(downloads = downloads))
+
+        val downloadsStore = DownloadUIStore(
+            initialState = DownloadUIState.INITIAL,
+            middleware = listOf(
+                DownloadUIMapperMiddleware(
+                    browserStore = browserStore,
+                    fileItemDescriptionProvider = fakeFileItemDescriptionProvider,
+                    scope = testScope,
+                ),
+            ),
+        )
+        val expectedList = DownloadUIState.ItemsState.Items(
+            listOf(
+                HeaderItem(TimeCategory.OLDER),
+                FileItem(
+                    id = "2",
+                    url = "https://www.google.com",
+                    fileName = "1.pdf",
+                    filePath = "downloads/1.pdf",
+                    description = "Completed",
+                    directoryPath = "downloads",
+                    displayedShortUrl = "google.com",
+                    contentType = "application/pdf",
+                    status = FileItem.Status.Completed,
+                    timeCategory = TimeCategory.OLDER,
+                ),
+            ),
+        )
+
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(expectedList, downloadsStore.state.itemsState)
     }
@@ -756,7 +895,6 @@ class DownloadUIStoreTest {
                 fileName = "1.pdf",
                 status = DownloadState.Status.FAILED,
                 contentLength = 10000,
-                destinationDirectory = "",
                 directoryPath = "downloads",
                 contentType = "application/pdf",
             ),
@@ -766,7 +904,6 @@ class DownloadUIStoreTest {
                 url = "https://www.google.com",
                 fileName = "1.pdf",
                 status = DownloadState.Status.DOWNLOADING,
-                destinationDirectory = "",
                 contentLength = 10000,
                 directoryPath = "downloads",
                 contentType = "application/pdf",
@@ -793,6 +930,7 @@ class DownloadUIStoreTest {
                     fileName = "1.pdf",
                     filePath = "downloads/1.pdf",
                     description = "Downloading",
+                    directoryPath = "downloads",
                     displayedShortUrl = "google.com",
                     contentType = "application/pdf",
                     status = FileItem.Status.Downloading(0f),
@@ -804,6 +942,7 @@ class DownloadUIStoreTest {
                     fileName = "1.pdf",
                     filePath = "downloads/1.pdf",
                     description = "Failed",
+                    directoryPath = "downloads",
                     displayedShortUrl = "google.com",
                     contentType = "application/pdf",
                     status = FileItem.Status.Failed,
@@ -1111,6 +1250,7 @@ class DownloadUIStoreTest {
             description = "Completed",
             contentType = "application/pdf",
             displayedShortUrl = "mozilla.com",
+            directoryPath = folder.root.path,
             status = FileItem.Status.Completed,
             timeCategory = TimeCategory.TODAY,
         )
@@ -1121,7 +1261,6 @@ class DownloadUIStoreTest {
             fileName = fileName,
             status = DownloadState.Status.COMPLETED,
             contentLength = 77,
-            destinationDirectory = folder.root.path,
             directoryPath = folder.root.path,
             contentType = "application/pdf",
         )

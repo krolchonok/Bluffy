@@ -3,8 +3,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { makeGuid } from "./ChatUtils.sys.mjs";
-
 /**
  * A message in a conversation.
  */
@@ -37,7 +35,7 @@ export class ChatMessage {
    * prompt/reply for example would be one turn
    * @param {URL} [param.pageUrl = null] - A URL object defining which page
    * the user was on when submitting a message if role == user
-   * @param {string} [param.id = makeGuid()] - The row.message_id of the
+   * @param {string} [param.id = crypto.randomUUID()] - The row.message_id of the
    * message in the database
    * @param {number} [param.createdDate = Date.now()] - The date the message was
    * sent/stored in the database
@@ -78,7 +76,7 @@ export class ChatMessage {
     content,
     turnIndex,
     pageUrl = null,
-    id = makeGuid(),
+    id = crypto.randomUUID(),
     createdDate = Date.now(),
     parentMessageId = null,
     convId = null,

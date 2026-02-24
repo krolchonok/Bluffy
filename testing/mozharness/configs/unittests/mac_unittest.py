@@ -246,7 +246,6 @@ config = {
     "minidump_save_path": "%(abs_work_dir)s/../minidumps",
     "unstructured_flavors": {
         "gtest": [],
-        "cppunittest": [],
         "jittest": [],
     },
     "tooltool_cache": "/builds/tooltool_cache",

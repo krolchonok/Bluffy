@@ -144,6 +144,8 @@ sealed class SearchEngineSource {
  * AwesomeBar. Always `false` in private mode, or when a non-default engine is selected.
  * @property showNonSponsoredSuggestions Whether or not to show Firefox Suggest search suggestions for web content
  * in the AwesomeBar. Always `false` in private mode, or when a non-default engine is selected.
+ * @property showStocksSuggestions Whether or not to show the optimized search suggestion stock cards
+ * in the AwesomeBar.
  * @property showTrendingSearches Whether the setting for showing trending searches is enabled or disabled.
  * @property showRecentSearches Whether the setting for showing recent searches is enabled or disabled.
  * @property showQrButton Whether or not to show the QR button.
@@ -180,6 +182,7 @@ data class SearchFragmentState(
     val showAllSessionSuggestions: Boolean,
     val showSponsoredSuggestions: Boolean,
     val showNonSponsoredSuggestions: Boolean,
+    val showStocksSuggestions: Boolean,
     val showTrendingSearches: Boolean,
     val showRecentSearches: Boolean,
     val showQrButton: Boolean,
@@ -223,6 +226,7 @@ data class SearchFragmentState(
             showAllSessionSuggestions = false,
             showSponsoredSuggestions = false,
             showNonSponsoredSuggestions = false,
+            showStocksSuggestions = false,
             showTrendingSearches = false,
             showRecentSearches = false,
             showQrButton = false,
@@ -290,6 +294,8 @@ fun createInitialSearchFragmentState(
             settings.enableFxSuggest && settings.showSponsoredSuggestions,
         showNonSponsoredSuggestions = browsingMode == BrowsingMode.Normal &&
             settings.enableFxSuggest && settings.showNonSponsoredSuggestions,
+        showStocksSuggestions = settings.isSearchOptimizationEnabled &&
+            settings.shouldShowSearchOptimizationStockCard,
         showTrendingSearches = shouldShowTrendingSearchSuggestions(
             browsingMode = browsingMode,
             settings = settings,
@@ -477,6 +483,8 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                     action.settings.enableFxSuggest && action.settings.showSponsoredSuggestions,
                 showNonSponsoredSuggestions = action.browsingMode == BrowsingMode.Normal &&
                     action.settings.enableFxSuggest && action.settings.showNonSponsoredSuggestions,
+                showStocksSuggestions = action.settings.isSearchOptimizationEnabled &&
+                    action.settings.shouldShowSearchOptimizationStockCard,
                 showAllSessionSuggestions = true,
                 showTrendingSearches = shouldShowTrendingSearchSuggestions(
                     browsingMode = action.browsingMode,
@@ -523,6 +531,7 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                 },
                 showSponsoredSuggestions = false,
                 showNonSponsoredSuggestions = false,
+                showStocksSuggestions = false,
                 showTrendingSearches = shouldShowTrendingSearchSuggestions(
                     browsingMode = action.browsingMode,
                     settings = action.settings,
@@ -547,6 +556,7 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                 showAllSessionSuggestions = false,
                 showSponsoredSuggestions = false,
                 showNonSponsoredSuggestions = false,
+                showStocksSuggestions = false,
                 showTrendingSearches = false,
                 showRecentSearches = false,
             )
@@ -567,6 +577,7 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                 showAllSessionSuggestions = false,
                 showSponsoredSuggestions = false,
                 showNonSponsoredSuggestions = false,
+                showStocksSuggestions = false,
                 showTrendingSearches = false,
                 showRecentSearches = false,
             )
@@ -587,6 +598,7 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
                 showAllSessionSuggestions = true,
                 showSponsoredSuggestions = false,
                 showNonSponsoredSuggestions = false,
+                showStocksSuggestions = false,
                 showTrendingSearches = false,
                 showRecentSearches = false,
             )

@@ -8,24 +8,38 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.LocalTextSelectionColors
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.TextButton
+import mozilla.components.compose.base.theme.AcornTheme
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.BottomSheetHandle
 import org.mozilla.fenix.tabstray.TabGroupAction
@@ -35,6 +49,7 @@ import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 
 private const val BOTTOM_SHEET_HANDLER_ALPHA = 0.4F
+private val formFieldShape = RoundedCornerShape(16.dp)
 
 /**
  * Prompt to edit a tab group.
@@ -44,7 +59,7 @@ private const val BOTTOM_SHEET_HANDLER_ALPHA = 0.4F
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EditTabGroupBottomSheet(
+fun EditTabGroupBottomSheet(
     tabsTrayStore: TabsTrayStore,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -95,11 +110,26 @@ private fun BottomSheet(
 private fun CreateTabGroupContent(
     onConfirmSave: () -> Unit,
 ) {
-    Column {
+    val defaultName = stringResource(R.string.create_tab_group_default_name)
+    var tabGroupName by remember {
+        mutableStateOf(
+            TextFieldValue(
+                text = defaultName,
+                selection = TextRange(0, defaultName.length),
+            ),
+        )
+    }
+
+    Column(
+        modifier = Modifier.padding(bottom = 12.dp),
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(
+                    horizontal = AcornTheme.layout.space.dynamic200,
+                    vertical = AcornTheme.layout.space.static150,
+                ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -114,7 +144,57 @@ private fun CreateTabGroupContent(
                 modifier = Modifier.padding(end = 12.dp),
             )
         }
+
+        Surface(
+            shape = formFieldShape,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AcornTheme.layout.space.dynamic200),
+        ) {
+            TabGroupNameTextField(
+                tabGroupName = tabGroupName,
+                onTabGroupNameChange = { tabGroupName = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+            )
+        }
     }
+}
+
+@Composable
+private fun TabGroupNameTextField(
+    tabGroupName: TextFieldValue,
+    onTabGroupNameChange: (TextFieldValue) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
+    val selectionColors = TextSelectionColors(
+        handleColor = LocalTextSelectionColors.current.handleColor,
+        backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+    )
+
+    OutlinedTextField(
+        value = tabGroupName,
+        onValueChange = onTabGroupNameChange,
+        label = {
+            Text(
+                text = stringResource(R.string.create_tab_group_name_label),
+                style = MaterialTheme.typography.labelMedium,
+            )
+        },
+        singleLine = true,
+        modifier = modifier.focusRequester(focusRequester),
+        colors = OutlinedTextFieldDefaults.colors(
+            selectionColors = selectionColors,
+        ),
+    )
 }
 
 @Preview

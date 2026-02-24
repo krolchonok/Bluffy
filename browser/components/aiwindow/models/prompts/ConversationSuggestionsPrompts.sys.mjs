@@ -3,6 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+export const conversationStarterSystemPrompt = `Return only the requested suggestions, one per line.`;
 
 export const assistantLimitationstMetadata = {
   version: "v1.0",

@@ -5,7 +5,7 @@
  */
 
 import valueParser from "postcss-value-parser";
-import { tokensTable } from "../../../../toolkit/themes/shared/design-system/dist/tokens-table.mjs";
+import { tokensTable } from "../../../../toolkit/themes/shared/design-system/dist/semantic-categories.mjs";
 import {
   DEPRECATED_SYSTEM_COLORS,
   NAMED_COLORS,

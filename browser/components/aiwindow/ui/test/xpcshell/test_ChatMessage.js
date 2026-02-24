@@ -17,7 +17,7 @@ add_task(function test_ChatMessage_constructor_defaults() {
   });
 
   Assert.withSoftAssertions(function (soft) {
-    soft.equal(message.id.length, 12);
+    soft.equal(message.id.length, 36);
     soft.equal(message.revisionRootMessageId, message.id);
     soft.ok(!isNaN(message.createdDate));
     soft.ok(message.isActiveBranch);

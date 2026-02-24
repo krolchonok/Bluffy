@@ -616,8 +616,8 @@ void StyleSheet::MaybeResolveReplacePromise() {
   }
 
   SetModificationDisallowed(false);
-  mReplacePromise->MaybeResolve(this);
-  mReplacePromise = nullptr;
+  RefPtr replacePromise = std::move(mReplacePromise);
+  replacePromise->MaybeResolve(this);
 }
 
 void StyleSheet::MaybeRejectReplacePromise() {
@@ -627,9 +627,9 @@ void StyleSheet::MaybeRejectReplacePromise() {
   }
 
   SetModificationDisallowed(false);
-  mReplacePromise->MaybeRejectWithNetworkError(
+  RefPtr replacePromise = std::move(mReplacePromise);
+  replacePromise->MaybeRejectWithNetworkError(
       "@import style sheet load failed");
-  mReplacePromise = nullptr;
 }
 
 // https://drafts.csswg.org/cssom/#dom-cssstylesheet-replace

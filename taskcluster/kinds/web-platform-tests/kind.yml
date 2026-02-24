@@ -375,6 +375,7 @@ tasks:
             by-test-platform:
                 linux2204.*/debug.*: 25
                 linux2204.*: 20
+                macosx.*-64.*/debug.*: 15
                 windows.*-64.*/opt.*: 14
                 default: 14
         max-run-time: 2700  # 45m

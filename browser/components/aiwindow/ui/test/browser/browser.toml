@@ -98,3 +98,5 @@ support-files = [
 ["browser_smartwindow_tab_move.js"]
 
 ["browser_smartwindow_tab_switching.js"]
+
+["browser_smartwindow_telemetry.js"]

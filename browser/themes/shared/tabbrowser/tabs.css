@@ -1793,19 +1793,10 @@ tab-group {
 
 .tab-group-editor-panel {
   --panel-width: 22em;
-  --panel-padding: var(--space-large);
-  --panel-separator-padding: var(--space-medium) 0;
   font: menu;
 
-  .panel-header {
-    min-height: auto;
-    > h1 {
-      margin-top: 0;
-    }
-  }
-
-  .panel-body {
-    padding-block: var(--space-medium);
+  &.tab-group-editor-panel-expanded {
+    --panel-width: 25em;
   }
 
   &.tab-group-editor-mode-create .tab-group-edit-mode-only,
@@ -1816,6 +1807,9 @@ tab-group {
   .tab-group-editor-name {
     display: flex;
     flex-direction: column;
+    margin: var(--arrowpanel-menuitem-margin);
+    padding-top: var(--arrowpanel-menuitem-padding-block);
+
     > label {
       margin-inline: 0;
       margin-bottom: var(--space-small);
@@ -1829,6 +1823,8 @@ tab-group {
     display: flex;
     flex-flow: row nowrap;
     justify-content: space-between;
+    margin: var(--arrowpanel-menuitem-margin);
+    padding-block: var(--arrowpanel-menuitem-padding-block);
   }
 
   input[name="tab-group-color"] {
@@ -1865,22 +1861,6 @@ tab-group {
       outline-offset: 1px;
     }
   }
-
-  .tab-group-edit-actions,
-  .tab-group-delete {
-    padding-block: 0;
-    > toolbarbutton {
-      justify-content: flex-start;
-    }
-  }
-
-  toolbarbutton {
-    margin: 0;
-  }
-}
-
-.tab-group-editor-panel.tab-group-editor-panel-expanded {
-  --panel-width: 25em;
 }
 
 @media not (prefers-contrast) {
@@ -2664,11 +2644,6 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
   }
 }
 
-#tab-group-suggestions-heading,
-#tab-group-main {
-  flex-direction: column;
-}
-
 #tab-group-default-actions {
   padding-top: var(--space-medium);
 }
@@ -2711,7 +2686,8 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
 #tab-group-suggestion-button {
   --button-border-color-ghost: var(--border-color-selected);
   color: var(--color-accent-primary);
-  width: 100%;
+  width: auto;
+  padding: 0;
 
   &:hover {
     --button-border-color-ghost-hover: var(--border-color-selected);
@@ -2741,6 +2717,11 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
     margin-top: 0;
     padding-inline: 35px var(--space-medium);
   }
+}
+
+#tab-group-suggestions-container,
+#tab-group-suggestions-optin-container {
+  margin: var(--arrowpanel-menuitem-margin);
 }
 
 .tab-group-suggestions-loading-header,

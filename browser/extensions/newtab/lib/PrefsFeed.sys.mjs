@@ -76,6 +76,7 @@ export class PrefsFeed {
     this.onOhttpImagesUpdated = this.onOhttpImagesUpdated.bind(this);
     this.onInferredPersonalizationExperimentUpdated =
       this.onInferredPersonalizationExperimentUpdated.bind(this);
+    this.onAdsBackendUpdated = this.onAdsBackendUpdated.bind(this);
 
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
@@ -229,6 +230,41 @@ export class PrefsFeed {
   }
 
   /**
+   * Computes the adsBackend features by processing all enrollments.
+   * This only looks at the flags variable within the adsBackend feature
+   * and merges each flags object, preferring an experiment over a rollout.
+   *
+   */
+  _getAdsBackendFeatures() {
+    /**
+     * @backward-compat { version 149 }
+     *
+     * We can replace `adsBackend?` with `adsBackend` once 149 hits the
+     * release channel.
+     */
+    const allEnrollments =
+      lazy.NimbusFeatures.adsBackend?.getAllEnrollments() || [];
+
+    const valueObj = {};
+    allEnrollments.reduce((accumulator, currentValue) => {
+      if (currentValue?.value?.flags) {
+        for (const [key, value] of Object.entries(currentValue.value.flags)) {
+          if (
+            !accumulator[key] ||
+            (accumulator[key].meta.isRollout && !currentValue.meta.isRollout)
+          ) {
+            accumulator[key] = currentValue;
+            valueObj[key] = value;
+          }
+        }
+      }
+      return accumulator;
+    }, {});
+
+    return valueObj;
+  }
+
+  /**
    * Handler for when experiment data updates.
    */
   onTrainhopExperimentUpdated() {
@@ -333,6 +369,23 @@ export class PrefsFeed {
     );
   }
 
+  /**
+   * Handler for when adsBackend experiment data updates.
+   */
+  onAdsBackendUpdated() {
+    const valueObj = this._getAdsBackendFeatures();
+
+    this.store.dispatch(
+      ac.BroadcastToContent({
+        type: at.PREF_CHANGED,
+        data: {
+          name: "adsBackendConfig",
+          value: valueObj,
+        },
+      })
+    );
+  }
+
   init() {
     this._prefs.observeBranch(this);
     lazy.NimbusFeatures.newtab.onUpdate(this.onExperimentUpdated);
@@ -348,6 +401,13 @@ export class PrefsFeed {
     );
     lazy.NimbusFeatures.newtabWidgets.onUpdate(this.onWidgetsUpdated);
     lazy.NimbusFeatures.newtabOhttpImages.onUpdate(this.onOhttpImagesUpdated);
+    /**
+     * @backward-compat { version 149 }
+     *
+     * We can replace `adsBackend?` with `adsBackend` once 149 hits the
+     * release channel.
+     */
+    lazy.NimbusFeatures.adsBackend?.onUpdate(this.onAdsBackendUpdated);
 
     // Get the initial value of each activity stream pref
     const values = {};
@@ -406,6 +466,7 @@ export class PrefsFeed {
     values.widgetsConfig =
       lazy.NimbusFeatures.newtabWidgets.getAllVariables() || {};
     values.trainhopConfig = this._getTrainhopConfig();
+    values.adsBackendConfig = this._getAdsBackendFeatures();
     this._setBoolPref(values, "logowordmark.alwaysVisible", false);
     this._setBoolPref(values, "feeds.section.topstories", false);
     this._setBoolPref(values, "discoverystream.enabled", false);
@@ -449,6 +510,13 @@ export class PrefsFeed {
     );
     lazy.NimbusFeatures.newtabWidgets.offUpdate(this.onWidgetsUpdated);
     lazy.NimbusFeatures.newtabOhttpImages.offUpdate(this.onOhttpImagesUpdated);
+    /**
+     * @backward-compat { version 149 }
+     *
+     * We can replace `adsBackend?` with `adsBackend` once 149 hits the
+     * release channel.
+     */
+    lazy.NimbusFeatures.adsBackend?.offUpdate(this.onAdsBackendUpdated);
 
     if (this.geo === "") {
       Services.obs.removeObserver(this, lazy.Region.REGION_TOPIC);

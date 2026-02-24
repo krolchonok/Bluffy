@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.70
- * pdfjsBuild = 30ed527a8
+ * pdfjsVersion = 5.5.135
+ * pdfjsBuild = 909a700af
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -8558,7 +8558,7 @@ class PDFViewer {
   #viewerAlert = null;
   #copiedPageViews = null;
   constructor(options) {
-    const viewerVersion = "5.5.70";
+    const viewerVersion = "5.5.135";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -9876,7 +9876,7 @@ class PDFViewer {
     this._setCurrentPageNumber(pageNumber, true);
     this.update();
   }
-  _getPageAdvance(currentPageNumber, previous = false) {
+  #getPageAdvance(currentPageNumber, previous = false) {
     switch (this._scrollMode) {
       case ScrollMode.WRAPPED:
         {
@@ -9893,11 +9893,7 @@ class PDFViewer {
             if (percent === 0 || widthPercent < 100) {
               continue;
             }
-            let yArray = pageLayout.get(y);
-            if (!yArray) {
-              pageLayout.set(y, yArray ||= []);
-            }
-            yArray.push(id);
+            pageLayout.getOrInsert(y, []).push(id);
           }
           for (const yArray of pageLayout.values()) {
             const currentIndex = yArray.indexOf(currentPageNumber);
@@ -9984,7 +9980,7 @@ class PDFViewer {
     if (currentPageNumber >= pagesCount) {
       return false;
     }
-    const advance = this._getPageAdvance(currentPageNumber, false) || 1;
+    const advance = this.#getPageAdvance(currentPageNumber, false) || 1;
     this.currentPageNumber = Math.min(currentPageNumber + advance, pagesCount);
     return true;
   }
@@ -9993,7 +9989,7 @@ class PDFViewer {
     if (currentPageNumber <= 1) {
       return false;
     }
-    const advance = this._getPageAdvance(currentPageNumber, true) || 1;
+    const advance = this.#getPageAdvance(currentPageNumber, true) || 1;
     this.currentPageNumber = Math.max(currentPageNumber - advance, 1);
     return true;
   }

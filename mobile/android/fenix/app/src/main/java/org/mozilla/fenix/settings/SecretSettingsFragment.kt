@@ -8,6 +8,8 @@ import android.os.Build
 import android.os.Bundle
 import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -25,13 +27,37 @@ import org.mozilla.fenix.debugsettings.data.DefaultDebugSettingsRepository
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
+import org.mozilla.fenix.ext.showToolbarWithIconButton
 import org.mozilla.fenix.GleanMetrics.DebugDrawer as DebugDrawerMetrics
 
 class SecretSettingsFragment : PreferenceFragmentCompat() {
 
+    private val args by navArgs<SecretSettingsFragmentArgs>()
+
     override fun onResume() {
         super.onResume()
-        showToolbar(getString(R.string.preferences_debug_settings))
+
+        val showSearch = requireContext().settings().isSettingsSearchEnabled &&
+            !args.searchInProgress
+
+        if (showSearch) {
+            showToolbarWithIconButton(
+                title = getString(R.string.preferences_debug_settings),
+                contentDescription = getString(R.string.settings_search_button_content_description),
+                iconResId = R.drawable.ic_search,
+                onClick = {
+                    findNavController().navigate(
+                        R.id.action_secretSettingsFragment_to_secretSettingsSearchFragment,
+                    )
+                },
+            )
+        } else {
+            showToolbar(getString(R.string.preferences_debug_settings))
+        }
+
+        args.preferenceToScrollTo?.let {
+            scrollToPreference(it)
+        }
     }
 
     @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
@@ -423,7 +449,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
 
         requirePreference<SwitchPreference>(R.string.pref_key_enable_shake_to_summarize).apply {
             isVisible = Config.channel.isDebug
-            isChecked = context.settings().shakeToSummarizeFeatureEnabled
+            isChecked = context.settings().shakeToSummarizeFeatureFlagEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 

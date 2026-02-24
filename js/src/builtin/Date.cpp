@@ -825,7 +825,7 @@ HourMinuteSecond js::ToHourMinuteSecond(int64_t epochMilliseconds) {
   MOZ_ASSERT(0 <= minute && minute < MinutesPerHour);
 
   int32_t second = SecFromTime(epochMilliseconds);
-  MOZ_ASSERT(0 <= minute && minute < SecondsPerMinute);
+  MOZ_ASSERT(0 <= second && second < SecondsPerMinute);
 
   return {hour, minute, second};
 }

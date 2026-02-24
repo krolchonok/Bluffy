@@ -678,11 +678,14 @@ export class ContileIntegration {
           const controller = new AbortController();
           const { signal } = controller;
 
+          const adsBackendConfig = state.Prefs.values?.adsBackendConfig || {};
+
           const options = {
             method: "POST",
             headers,
             body: JSON.stringify({
               context_id: await lazy.ContextId.request(),
+              flags: adsBackendConfig,
               placements: placementsArray.map((placement, index) => ({
                 placement,
                 count: countsArray[index],

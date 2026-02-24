@@ -229,7 +229,7 @@ panelview {
   transition: height var(--panelui-subview-transition-duration);
 }
 
-.panel-subview-body {
+.panel-subview-body:not([hidden]) {
   display: flex;
   flex-direction: column;
   flex: 1;

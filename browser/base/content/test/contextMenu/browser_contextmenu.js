@@ -51,6 +51,10 @@ let hasStripOnShare = Services.prefs.getBoolPref(
 let hasContainers =
   Services.prefs.getBoolPref("privacy.userContext.enabled") &&
   ContextualIdentityService.getPublicIdentities().length;
+let hasSplitViews = Services.prefs.getBoolPref(
+  "browser.tabs.splitView.enabled",
+  false
+);
 
 const hasSelectTranslations =
   Services.prefs.getBoolPref("browser.translations.enable") &&
@@ -104,6 +108,7 @@ add_task(async function test_xul_text_link_label() {
     [
       "context-openlinkintab",
       true,
+      ...(hasSplitViews ? ["context-openlinkinsplitview", true] : []),
       ...(hasContainers ? ["context-openlinkinusercontext-menu", true] : []),
       // We need a blank entry here because the containers submenu is
       // dynamically generated with no ids.
@@ -206,6 +211,7 @@ add_task(async function test_plaintext() {
 const kLinkItems = [
   "context-openlinkintab",
   true,
+  ...(hasSplitViews ? ["context-openlinkinsplitview", true] : []),
   ...(hasContainers ? ["context-openlinkinusercontext-menu", true] : []),
   // We need a blank entry here because the containers submenu is
   // dynamically generated with no ids.
@@ -279,6 +285,7 @@ add_task(async function test_linkpreviewcommand() {
     [
       "context-openlinkintab",
       true,
+      ...(hasSplitViews ? ["context-openlinkinsplitview", true] : []),
       ...(hasContainers ? ["context-openlinkinusercontext-menu", true] : []),
       // We need a blank entry here because the containers submenu is
       // dynamically generated with no ids.
@@ -326,6 +333,7 @@ add_task(async function test_linkpreviewcommand_disabled() {
     [
       "context-openlinkintab",
       true,
+      ...(hasSplitViews ? ["context-openlinkinsplitview", true] : []),
       ...(hasContainers ? ["context-openlinkinusercontext-menu", true] : []),
       // We need a blank entry here because the containers submenu is
       // dynamically generated with no ids.
@@ -1668,6 +1676,9 @@ add_task(async function test_dom_full_screen() {
         gBrowser.selectedBrowser,
         [],
         async function () {
+          if (!content.document.fullscreenElement) {
+            return;
+          }
           let win = content.document.defaultView;
           let awaitFullScreenChange = ContentTaskUtils.waitForEvent(
             win,
@@ -1835,6 +1846,7 @@ add_task(async function test_select_text_link() {
       true,
       "context-openlinkintab",
       true,
+      ...(hasSplitViews ? ["context-openlinkinsplitview", true] : []),
       ...(hasContainers ? ["context-openlinkinusercontext-menu", true] : []),
       // We need a blank entry here because the containers submenu is
       // dynamically generated with no ids.
@@ -1908,6 +1920,7 @@ add_task(async function test_imagelink() {
     [
       "context-openlinkintab",
       true,
+      ...(hasSplitViews ? ["context-openlinkinsplitview", true] : []),
       ...(hasContainers ? ["context-openlinkinusercontext-menu", true] : []),
       // We need a blank entry here because the containers submenu is
       // dynamically generated with no ids.
@@ -2155,6 +2168,7 @@ add_task(async function test_svg_link() {
     [
       "context-openlinkintab",
       true,
+      ...(hasSplitViews ? ["context-openlinkinsplitview", true] : []),
       ...(hasContainers ? ["context-openlinkinusercontext-menu", true] : []),
       // We need a blank entry here because the containers submenu is
       // dynamically generated with no ids.
@@ -2194,6 +2208,7 @@ add_task(async function test_svg_link() {
     [
       "context-openlinkintab",
       true,
+      ...(hasSplitViews ? ["context-openlinkinsplitview", true] : []),
       ...(hasContainers ? ["context-openlinkinusercontext-menu", true] : []),
       // We need a blank entry here because the containers submenu is
       // dynamically generated with no ids.
@@ -2233,6 +2248,7 @@ add_task(async function test_svg_link() {
     [
       "context-openlinkintab",
       true,
+      ...(hasSplitViews ? ["context-openlinkinsplitview", true] : []),
       ...(hasContainers ? ["context-openlinkinusercontext-menu", true] : []),
       // We need a blank entry here because the containers submenu is
       // dynamically generated with no ids.
@@ -2274,6 +2290,7 @@ add_task(async function test_svg_relative_link() {
     [
       "context-openlinkintab",
       true,
+      ...(hasSplitViews ? ["context-openlinkinsplitview", true] : []),
       ...(hasContainers ? ["context-openlinkinusercontext-menu", true] : []),
       // We need a blank entry here because the containers submenu is
       // dynamically generated with no ids.
@@ -2313,6 +2330,7 @@ add_task(async function test_svg_relative_link() {
     [
       "context-openlinkintab",
       true,
+      ...(hasSplitViews ? ["context-openlinkinsplitview", true] : []),
       ...(hasContainers ? ["context-openlinkinusercontext-menu", true] : []),
       // We need a blank entry here because the containers submenu is
       // dynamically generated with no ids.
@@ -2352,6 +2370,7 @@ add_task(async function test_svg_relative_link() {
     [
       "context-openlinkintab",
       true,
+      ...(hasSplitViews ? ["context-openlinkinsplitview", true] : []),
       ...(hasContainers ? ["context-openlinkinusercontext-menu", true] : []),
       // We need a blank entry here because the containers submenu is
       // dynamically generated with no ids.
@@ -2438,6 +2457,7 @@ add_task(async function test_background_image() {
     [
       "context-openlinkintab",
       true,
+      ...(hasSplitViews ? ["context-openlinkinsplitview", true] : []),
       ...(hasContainers ? ["context-openlinkinusercontext-menu", true] : []),
       // We need a blank entry here because the containers submenu is
       // dynamically generated with no ids.
@@ -2552,6 +2572,7 @@ add_task(async function test_strip_on_share_on_secure_about_page() {
     [
       "context-openlinkintab",
       true,
+      ...(hasSplitViews ? ["context-openlinkinsplitview", true] : []),
       ...(hasContainers ? ["context-openlinkinusercontext-menu", true] : []),
       // We need a blank entry here because the containers submenu is
       // dynamically generated with no ids.

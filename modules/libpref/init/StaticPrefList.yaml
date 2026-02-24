@@ -2517,13 +2517,6 @@
 # Prefs starting with "docshell."
 #---------------------------------------------------------------------------
 
-# Used to indicate whether session history listeners should be notified
-# about content viewer eviction. Used only for testing.
-- name: docshell.shistory.testing.bfevict
-  type: bool
-  value: false
-  mirror: always
-
 # If true, pages with an opener won't be bfcached.
 - name: docshell.shistory.bfcache.require_no_opener
   type: bool
@@ -8323,7 +8316,7 @@
 - name: gfx.webrender.precise-linear-gradients
   type: bool
   rust: true
-  value: false
+  value: true
   mirror: once
 
 # Use a more precise method for sampling gradients when using SWGL.

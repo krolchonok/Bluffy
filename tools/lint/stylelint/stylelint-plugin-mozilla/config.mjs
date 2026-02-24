@@ -11,8 +11,8 @@ import { SYSTEM_COLORS } from "./referenceColors.mjs";
  * @typedef {object} PropertyTypeConfig
  * @property {string[]} allow Allowed keyword values (e.g., "auto", "none", "transparent")
  * @property {string[]} allowAlias Allowed keyword values that should only be used via local variables
- * @property {string[]} [tokenTypes] Token categories from tokens-table.mjs whose tokens are valid
- * @property {string[]} [aliasTokenTypes] Token categories from tokens-table.mjs whose tokens are valid only when used through local custom properties
+ * @property {string[]} [tokenTypes] Token categories from semantic-categories.mjs whose tokens are valid
+ * @property {string[]} [aliasTokenTypes] Token categories from semantic-categories.mjs whose tokens are valid only when used through local custom properties
  * @property {string[]} [allowFunctions] Allowed CSS function names (e.g., "url", "linear-gradient")
  * @property {boolean} [allowUnits] Whether values with CSS units (e.g., "10px", "50%") are allowed
  * @property {string[]} [allowedUnits] Specific unit types allowed (e.g., ["em", "ch", "%"]). If provided, only these units are allowed when allowUnits is true

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -17,6 +18,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.menu.store.SummarizationMenuState
 import org.mozilla.fenix.components.menu.store.TranslationInfo
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
@@ -38,8 +40,9 @@ internal fun MoreSettingsSubmenu(
     translationInfo: TranslationInfo,
     showShortcuts: Boolean,
     isAndroidAutomotiveAvailable: Boolean,
-    showSummarization: Boolean,
+    summarizationMenuState: SummarizationMenuState,
     onWebCompatReporterClick: () -> Unit,
+    onSummarizePageMenuExposed: () -> Unit,
     onSummarizePageClick: () -> Unit,
     onShortcutsMenuClick: () -> Unit,
     onAddToHomeScreenMenuClick: () -> Unit,
@@ -56,7 +59,8 @@ internal fun MoreSettingsSubmenu(
             isReaderViewActive = isReaderViewActive,
         )
         SummarizationMenuItem(
-            showSummarization = showSummarization,
+            summarizationMenuState = summarizationMenuState,
+            onSummarizePageMenuExposed = onSummarizePageMenuExposed,
             onSummarizePageClick = onSummarizePageClick,
         )
         WebCompatReporterMenuItem(
@@ -106,16 +110,45 @@ private fun TranslationSection(
     }
 }
 
+/**
+ * Summarization menu item.
+ *
+ * @param summarizationMenuState The state of the summarization menu.
+ * @param onSummarizePageMenuExposed A callback to be executed when the menu is exposed to the user.
+ * it will be used to know when to remove the highlight.
+ * @param onSummarizePageClick A callback to be executed when the menu item is clicked.
+ */
 @Composable
 private fun SummarizationMenuItem(
-    showSummarization: Boolean,
+    summarizationMenuState: SummarizationMenuState,
+    onSummarizePageMenuExposed: () -> Unit,
     onSummarizePageClick: () -> Unit,
 ) {
-    if (showSummarization) {
+    if (summarizationMenuState.visible) {
+        LaunchedEffect(Unit) {
+            if (summarizationMenuState.highlighted) {
+                onSummarizePageMenuExposed()
+            }
+        }
+        val state: MenuItemState = if (summarizationMenuState.enabled) {
+            MenuItemState.ENABLED
+        } else {
+            MenuItemState.DISABLED
+        }
         MenuItem(
             label = stringResource(id = R.string.browser_menu_summarize_page),
             beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_lightning_24),
+            isBeforeIconHighlighted = summarizationMenuState.highlighted,
             onClick = onSummarizePageClick,
+            state = state,
+            afterContent = {
+                if (summarizationMenuState.showNewFeatureBadge) {
+                    Badge(
+                        badgeText = stringResource(R.string.browser_menu_summarize_page_badge),
+                        state = state,
+                    )
+                }
+            },
         )
     }
 }
@@ -317,8 +350,13 @@ private fun MoreSettingsSubmenuPreview(
                     ),
                     showShortcuts = true,
                     isAndroidAutomotiveAvailable = false,
-                    showSummarization = true,
+                    summarizationMenuState = SummarizationMenuState.Default.copy(
+                        visible = true,
+                        highlighted = true,
+                        showNewFeatureBadge = true,
+                    ),
                     onWebCompatReporterClick = {},
+                    onSummarizePageMenuExposed = {},
                     onSummarizePageClick = {},
                     onShortcutsMenuClick = {},
                     onAddToHomeScreenMenuClick = {},
@@ -363,8 +401,9 @@ private fun MoreSettingsSubmenuDisabledOpenPreview(
                     ),
                     showShortcuts = true,
                     isAndroidAutomotiveAvailable = false,
-                    showSummarization = false,
+                    summarizationMenuState = SummarizationMenuState.Default,
                     onWebCompatReporterClick = {},
+                    onSummarizePageMenuExposed = {},
                     onSummarizePageClick = {},
                     onShortcutsMenuClick = {},
                     onAddToHomeScreenMenuClick = {},

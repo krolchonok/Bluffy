@@ -691,9 +691,7 @@ def run_test_harness(parser, options):
     if hasattr(options, "log"):
         log = options.log
     else:
-        log = mozlog.commandline.setup_logging(
-            "runjunit", options, {"tbpl": sys.stdout}
-        )
+        log = mozlog.commandline.setup_logging("runjunit", options, {"raw": sys.stdout})
     runner = JUnitTestRunner(log, options)
     result = -1
     try:

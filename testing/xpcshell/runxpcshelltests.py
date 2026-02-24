@@ -2464,7 +2464,7 @@ class XPCShellTests:
         # Start group for parallel test execution
         parallel_group_started = False
         if tests_queue:
-            self.log.group_start(name="parallel")
+            self.log.group_start(name="parallel", extra={"threads": self.threadCount})
             parallel_group_started = True
 
         while tests_queue or running_tests:
@@ -2638,7 +2638,7 @@ def main():
     parser = parser_desktop()
     options = parser.parse_args()
 
-    log = commandline.setup_logging("XPCShell", options, {"tbpl": sys.stdout})
+    log = commandline.setup_logging("XPCShell", options, {"raw": sys.stdout})
 
     if options.xpcshell is None and options.app_binary is None:
         log.error(

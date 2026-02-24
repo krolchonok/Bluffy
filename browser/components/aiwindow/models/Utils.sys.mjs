@@ -65,6 +65,7 @@ Services.prefs.addObserver(MODEL_PREF, modelPrefObserver);
 export const MODEL_FEATURES = Object.freeze({
   CHAT: "chat",
   TITLE_GENERATION: "title-generation",
+  CONVERSATION_STARTERS_SIDEBAR_SYSTEM: "conversation-starters-sidebar-system",
   CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER:
     "conversation-suggestions-sidebar-starter",
   CONVERSATION_SUGGESTIONS_FOLLOWUP: "conversation-suggestions-followup",
@@ -131,7 +132,8 @@ export const DEFAULT_MODEL = Object.freeze({
 export const FEATURE_MAJOR_VERSIONS = Object.freeze({
   [MODEL_FEATURES.CHAT]: 2,
   [MODEL_FEATURES.TITLE_GENERATION]: 1,
-  [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER]: 1,
+  [MODEL_FEATURES.CONVERSATION_STARTERS_SIDEBAR_SYSTEM]: 1,
+  [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER]: 2,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP]: 1,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_ASSISTANT_LIMITATIONS]: 1,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_INSIGHTS]: 1,
@@ -558,6 +560,11 @@ export class openAIEngine {
         const { titleGenerationPrompt } =
           await import("moz-src:///browser/components/aiwindow/models/prompts/TitleGenerationPrompts.sys.mjs");
         return titleGenerationPrompt;
+      }
+      case MODEL_FEATURES.CONVERSATION_STARTERS_SIDEBAR_SYSTEM: {
+        const { conversationStarterSystemPrompt } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/ConversationSuggestionsPrompts.sys.mjs");
+        return conversationStarterSystemPrompt;
       }
       case MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER: {
         const { conversationStarterPrompt } =

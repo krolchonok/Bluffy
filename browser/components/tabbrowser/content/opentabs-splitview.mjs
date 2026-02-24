@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { html } from "chrome://global/content/vendor/lit.all.mjs";
+import { html, when } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 
 const lazy = {};
@@ -20,6 +20,15 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * A collection of open, unpinned, unsplit tabs for the current by window.
  */
 class OpenTabsInSplitView extends MozLitElement {
+  static properties = {
+    searchQuery: { type: String },
+  };
+
+  static queries = {
+    sidebarTabList: "sidebar-tab-list",
+    searchTextbox: "moz-input-search",
+  };
+
   currentWindow = null;
   openTabsTarget = null;
 
@@ -36,11 +45,8 @@ class OpenTabsInSplitView extends MozLitElement {
       component: "splitview",
     });
     this.listenersAdded = false;
+    this.searchQuery = "";
   }
-
-  static queries = {
-    sidebarTabList: "sidebar-tab-list",
-  };
 
   connectedCallback() {
     super.connectedCallback();
@@ -107,7 +113,7 @@ class OpenTabsInSplitView extends MozLitElement {
     }
   }
 
-  get nonSplitViewUnpinnedTabs() {
+  get allAvailableTabs() {
     const { gBrowser } = this.getWindow();
     return gBrowser.visibleTabs.filter(tab => {
       return (
@@ -118,11 +124,33 @@ class OpenTabsInSplitView extends MozLitElement {
     });
   }
 
+  get nonSplitViewUnpinnedTabs() {
+    let tabs = this.allAvailableTabs;
+
+    if (this.searchQuery) {
+      const query = this.searchQuery.toLowerCase();
+      tabs = tabs.filter(tab => {
+        const title = tab.label?.toLowerCase() || "";
+        const url = tab.linkedBrowser?.currentURI?.spec?.toLowerCase() || "";
+        return title.includes(query) || url.includes(query);
+      });
+    }
+
+    return tabs;
+  }
+
+  onSearchQuery(e) {
+    this.searchQuery = e.detail.query;
+  }
+
   render() {
     const { gBrowser } = this.getWindow();
-    let tabs = this.nonSplitViewUnpinnedTabs;
+    const allTabs = this.allAvailableTabs;
+    const filteredTabs = this.nonSplitViewUnpinnedTabs;
+    const isSearching = !!this.searchQuery;
+
     if (
-      !tabs.length ||
+      !allTabs.length ||
       (gBrowser.selectedTab.linkedBrowser.currentURI.spec ===
         BROWSER_OPEN_TABS_URL &&
         !this.currentSplitView)
@@ -140,14 +168,49 @@ class OpenTabsInSplitView extends MozLitElement {
         rel="stylesheet"
         href="chrome://browser/content/firefoxview/firefoxview.css"
       />
-      <moz-card>
-        <sidebar-tab-list
-          maxTabsLength="-1"
-          .tabItems=${this.controller.getTabListItems(tabs)}
-          @fxview-tab-list-primary-action=${this.onTabListRowClick}
-        >
-        </sidebar-tab-list>
-      </moz-card>
+      <div class="sticky-header">
+        <h3 data-l10n-id="opentabs-page-title"></h3>
+        <moz-input-search
+          data-l10n-id="opentabs-search-text-box"
+          data-l10n-attrs="placeholder"
+          @MozInputSearch:search=${this.onSearchQuery}
+        ></moz-input-search>
+      </div>
+      ${isSearching
+        ? html`<moz-card
+            data-l10n-id="opentabs-search-results-header"
+            data-l10n-attrs="heading"
+            data-l10n-args=${JSON.stringify({ query: this.searchQuery })}
+          >
+            ${when(
+              filteredTabs.length,
+              () => html`
+                <sidebar-tab-list
+                  maxTabsLength="-1"
+                  .tabItems=${this.controller.getTabListItems(filteredTabs)}
+                  @fxview-tab-list-primary-action=${this.onTabListRowClick}
+                >
+                </sidebar-tab-list>
+              `,
+              () => html`
+                <div
+                  class="empty-search-message"
+                  data-l10n-id="firefoxview-search-results-empty"
+                  data-l10n-args=${JSON.stringify({
+                    query: this.searchQuery,
+                  })}
+                ></div>
+              `
+            )}
+          </moz-card>`
+        : html`<moz-card>
+            <sidebar-tab-list
+              maxTabsLength="-1"
+              .tabItems=${this.controller.getTabListItems(filteredTabs)}
+              @fxview-tab-list-primary-action=${this.onTabListRowClick}
+            >
+            </sidebar-tab-list>
+          </moz-card>`}
     `;
   }
 }

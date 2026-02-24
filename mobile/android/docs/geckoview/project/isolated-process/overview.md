@@ -33,6 +33,9 @@ Some links to external documentation:
 [`ac_add_options --enable-isolated-process`](https://searchfox.org/firefox-main/rev/f37efeb9fd346125bfc98d132ae0dea48a1e2584/mobile/android/moz.configure#62)
 (Should apply to junit, supported mochitests, xpcshell, wpt, and reftests.)
 
+#### GeckoView Example:
+[Hardcode](https://searchfox.org/firefox-main/rev/5c6d4ae3f944972de57bd80adb49fcf18fa5f3bb/mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntimeSettings.java#869) `mIsolatedProcess` to true in `GeckoRuntimeSettings.java`.
+
 #### CI:
 Currently in CI as a build type of [debug-isolated-process](https://searchfox.org/firefox-main/rev/f37efeb9fd346125bfc98d132ae0dea48a1e2584/mobile/android/config/mozconfigs/android-x86_64/debug-isolated-process). It is in the process of transitioning to a variant of [geckoview-isolated-process.](https://phabricator.services.mozilla.com/D265099)
 
@@ -92,6 +95,9 @@ App zygote preloading requires Android 10 (level 29\) or higher.
 #### GeckoView Test Runner Locally:
 [`ac_add_options --enable-isolated-zygote-process`](https://searchfox.org/firefox-main/rev/f37efeb9fd346125bfc98d132ae0dea48a1e2584/mobile/android/moz.configure#43)
 (Should apply to junit, supported mochitests, xpcshell, wpt, and reftests.)
+
+#### GeckoView Example:
+[Hardcode](https://searchfox.org/firefox-main/rev/0fce12de99c5e7d74536d8f93cf9778ce6199a1f/mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntimeSettings.java#870) `mAppZygoteProcess` to true in `GeckoRuntimeSettings.java`.
 
 #### CI:
 [geckoview-zygote](https://searchfox.org/firefox-main/rev/f37efeb9fd346125bfc98d132ae0dea48a1e2584/taskcluster/test_configs/variants.yml#232) variant

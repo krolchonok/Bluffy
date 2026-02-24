@@ -437,6 +437,8 @@ static bool RemoveProblematicMenuItems(NSMenu* aMenu) {
   NSMutableArray* itemsToRemove =
       [NSMutableArray arrayWithCapacity:problematicMenuItemCount];
 
+  bool didRemoveItems = false;
+
   for (NSInteger i = 0; i < aMenu.numberOfItems; i++) {
     NSMenuItem* item = [aMenu itemAtIndex:i];
 
@@ -446,12 +448,11 @@ static bool RemoveProblematicMenuItems(NSMenu* aMenu) {
       [itemsToRemove addObject:@(i)];
     }
 
-    if (item.hasSubmenu && RemoveProblematicMenuItems(item.submenu)) {
-      return true;
+    if (item.hasSubmenu) {
+      didRemoveItems |= RemoveProblematicMenuItems(item.submenu);
     }
   }
 
-  bool didRemoveItems = false;
   for (NSNumber* index in [itemsToRemove reverseObjectEnumerator]) {
     [aMenu removeItemAtIndex:index.integerValue];
     didRemoveItems = true;

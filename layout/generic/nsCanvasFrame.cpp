@@ -111,9 +111,13 @@ void nsCanvasFrame::Destroy(DestroyContext& aContext) {
 
 void nsCanvasFrame::SetInitialChildList(ChildListID aListID,
                                         nsFrameList&& aChildList) {
+  // In printing, canvas frame's continuations may have multiple children in the
+  // principal child list when nsCSSFrameConstructor::ReplicateFixedFrames
+  // creates placeholders for fixed-pos elements.
   NS_ASSERTION(aListID != FrameChildListID::Principal || aChildList.IsEmpty() ||
-                   aChildList.OnlyChild(),
-               "Primary child list can have at most one frame in it");
+                   aChildList.OnlyChild() || GetPrevInFlow(),
+               "Principal child list of first-in-flow canvas frame can have at "
+               "most one frame in it!");
   nsContainerFrame::SetInitialChildList(aListID, std::move(aChildList));
 }
 
