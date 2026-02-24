@@ -1,0 +1,46 @@
+name: Sync upstream
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync fork with upstream
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+
+            const { data: repository } = await github.rest.repos.get({ owner, repo });
+
+            if (!repository.fork || !repository.parent) {
+              core.info('Repository is not a fork. Skipping upstream sync.');
+              return;
+            }
+
+            const branch = repository.default_branch;
+
+            try {
+              const response = await github.request('POST /repos/{owner}/{repo}/merge-upstream', {
+                owner,
+                repo,
+                branch,
+              });
+
+              core.info(`Upstream sync result: ${response.data.message}`);
+            } catch (error) {
+              if (error.status === 409) {
+                core.warning('Upstream sync resulted in conflicts. Manual merge required.');
+                return;
+              }
+
+              throw error;
+            }
