@@ -4,11 +4,16 @@
 
 package mozilla.components.feature.prompts.emailmask
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -61,41 +67,53 @@ fun EmailMaskPromptBar(
     onMaskEmailClicked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var isDismissed by remember { mutableStateOf(false) }
-    val canShowCfr = !isLandscapeNotTablet()
+    val isImeVisible = rememberImeIsVisible()
 
-    Surface(color = Color.Transparent) {
-        Column {
-            if (shouldShowCfr && canShowCfr && !isDismissed) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+    AnimatedVisibility(
+        visible = isImeVisible,
+        enter = slideInVertically(initialOffsetY = { it }),
+        exit = slideOutVertically(targetOffsetY = { it }),
+    ) {
+        var isDismissed by remember { mutableStateOf(false) }
+        val canShowCfr = !isLandscapeNotTablet()
+
+        Surface(color = Color.Transparent) {
+            Column {
+                AnimatedVisibility(
+                    visible = shouldShowCfr && canShowCfr && !isDismissed,
+                    enter = slideInVertically(initialOffsetY = { it }),
+                    exit = slideOutVertically(targetOffsetY = { it }),
                 ) {
-                    Cfr(
-                        onDismiss = {
-                            isDismissed = true
-                            onCfrDismiss()
-                        },
-                        cfrText = cfrText,
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Cfr(
+                            onDismiss = {
+                                isDismissed = true
+                                onCfrDismiss()
+                            },
+                            cfrText = cfrText,
+                        )
+                    }
                 }
-            }
 
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-            ) {
-                Row(
-                    modifier = modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
                 ) {
-                    MaskEmailChip(
-                        onClick = {
-                            isDismissed = true
-                            onCfrDismiss()
-                            onMaskEmailClicked()
-                        },
-                    )
+                    Row(
+                        modifier = modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                    ) {
+                        MaskEmailChip(
+                            onClick = {
+                                isDismissed = true
+                                onCfrDismiss()
+                                onMaskEmailClicked()
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -182,4 +200,11 @@ private fun EmailMaskPromptBarPreview() {
             onMaskEmailClicked = {},
         )
     }
+}
+
+@Composable
+private fun rememberImeIsVisible(): Boolean {
+    val density = LocalDensity.current
+    val imeBottom = WindowInsets.ime.getBottom(density)
+    return imeBottom > 0
 }

@@ -51,6 +51,9 @@ def pytest_generate_tests(metafunc):
     if "actual_platform_required" in marks:
         otherargs["actual_platform_required"] = True
 
+    if "use_big_minimum_font_size" in marks:
+        otherargs["use_big_minimum_font_size"] = True
+
     if "no_overlay_scrollbars" in marks:
         otherargs["no_overlay_scrollbars"] = True
 
@@ -100,6 +103,7 @@ async def test_config(request, driver):
         ),
         "need_visible_scrollbars": params.get("need_visible_scrollbars", False),
         "no_overlay_scrollbars": params.get("no_overlay_scrollbars", False),
+        "use_big_minimum_font_size": params.get("use_big_minimum_font_size", False),
         "use_interventions": use_interventions,
         "use_pbm": params.get("with_private_browsing", False),
         "use_strict_etp": params.get("with_strict_etp", False),

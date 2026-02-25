@@ -1164,4 +1164,11 @@ abstract class EngineSession(
      * @param onResult callback invoked if the engine API returned a valid response.
      */
     abstract fun processBackPressed(onResult: (Boolean) -> Unit)
+
+    /**
+     * Asynchronously determine if the page loaded in this session uses a QWAC.
+     *
+     * @param onResult Callback to call with the QWAC or null if none.
+     */
+    open fun qwacStatus(onResult: (X509Certificate?) -> Unit) = Unit
 }

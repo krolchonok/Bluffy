@@ -6,12 +6,14 @@
 
 #include "RealTimeRequestSimulator.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/glean/UrlClassifierMetrics.h"
 #include "nsIObserverService.h"
+#include "nsString.h"
 #include "nsThreadUtils.h"
 #include "nsUrlClassifierDBService.h"
 #include "LookupCache.h"
@@ -22,6 +24,14 @@ namespace safebrowsing {
 
 StaticRefPtr<RealTimeRequestSimulator> RealTimeRequestSimulator::sInstance;
 
+static constexpr char kContentBlockingCategoryPrefName[] =
+    "browser.contentblocking.category";
+StaticAutoPtr<nsCString> sContentBlockingCategory;
+
+static constexpr char kRealTimeDebugPrefName[] =
+    "browser.safebrowsing.realTime.debug";
+static Maybe<bool> sRealTimeDebugEnabled;
+
 /* static */
 RealTimeRequestSimulator* RealTimeRequestSimulator::GetInstance() {
   MOZ_ASSERT(NS_IsMainThread());
@@ -31,6 +41,55 @@ RealTimeRequestSimulator* RealTimeRequestSimulator::GetInstance() {
     ClearOnShutdown(&sInstance);
   }
   return sInstance.get();
+}
+
+void ContentBlockingCategoryPrefChangeCallback(const char* aPrefName, void*) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!strcmp(aPrefName, kContentBlockingCategoryPrefName));
+  MOZ_ASSERT(sContentBlockingCategory);
+
+  Preferences::GetCString(kContentBlockingCategoryPrefName,
+                          *sContentBlockingCategory);
+}
+
+/* static */
+const nsCString& RealTimeRequestSimulator::ContentBlockingCategory() {
+  if (!sContentBlockingCategory) {
+    sContentBlockingCategory = new nsCString();
+
+    Preferences::RegisterCallbackAndCall(
+        ContentBlockingCategoryPrefChangeCallback,
+        kContentBlockingCategoryPrefName);
+
+    RunOnShutdown([]() {
+      Preferences::UnregisterCallback(ContentBlockingCategoryPrefChangeCallback,
+                                      kContentBlockingCategoryPrefName);
+      sContentBlockingCategory = nullptr;
+    });
+  }
+  return *sContentBlockingCategory;
+}
+
+void RealTimeDebugPrefChangedCallback(const char* aPrefName, void*) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(!strcmp(aPrefName, kRealTimeDebugPrefName));
+
+  sRealTimeDebugEnabled =
+      Some(Preferences::GetBool(kRealTimeDebugPrefName, false));
+}
+
+/* static */
+bool RealTimeRequestSimulator::RealTimeDebugEnabled() {
+  if (sRealTimeDebugEnabled.isNothing()) {
+    Preferences::RegisterCallbackAndCall(RealTimeDebugPrefChangedCallback,
+                                         kRealTimeDebugPrefName);
+
+    RunOnShutdown([]() {
+      Preferences::UnregisterCallback(RealTimeDebugPrefChangedCallback,
+                                      kRealTimeDebugPrefName);
+    });
+  }
+  return sRealTimeDebugEnabled.valueOr(false);
 }
 
 void RealTimeRequestSimulator::ComputeFullHashesFromURL(
@@ -220,11 +279,8 @@ void RealTimeRequestSimulator::NotifyResult(bool aWouldSendRequest,
       "RealTimeRequestSimulator::NotifyResult",
       [aWouldSendRequest, aRequestBytes, aResponseBytes, aIsPrivate]() {
         if (aWouldSendRequest) {
-          nsAutoCString etpCategory;
-          nsresult rv = Preferences::GetCString(
-              "browser.contentblocking.category", etpCategory);
-
-          if (NS_SUCCEEDED(rv)) {
+          const nsCString& etpCategory = ContentBlockingCategory();
+          if (!etpCategory.IsEmpty()) {
             nsAutoCString label;
             if (etpCategory.EqualsLiteral("standard") ||
                 etpCategory.EqualsLiteral("strict") ||
@@ -245,8 +301,7 @@ void RealTimeRequestSimulator::NotifyResult(bool aWouldSendRequest,
           }
         }
 
-        if (Preferences::GetBool("browser.safebrowsing.realTime.debug",
-                                 false)) {
+        if (RealTimeDebugEnabled()) {
           nsAutoCString data;
           data.AppendInt(aWouldSendRequest ? 1 : 0);
           data.Append(',');

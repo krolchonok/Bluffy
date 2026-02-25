@@ -839,16 +839,8 @@ add_task(async function test_open_link_in_split_view_from_container() {
 
   await splitViewCreated;
   info("Split view created");
-  let openTabsTab = await TestUtils.waitForCondition(
-    () =>
-      gBrowser.tabs.find(
-        tab => tab.linkedBrowser?.currentURI?.spec === "about:opentabs"
-      ),
-    "about:opentabs tab should be created"
-  );
-  ok(openTabsTab, "about:opentabs tab should be created");
 
-  let linkTab = openTabsTab.splitview?.tabs.find(tab => tab !== openTabsTab);
+  let linkTab = containerTab.splitview?.tabs.find(tab => tab !== containerTab);
   ok(linkTab, "Link tab should be in the split view");
 
   is(
@@ -856,25 +848,16 @@ add_task(async function test_open_link_in_split_view_from_container() {
     USER_CONTEXT_ID,
     "Link tab should be in the same container as the original tab"
   );
-  is(
-    openTabsTab.userContextId,
-    USER_CONTEXT_ID,
-    "about:opentabs tab should be in the same container as the original tab"
-  );
 
   ok(linkTab.splitview, "Link tab should be in a split view");
-  ok(openTabsTab.splitview, "about:opentabs tab should be in a split view");
+  ok(containerTab.splitview, "Container tab should be in a split view");
   is(
     linkTab.splitview,
-    openTabsTab.splitview,
+    containerTab.splitview,
     "Both tabs should be in the same split view"
   );
 
-  is(
-    gBrowser.selectedTab,
-    openTabsTab,
-    "about:opentabs tab should be selected"
-  );
+  is(gBrowser.selectedTab, linkTab, "Link tab should be selected");
 
   linkTab.splitview.close();
   while (gBrowser.tabs.length > 1) {

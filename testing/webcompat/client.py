@@ -13,7 +13,7 @@ from urllib.parse import quote
 
 import pytest
 import webdriver
-from PIL import Image
+from PIL import Image, ImageChops
 from webdriver.bidi.error import InvalidArgumentException, NoSuchFrameException
 from webdriver.bidi.modules.script import ContextTarget
 
@@ -1608,11 +1608,17 @@ class Client:
         except webdriver.error.StaleElementReferenceException:
             return False
 
-    def is_one_solid_color(self, element, max_fuzz=8):
+    def diff_images(self, img1b64, img2b64):
+        img1 = Image.open(BytesIO(b64decode(img1b64))).convert("RGB")
+        img2 = Image.open(BytesIO(b64decode(img2b64))).convert("RGB")
+        return ImageChops.difference(img1, img2)
+
+    def is_one_solid_color(self, image, max_fuzz=8):
         # max_fuzz is needed as screenshots can have slight color bleeding/fringing
-        shotb64 = element.screenshot()
-        shot = Image.open(BytesIO(b64decode(shotb64))).convert("RGB")
-        for min, max in shot.getextrema():
+        if isinstance(image, webdriver.client.WebElement):
+            shotb64 = image.screenshot()
+            image = Image.open(BytesIO(b64decode(shotb64))).convert("RGB")
+        for min, max in image.getextrema():
             if max - min > max_fuzz:
                 return False
         return True

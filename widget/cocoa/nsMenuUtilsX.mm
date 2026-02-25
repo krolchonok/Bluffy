@@ -35,24 +35,22 @@ void nsMenuUtilsX::DispatchCommandTo(nsIContent* aTargetContent,
   MOZ_ASSERT(aTargetContent, "null ptr");
 
   dom::Document* doc = aTargetContent->OwnerDoc();
-  if (doc) {
-    RefPtr<dom::XULCommandEvent> event =
-        new dom::XULCommandEvent(doc, doc->GetPresContext(), nullptr);
+  RefPtr<dom::XULCommandEvent> event =
+      new dom::XULCommandEvent(doc, doc->GetPresContext(), nullptr);
 
-    bool ctrlKey = aModifierFlags & NSEventModifierFlagControl;
-    bool altKey = aModifierFlags & NSEventModifierFlagOption;
-    bool shiftKey = aModifierFlags & NSEventModifierFlagShift;
-    bool cmdKey = aModifierFlags & NSEventModifierFlagCommand;
+  bool ctrlKey = aModifierFlags & NSEventModifierFlagControl;
+  bool altKey = aModifierFlags & NSEventModifierFlagOption;
+  bool shiftKey = aModifierFlags & NSEventModifierFlagShift;
+  bool cmdKey = aModifierFlags & NSEventModifierFlagCommand;
 
-    IgnoredErrorResult rv;
-    event->InitCommandEvent(u"command"_ns, true, true,
-                            nsGlobalWindowInner::Cast(doc->GetInnerWindow()), 0,
-                            ctrlKey, altKey, shiftKey, cmdKey, aButton, nullptr,
-                            0, rv);
-    if (!rv.Failed()) {
-      event->SetTrusted(true);
-      aTargetContent->DispatchEvent(*event);
-    }
+  IgnoredErrorResult rv;
+  event->InitCommandEvent(u"command"_ns, true, true,
+                          nsGlobalWindowInner::Cast(doc->GetInnerWindow()), 0,
+                          ctrlKey, altKey, shiftKey, cmdKey, aButton, nullptr,
+                          0, rv);
+  if (!rv.Failed()) {
+    event->SetTrusted(true);
+    aTargetContent->DispatchEvent(*event);
   }
 }
 
@@ -86,7 +84,7 @@ uint8_t nsMenuUtilsX::GeckoModifiersForNodeAttribute(
     } else if ((strcmp(token, "accel") == 0) || (strcmp(token, "meta") == 0)) {
       modifiers |= knsMenuItemCommandModifier;
     }
-    token = strtok_r(newStr, ", \t", &newStr);
+    token = strtok_r(nullptr, ", \t", &newStr);
   }
   free(str);
 
@@ -227,7 +225,7 @@ NSMenuItem* nsMenuUtilsX::NativeMenuItemWithLocation(NSMenu* aRootMenu,
       targetIndex++;
     }
     int itemCount = currentSubmenu.numberOfItems;
-    if (targetIndex >= itemCount) {
+    if (targetIndex < 0 || targetIndex >= itemCount) {
       return nil;
     }
     NSMenuItem* menuItem = [currentSubmenu itemAtIndex:targetIndex];
@@ -250,6 +248,10 @@ NSAttributedString* nsMenuUtilsX::AttributedStringForContent(
     nsIContent* aContent, NSString* aLabel) {
   // Get the computed font size for the menu item and apply it to
   // NSAttributedString.
+
+  if (!aContent->IsElement()) {
+    return nil;
+  }
 
   RefPtr<const ComputedStyle> style =
       nsComputedDOMStyle::GetComputedStyleNoFlush(aContent->AsElement());

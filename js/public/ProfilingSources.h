@@ -190,8 +190,11 @@ using ProfilerJSSources =
 
 /*
  * Main API for getting the profiled JS sources.
+ * If gatherSourceText is false, only metadata (filename) will be gathered, not
+ * the actual source text.
  */
-JS_PUBLIC_API ProfilerJSSources GetProfilerScriptSources(JSRuntime* rt);
+JS_PUBLIC_API ProfilerJSSources GetProfilerScriptSources(JSRuntime* rt,
+                                                         bool gatherSourceText);
 
 /**
  * Retrieve the JS sources that are only retrievable from the parent process.

@@ -1160,6 +1160,9 @@ bool DebugAPI::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
     if (success && completion.get().suspending()) {
       Debugger::suspendGeneratorDebuggerFrames(cx, frame);
     } else {
+      if (frame.isWasmDebugFrame()) {
+        DebugEnvironments::onPopWasm(cx, frame);
+      }
       Debugger::terminateDebuggerFrames(cx, frame);
     }
   });
@@ -4639,10 +4642,14 @@ bool Debugger::CallData::setCollectCoverageInfo() {
     return false;
   }
 
-  dbg->collectCoverageInfo = ToBoolean(args[0]);
+  bool oldFlag = dbg->collectCoverageInfo;
+  bool newFlag = ToBoolean(args[0]);
+  dbg->collectCoverageInfo = newFlag;
 
   IsObserving observing = dbg->collectCoverageInfo ? Observing : NotObserving;
   if (!dbg->updateObservesCoverageOnDebuggees(cx, observing)) {
+    // Revert code coverage setting if we fail to update the observing flag.
+    dbg->collectCoverageInfo = oldFlag;
     return false;
   }
 

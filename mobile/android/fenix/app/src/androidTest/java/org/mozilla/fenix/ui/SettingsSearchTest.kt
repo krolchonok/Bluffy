@@ -289,7 +289,7 @@ class SettingsSearchTest : TestSetup() {
             changeDefaultSearchEngine(customSearchEngine.title)
             pressBack()
             openManageShortcutsMenu()
-            verifyEngineListContains(customSearchEngine.title, shouldExist = true)
+            verifyEngineListContains(customSearchEngine.title, shouldExist = false)
             pressBack()
         }.goBack {
             verifySettingsOptionSummary("Search", customSearchEngine.title)
@@ -632,12 +632,11 @@ class SettingsSearchTest : TestSetup() {
             verifyEnginesShortcutsListHeader()
             verifyManageShortcutsList(composeTestRule)
             verifySearchShortcutChecked(
-                EngineShortcut(name = "Google", checkboxIndex = 1, isChecked = true),
-                EngineShortcut(name = "Bing", checkboxIndex = 4, isChecked = true),
-                EngineShortcut(name = "DuckDuckGo", checkboxIndex = 7, isChecked = true),
-                EngineShortcut(name = "Wikipedia (en)", checkboxIndex = 10, isChecked = true),
-                EngineShortcut(name = "Reddit", checkboxIndex = 13, isChecked = false),
-                EngineShortcut(name = "YouTube", checkboxIndex = 16, isChecked = false),
+                EngineShortcut(name = "Bing", checkboxIndex = 1, isChecked = true),
+                EngineShortcut(name = "DuckDuckGo", checkboxIndex = 4, isChecked = true),
+                EngineShortcut(name = "Wikipedia (en)", checkboxIndex = 7, isChecked = true),
+                EngineShortcut(name = "Reddit", checkboxIndex = 10, isChecked = false),
+                EngineShortcut(name = "YouTube", checkboxIndex = 13, isChecked = false),
             )
         }
     }
@@ -651,14 +650,12 @@ class SettingsSearchTest : TestSetup() {
         }.clickSettingsButton {
         }.openSearchSubMenu {
             openManageShortcutsMenu()
-            selectSearchShortcut(EngineShortcut(name = "Google", checkboxIndex = 1))
-            selectSearchShortcut(EngineShortcut(name = "Reddit", checkboxIndex = 13))
-            selectSearchShortcut(EngineShortcut(name = "YouTube", checkboxIndex = 16))
+            selectSearchShortcut(EngineShortcut(name = "Reddit", checkboxIndex = 10))
+            selectSearchShortcut(EngineShortcut(name = "YouTube", checkboxIndex = 13))
             exitMenu()
         }
         searchScreen(composeTestRule) {
             clickSearchSelectorButton()
-            verifySearchShortcutList("Google", isSearchEngineDisplayed = false)
             verifySearchShortcutList("YouTube", isSearchEngineDisplayed = true)
             verifySearchShortcutList("Reddit", isSearchEngineDisplayed = true)
         }

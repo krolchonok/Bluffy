@@ -700,10 +700,6 @@ with Files("tests/paint-timing/**"):
     BUG_COMPONENT = ("Core", "DOM: Performance APIs")
 
 # No tests in here
-with Files("tests/payment-handler/**"):
-    BUG_COMPONENT = ("Core", "DOM: Web Payments")
-
-# No tests in here
 with Files("tests/payment-method-basic-card/**"):
     BUG_COMPONENT = ("Core", "DOM: Web Payments")
 

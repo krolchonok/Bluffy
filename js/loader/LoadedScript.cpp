@@ -9,7 +9,7 @@
 #include "mozilla/AlreadyAddRefed.h"  // already_AddRefed
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/RefPtr.h"     // RefPtr, mozilla::MakeRefPtr
-#include "mozilla/UniquePtr.h"  // mozilla::UniquePtr
+#include "mozilla/UniquePtr.h"  // mozilla::UniquePtr, mozilla::MakeUnique
 
 #include "mozilla/dom/ScriptLoadContext.h"  // ScriptLoadContext
 #include "jsfriendapi.h"
@@ -90,6 +90,11 @@ LoadedScript::LoadedScript(const LoadedScript& aOther)
   MOZ_DIAGNOSTIC_ASSERT(mStencil);
   MOZ_ASSERT(!mScriptData);
   MOZ_ASSERT(mSRIAndSerializedStencil.empty());
+
+  if (aOther.mSRIMetadata) {
+    mSRIMetadata =
+        mozilla::MakeUnique<mozilla::dom::SRIMetadata>(*aOther.mSRIMetadata);
+  }
 }
 
 LoadedScript::~LoadedScript() {
@@ -136,6 +141,10 @@ size_t LoadedScript::SizeOfIncludingThis(
 
   if (mFetchOptions) {
     bytes += mFetchOptions->SizeOfIncludingThis(aMallocSizeOf);
+  }
+
+  if (mSRIMetadata) {
+    bytes += mSRIMetadata->SizeOfIncludingThis(aMallocSizeOf);
   }
 
   if (IsTextSource()) {
@@ -244,6 +253,28 @@ void LoadedScript::SetBaseURLFromChannelAndOriginalURI(nsIChannel* aChannel,
   } else {
     aChannel->GetURI(getter_AddRefs(mBaseURL));
   }
+}
+
+void LoadedScript::SetSRIMetadata(
+    const mozilla::dom::SRIMetadata& aSRIMetadata) {
+  if (aSRIMetadata.IsEmpty()) {
+    return;
+  }
+
+  mSRIMetadata = mozilla::MakeUnique<mozilla::dom::SRIMetadata>(aSRIMetadata);
+}
+
+bool LoadedScript::IsSRIMetadataReusableBy(
+    const mozilla::dom::SRIMetadata& aSRIMetadata) {
+  if (aSRIMetadata.IsEmpty()) {
+    return true;
+  }
+
+  if (!mSRIMetadata) {
+    return false;
+  }
+
+  return aSRIMetadata.CanTrustBeDelegatedTo(*mSRIMetadata);
 }
 
 inline void CheckModuleScriptPrivate(LoadedScript* script,

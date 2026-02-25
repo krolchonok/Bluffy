@@ -664,7 +664,7 @@ cbindgen-types = [
 
 mapped-generic-types = [
     { generic = true, gecko = "mozilla::RustCell", servo = "::std::cell::Cell" },
-    { generic = false, gecko = "ServoNodeData", servo = "atomic_refcell::AtomicRefCell<crate::data::ElementData>" },
+    { generic = false, gecko = "ServoNodeData", servo = "crate::data::ElementDataWrapper" },
     { generic = false, gecko = "mozilla::ServoWritingMode", servo = "crate::logical_geometry::WritingMode" },
     { generic = false, gecko = "mozilla::ServoComputedCustomProperties", servo = "crate::custom_properties::ComputedCustomProperties" },
     { generic = false, gecko = "mozilla::ServoUsedAttributes", servo = "crate::dom::AttributeReferences" },

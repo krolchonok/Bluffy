@@ -1233,6 +1233,10 @@ class LifoAllocPolicy : public AllocPolicyBase {
   [[nodiscard]] bool checkSimulatedOOM() const {
     return fb == Infallible || !js::oom::ShouldFailWithOOM();
   }
+
+  bool operator==(const LifoAllocPolicy<fb>& other) const {
+    return &alloc_ == &other.alloc_;
+  }
 };
 
 }  // namespace js

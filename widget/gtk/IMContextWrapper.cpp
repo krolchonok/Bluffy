@@ -1110,6 +1110,7 @@ void IMContextWrapper::OnFocusChangeInGecko(bool aFocus) {
   // We shouldn't carry over the removed string to another editor.
   mSelectedStringRemovedByComposition.Truncate();
   mContentSelection.reset();
+  mPendingSetSurrounding = false;
 
   if (aFocus) {
     if (mSetInputPurposeAndInputHints) {
@@ -1606,6 +1607,20 @@ void IMContextWrapper::OnSelectionChange(
       ResetIME();
     }
   }
+
+  if (mPendingSetSurrounding) {
+    MOZ_LOG(gIMELog, LogLevel::Debug,
+            ("0x%p   OnSelectionChange(), retrying "
+             "OnRetrieveSurroundingNative()",
+             this));
+    if (GtkIMContext* currentContext = GetCurrentContext()) {
+      AutoRestore<bool> restore(mRetrieveSurroundingSignalReceived);
+      OnRetrieveSurroundingNative(currentContext);
+    }
+    // Even if OnRetrieveSurroundingNative is failed, don't retry it due to
+    // unexpected.
+    mPendingSetSurrounding = false;
+  }
 }
 
 /* static */
@@ -1801,6 +1816,8 @@ gboolean IMContextWrapper::OnRetrieveSurroundingNative(GtkIMContext* aContext) {
            "current context=0x%p",
            this, aContext, GetCurrentContext()));
 
+  mPendingSetSurrounding = false;
+
   // See bug 472635, we should do nothing if IM context doesn't match.
   if (GetCurrentContext() != aContext) {
     MOZ_LOG(gIMELog, LogLevel::Error,
@@ -1813,6 +1830,10 @@ gboolean IMContextWrapper::OnRetrieveSurroundingNative(GtkIMContext* aContext) {
   nsAutoString uniStr;
   uint32_t cursorPos;
   if (NS_FAILED(GetCurrentParagraph(uniStr, cursorPos))) {
+    // In this situation, content process doesn't notify parent of text changes,
+    // so selection cache in parent is still old data. After receiving the
+    // notification from child, we should retry to set surrounding text.
+    mPendingSetSurrounding = true;
     return FALSE;
   }
 

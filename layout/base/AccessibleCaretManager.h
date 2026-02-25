@@ -18,6 +18,7 @@
 #include "nsCOMPtr.h"
 #include "nsCoord.h"
 #include "nsIFrame.h"
+#include "nsIHapticFeedback.h"
 #include "nsISelectionListener.h"
 
 class nsFrameSelection;
@@ -192,8 +193,9 @@ class AccessibleCaretManager {
   // A helper function to update mShouldDisableApz.
   void UpdateShouldDisableApz();
 
-  // Provide haptic / touch feedback, primarily for select on longpress.
-  void ProvideHapticFeedback();
+  // Provide haptic / touch feedback, primarily for selection on longpress and
+  // caret dragging.
+  void ProvideHapticFeedback(nsIHapticFeedback::HapticFeedbackType aEffect);
 
   // Get the nearest enclosing focusable frame of aFrame.
   // @return focusable frame if there is any; nullptr otherwise.

@@ -26,6 +26,9 @@ class RealTimeRequestSimulator final {
   // A test-only function to clean the simulated local cache.
   void CleanCache();
 
+  static const nsCString& ContentBlockingCategory();
+  static bool RealTimeDebugEnabled();
+
  private:
   RealTimeRequestSimulator() = default;
   ~RealTimeRequestSimulator() = default;

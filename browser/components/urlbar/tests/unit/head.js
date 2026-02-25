@@ -976,7 +976,8 @@ function makeGlobalActionsResult({
  *   The value that would be filled if the autofill result was confirmed.
  *   Has no effect if `autofilled` is not specified.
  * @param {object} [options.conditionalPayloadProperties]
- *   An object mapping payload property names to objects { optional, ignore }.
+ *   An object mapping payload property names to objects
+ *   { optional, ignore, custom }.
  *   See the code below.
  * @param {Array} options.matches
  *   An array of UrlbarResults.
@@ -1145,6 +1146,11 @@ async function check_results({
           condition?.ignore ||
           (condition?.optional && !expected.hasOwnProperty(key))
         ) {
+          continue;
+        }
+
+        if (condition?.custom?.(i, actual)) {
+          // The custom assertion consumed this assertion.
           continue;
         }
 

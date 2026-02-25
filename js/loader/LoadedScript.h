@@ -19,7 +19,9 @@
 #include "mozilla/Utf8.h"  // mozilla::Utf8Unit
 #include "mozilla/Variant.h"
 #include "mozilla/Vector.h"
+#include "mozilla/UniquePtr.h"  // mozilla::UniquePtr
 
+#include "mozilla/dom/SRIMetadata.h"  // mozilla::dom::SRIMetadata
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsICacheInfoChannel.h"  // nsICacheInfoChannel
@@ -375,6 +377,12 @@ class LoadedScript : public nsIMemoryReporter {
     }
   }
 
+  void SetSRIMetadata(const mozilla::dom::SRIMetadata& aSRIMetadata);
+
+  // Returns true if this script has compatible SRI metadata as the provided
+  // one.
+  bool IsSRIMetadataReusableBy(const mozilla::dom::SRIMetadata& aSRIMetadata);
+
  public:
   // Fields.
 
@@ -443,6 +451,11 @@ class LoadedScript : public nsIMemoryReporter {
 
   // The base URL used for resolving relative module imports.
   nsCOMPtr<nsIURI> mBaseURL;
+
+  // An optional field to store the SRI metadata used by the request that
+  // first creates this instance.
+  // nullptr if the SRI metadata was empty, or not yet set.
+  mozilla::UniquePtr<mozilla::dom::SRIMetadata> mSRIMetadata;
 
  public:
   // Holds script source data for non-inline scripts, or raw bytes for wasm

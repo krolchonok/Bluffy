@@ -34,7 +34,7 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.FilledButton
-import mozilla.components.compose.base.button.TextButton
+import mozilla.components.compose.base.button.OutlinedButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.ScrollIndicator
 import org.mozilla.fenix.onboarding.view.Action
@@ -69,7 +69,7 @@ private fun SecondaryButton(
     title: String,
     secondaryButton: Action,
 ) {
-    TextButton(
+    OutlinedButton(
         modifier = Modifier
             .width(width = FirefoxTheme.layout.size.maxWidth.small)
             .semantics {

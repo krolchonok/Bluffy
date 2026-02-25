@@ -1604,9 +1604,8 @@ class ActivePS {
   // shared between all threads.
   static nsTArray<mozilla::JSSourceEntry> GatherJSSources(PSLockRef aLock) {
     nsTArray<mozilla::JSSourceEntry> jsSourceEntries;
-    if (!ProfilerFeature::HasJSSources(ActivePS::Features(aLock))) {
-      return jsSourceEntries;
-    }
+    bool gatherSourceText =
+        ProfilerFeature::HasJSSources(ActivePS::Features(aLock));
 
     ThreadRegistry::LockedRegistry lockedRegistry;
     ActivePS::ProfiledThreadList threads =
@@ -1625,8 +1624,10 @@ class ActivePS {
     }
     JSContext* jsContext = mainThread->mJSContext;
 
-    js::ProfilerJSSources threadSources =
-        js::GetProfilerScriptSources(JS_GetRuntime(jsContext));
+    // Always gather source metadata (filename), but only gather actual source
+    // text if the JS sources feature is enabled.
+    js::ProfilerJSSources threadSources = js::GetProfilerScriptSources(
+        JS_GetRuntime(jsContext), gatherSourceText);
 
     // Compute hash for each source based on filepath and source text.
     // This replaces random UUIDs with deterministic hashes, which enables us to
@@ -3918,13 +3919,10 @@ locked_profiler_stream_json_for_this_process(
   nsTArray<mozilla::JSSourceEntry> jsSourceEntries =
       ActivePS::GatherJSSources(aLock);
 
-  // If there are sources, stream the sources table that is shared between the
-  // threads, and get the UUID to index mappings needed for frame serialization.
-  Maybe<nsTHashMap<SourceId, IndexIntoSourceTable>> sourceIdToIndexMap;
-  if (!jsSourceEntries.IsEmpty()) {
-    sourceIdToIndexMap.emplace(
-        buffer.StreamSourceTableToJSON(aWriter, jsSourceEntries));
-  }
+  // Always stream the sources table that is shared between the threads, and get
+  // the UUID to index mappings needed for frame serialization.
+  nsTHashMap<SourceId, IndexIntoSourceTable> sourceIdToIndexMap =
+      buffer.StreamSourceTableToJSON(aWriter, jsSourceEntries);
 
   // Lists the samples for each thread profile
   aWriter.StartArrayProperty("threads");
@@ -3953,8 +3951,7 @@ locked_profiler_stream_json_for_this_process(
       MOZ_RELEASE_ASSERT(thread.mProfiledThreadData);
       processStreamingContext.AddThreadStreamingContext(
           *thread.mProfiledThreadData, buffer, thread.mJSContext, aService,
-          std::move(progressLogger),
-          sourceIdToIndexMap.isSome() ? sourceIdToIndexMap.ptr() : nullptr);
+          std::move(progressLogger), &sourceIdToIndexMap);
       if (aWriter.Failed()) {
         return Err(ProfilerError::JsonGenerationFailed);
       }

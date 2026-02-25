@@ -80,6 +80,8 @@ const SIDEBAR = "sidebar";
 const PREF_MEMORIES = "browser.smartwindow.memories";
 const TAB_FAVICON_CHAT =
   "chrome://browser/content/aiwindow/assets/ask-icon.svg";
+const PREF_CHAT_INTERACTION_COUNT = "browser.smartwindow.chat.interactionCount";
+const MAX_INTERACTION_COUNT = 1000;
 
 /**
  * A custom element for managing AI Window
@@ -165,6 +167,26 @@ export class AIWindow extends MozLitElement {
     this.#memoriesButton.disabled = !this.memoriesPref;
     this.#memoriesButton.pressed =
       this.memoriesPref && (this.#memoriesToggled ?? this.memoriesPref);
+  }
+
+  /**
+   * Records a user chat interaction by incrementing the interaction
+   * counter when users submit messages or click starter prompts.
+   *
+   * @private
+   */
+  #recordChatInteraction() {
+    let interactionCount = Services.prefs.getIntPref(
+      PREF_CHAT_INTERACTION_COUNT,
+      0
+    );
+
+    if (interactionCount < MAX_INTERACTION_COUNT) {
+      Services.prefs.setIntPref(
+        PREF_CHAT_INTERACTION_COUNT,
+        interactionCount + 1
+      );
+    }
   }
 
   constructor() {
@@ -659,6 +681,8 @@ export class AIWindow extends MozLitElement {
     if (!trimmed) {
       return;
     }
+
+    this.#recordChatInteraction();
     this.#fetchAIResponse(trimmed, this.#createUserRoleOpts(contextMentions));
   }
 
@@ -696,6 +720,7 @@ export class AIWindow extends MozLitElement {
     );
 
     const { text } = event.detail;
+    this.#recordChatInteraction();
     this.#fetchAIResponse(text, this.#createUserRoleOpts());
   };
 

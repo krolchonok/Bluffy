@@ -100,6 +100,13 @@ gcc-14.2.0:
         strip-components: 1
         add-prefix: gcc-source/
 
+sixgill:
+    description: Sixgill GCC static analysis plugin source code
+    fetch:
+        type: git
+        repo: https://github.com/mozilla-spidermonkey/sixgill
+        revision: f8ace7cffffe9fd2b35a53a8260199c85f685336
+
 gmp-6.1.0:
     description: GMP 6.1.0 source code
     fetch:
@@ -210,21 +217,24 @@ nsis-3.07-win:
         strip-components: 1
         add-prefix: nsis/
 
-upx-3.95-win:
-    description: upx 3.95 for windows
+upx:
+    description: upx 5.1.0 source
     fetch:
         type: static-url
-        url: https://hg.mozilla.org/mozilla-build/raw-file/3b8c537ca3c879551956ad47ca9f089583f647c5/upx-3.95-win64.zip
-        sha256: 5c076f87ba64d82f11513f4af0ceb07246a3540aa3c72ca3ffc2d53971fa56e3
-        size: 462820
+        url: https://github.com/upx/upx/releases/download/v5.1.0/upx-5.1.0-src.tar.xz
+        sha256: 9f7a810b8a810b1ca2c5cb01ffcf23066e3fb8a51ddc406ea05bdd5d37d0b8bd
+        size: 1406744
+        artifact-name: upx-src.tar.zst
+        strip-components: 1
+        add-prefix: upx/
 
 wine:
     description: wine source code
     fetch:
         type: static-url
-        url: https://dl.winehq.org/wine/source/11.x/wine-11.2.tar.xz
-        sha256: 1756227bdb3feb41750afa97b44ac50a22890a88704a1f0fa14d88c4f921e183
-        size: 33227804
+        url: https://dl.winehq.org/wine/source/11.x/wine-11.3.tar.xz
+        sha256: bbe42158cfdc673280971e00c9be820b05816c8f6a568b80ae7829c06c455e24
+        size: 33238452
         gpg-signature:
             sig-url: "{url}.sign"
             key-path: build/unix/build-gcc/DA23579A74D4AD9AF9D3F945CEFAC8EAAF17519D.key
@@ -341,7 +351,7 @@ mingw-w64:
     fetch:
         type: git
         repo: https://git.code.sf.net/p/mingw-w64/mingw-w64
-        revision: 287a0d4d478e3575d082ba37ce4dcba86524fc9e
+        revision: 43f2643cbde20aff1c4b89a98c78d0b4b0fe90c2
 
 mingw-w64-trunk:
     description: mingw-w64 master branch source code
@@ -436,43 +446,43 @@ wasi-sdk:
         revision: 935fe1acd2fcd7ea4aed2d5ee4527482862b6344
 
 macosx64-ninja:
-    description: ninja 1.13.1
+    description: ninja 1.13.2
     fetch:
         type: static-url
-        url: https://github.com/ninja-build/ninja/releases/download/v1.13.1/ninja-mac.zip
-        sha256: da7797794153629aca5570ef7c813342d0be214ba84632af886856e8f0063dd9
-        size: 314009
+        url: https://github.com/ninja-build/ninja/releases/download/v1.13.2/ninja-mac.zip
+        sha256: c99048673aa765960a99cf10c6ddb9f1fad506099ff0a0e137ad8960a88f321b
+        size: 314051
         artifact-name: ninja.tar.zst
         add-prefix: ninja/bin/
 
 win64-ninja:
-    description: ninja 1.13.1
+    description: ninja 1.13.2
     fetch:
         type: static-url
-        url: https://github.com/ninja-build/ninja/releases/download/v1.13.1/ninja-win.zip
-        sha256: 26a40fa8595694dec2fad4911e62d29e10525d2133c9a4230b66397774ae25bf
-        size: 289808
+        url: https://github.com/ninja-build/ninja/releases/download/v1.13.2/ninja-win.zip
+        sha256: 07fc8261b42b20e71d1720b39068c2e14ffcee6396b76fb7a795fb460b78dc65
+        size: 291570
         artifact-name: ninja.tar.zst
         add-prefix: ninja/bin/
 
 macosx64-cmake:
-    description: cmake 4.1.2
+    description: cmake 4.2.3
     fetch:
         type: static-url
-        url: https://github.com/Kitware/CMake/releases/download/v4.1.2/cmake-4.1.2-macos-universal.tar.gz
-        sha256: 3be85f5b999e327b1ac7d804cbc9acd767059e9f603c42ec2765f6ab68fbd367
-        size: 80750689
+        url: https://github.com/Kitware/CMake/releases/download/v4.2.3/cmake-4.2.3-macos-universal.tar.gz
+        sha256: c2302d3e9c48daabee5ea7c4db4b2b93b989bcc89dae8b760880e00120641b5b
+        size: 84254384
         artifact-name: cmake.tar.zst
         strip-components: 3
         add-prefix: cmake/
 
 cmake:
-    description: cmake 4.1.2 source code
+    description: cmake 4.2.3 source code
     fetch:
         type: static-url
-        url: https://github.com/Kitware/CMake/releases/download/v4.1.2/cmake-4.1.2.tar.gz
-        sha256: 643f04182b7ba323ab31f526f785134fb79cba3188a852206ef0473fee282a15
-        size: 12048810
+        url: https://github.com/Kitware/CMake/releases/download/v4.2.3/cmake-4.2.3.tar.gz
+        sha256: 7efaccde8c5a6b2968bad6ce0fe60e19b6e10701a12fce948c2bf79bac8a11e9
+        size: 12345147
         artifact-name: cmake.tar.zst
         strip-components: 1
         add-prefix: cmake/
@@ -499,12 +509,12 @@ fix-stacks:
         revision: 1fb1bcc8cb4dd65fbe342853954651563a0a88e7
 
 7zz:
-    description: 7-zip 25.01 source code
+    description: 7-zip 26.00 source code
     fetch:
         type: static-url
-        url: https://downloads.sourceforge.net/sevenzip/7-Zip/25.01/7z2501-src.tar.xz
-        sha256: ed087f83ee789c1ea5f39c464c55a5c9d4008deb0efe900814f2df262b82c36e
-        size: 1533240
+        url: https://www.7-zip.org/a/7z2600-src.tar.xz
+        sha256: 3e596155744af055a77fc433c703d54e3ea9212246287b5b1436a6beac060f16
+        size: 1538112
         artifact-name: 7z-src.tar.zst
         add-prefix: 7zz/
 
@@ -542,9 +552,9 @@ jdk-8-linux64:
     description: Java 8 JDK
     fetch:
         type: static-url
-        url: https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u472-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u472b08.tar.gz
-        sha256: 5becaa4ac660e844c5a39e2ebc39ff5ac824c37ff1b625af8c8b111dc13c3592
-        size: 103123206
+        url: https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u482-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u482b08.tar.gz
+        sha256: e74becad56b4cc01f1556a671e578d3788789f5257f9499f6fbed84e63a55ecf
+        size: 103525252
         artifact-name: jdk-8.tar.zst
         strip-components: 1
         add-prefix: jdk-8/
@@ -690,13 +700,13 @@ symbol-scrapers:
         repo: https://github.com/mozilla/symbol-scrapers
         revision: c9f6fe6a16cb9bba11976d85fc924efaad643a9d
 
-xz-5.8.1:
-    description: xz 5.8.1 source code
+xz:
+    description: xz 5.8.2 source code
     fetch:
         type: static-url
-        url: https://github.com/tukaani-project/xz/releases/download/v5.8.1/xz-5.8.1.tar.xz
-        sha256: 0b54f79df85912504de0b14aec7971e3f964491af1812d83447005807513cd9e
-        size: 1461872
+        url: https://github.com/tukaani-project/xz/releases/download/v5.8.2/xz-5.8.2.tar.xz
+        sha256: 890966ec3f5d5cc151077879e157c0593500a522f413ac50ba26d22a9a145214
+        size: 1511132
         artifact-name: xz-source.tar.zst
         strip-components: 1
         add-prefix: xz-source/

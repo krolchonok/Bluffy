@@ -7487,7 +7487,8 @@ class TopSiteFormInput extends (external_React_default()).PureComponent {
         type: "button",
         className: "icon icon-clear-input icon-button-style",
         onClick: this.props.onClear,
-        onKeyPress: this.onClearIconPress
+        onKeyPress: this.onClearIconPress,
+        "data-l10n-id": "newtab-topsites-clear-input"
       });
     }
     return null;

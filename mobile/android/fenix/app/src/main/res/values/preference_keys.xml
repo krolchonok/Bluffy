@@ -187,7 +187,10 @@
     <string name="pref_key_toolbar_cfr" translatable="false">pref_key_toolbar_cfr</string>
 
     <!-- Remote Server Settings -->
-    <string name="pref_key_remote_server_prod" translatable="false">pref_key_remote_server_prod</string>
+    <string name="pref_key_remote_settings_server" translatable="false">pref_key_remote_settings_server</string>
+    <string name="pref_key_remote_settings_server_prod" translatable="false">pref_key_remote_settings_server_prod</string>
+    <string name="pref_key_remote_settings_server_stage" translatable="false">pref_key_remote_settings_server_stage</string>
+    <string name="pref_key_remote_settings_server_dev" translatable="false">pref_key_remote_settings_server_dev</string>
 
     <!-- Theme Settings -->
     <string name="pref_key_light_theme" translatable="false">pref_key_light_theme</string>
@@ -563,4 +566,6 @@
     <!--  Search Optimization Cards  -->
     <string name="pref_key_search_optimization_feature" translatable="false">pref_key_search_optimization_feature</string>
     <string name="pref_key_search_optimization_stocks" translatable="false">pref_key_search_optimization_stocks</string>
+    <string name="pref_key_search_optimization_flights" translatable="false">pref_key_search_optimization_flights</string>
+    <string name="pref_key_search_optimization_sports" translatable="false">pref_key_search_optimization_sports</string>
 </resources>

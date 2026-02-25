@@ -5,6 +5,7 @@
 loader: taskgraph.loader.transform:loader
 
 kind-dependencies:
+    - fetch
     - toolchain
     - instrumented-build
 
@@ -24,6 +25,9 @@ task-defaults:
         kind: build
         tier: 1
     use-python: default
+    fetches:
+        fetch:
+            - pgo-extended-corpus
 
 tasks:
     linux64-shippable/opt:

@@ -1794,6 +1794,17 @@ void ChromeUtils::InvalidateResourceCache(GlobalObject& aGlobal,
   SharedScriptCache::Invalidate();
 }
 
+void ChromeUtils::GetCachedJavaScriptSource(
+    GlobalObject& aGlobal, const nsACString& aKey, const nsACString& aURI,
+    const nsACString& aNonce, const nsACString& aHintCharset,
+    JS::MutableHandle<JS::Value> aRetval, ErrorResult& aRv) {
+  JSContext* cx = aGlobal.Context();
+  if (!SharedScriptCache::GetCachedScriptSource(cx, aKey, aURI, aNonce,
+                                                aHintCharset, aRetval)) {
+    aRv.NoteJSContextException(aGlobal.Context());
+  }
+}
+
 void ChromeUtils::ClearBfcacheByPrincipal(GlobalObject& aGlobal,
                                           nsIPrincipal* aPrincipal,
                                           ErrorResult& aRv) {

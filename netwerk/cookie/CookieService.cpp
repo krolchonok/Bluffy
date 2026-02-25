@@ -257,8 +257,6 @@ nsresult CookieService::Init() {
 
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   NS_ENSURE_STATE(os);
-  os->AddObserver(this, "profile-before-change", true);
-  os->AddObserver(this, "profile-do-change", true);
   os->AddObserver(this, "last-pb-context-exited", true);
   os->AddObserver(this, "browser-delayed-startup-finished", true);
 
@@ -309,26 +307,7 @@ CookieService::~CookieService() {
 NS_IMETHODIMP
 CookieService::Observe(nsISupports* /*aSubject*/, const char* aTopic,
                        const char16_t* /*aData*/) {
-  // check the topic
-  if (!strcmp(aTopic, "profile-before-change")) {
-    // The profile is about to change,
-    // or is going away because the application is shutting down.
-
-    // Close the default DB connection and null out our CookieStorages before
-    // changing.
-    CloseCookieStorages();
-
-  } else if (!strcmp(aTopic, "profile-do-change")) {
-    NS_ASSERTION(!mPersistentStorage, "shouldn't have a default CookieStorage");
-    NS_ASSERTION(!mPrivateStorage, "shouldn't have a private CookieStorage");
-
-    // the profile has already changed; init the db from the new location.
-    // if we are in the private browsing state, however, we do not want to read
-    // data into it - we should instead put it into the default state, so it's
-    // ready for us if and when we switch back to it.
-    InitCookieStorages();
-
-  } else if (!strcmp(aTopic, "browser-delayed-startup-finished")) {
+  if (!strcmp(aTopic, "browser-delayed-startup-finished")) {
     mThirdPartyCookieBlockingExceptions.Initialize();
 
     RunOnShutdown([self = RefPtr{this}] {
@@ -342,6 +321,20 @@ CookieService::Observe(nsISupports* /*aSubject*/, const char* aTopic,
     mPrivateStorage = CookiePrivateStorage::Create();
   }
 
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+CookieService::TestCloseCookieDB() {
+  CloseCookieStorages();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+CookieService::TestOpenCookieDB() {
+  MOZ_ASSERT(!mPersistentStorage, "shouldn't have a default CookieStorage");
+  MOZ_ASSERT(!mPrivateStorage, "shouldn't have a private CookieStorage");
+  InitCookieStorages();
   return NS_OK;
 }
 

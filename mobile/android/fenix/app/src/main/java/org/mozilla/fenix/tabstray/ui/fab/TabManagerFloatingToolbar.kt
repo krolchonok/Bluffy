@@ -102,11 +102,12 @@ internal fun TabManagerFloatingToolbar(
         exit = fadeOut(),
     ) {
         Row(
+            modifier = Modifier.padding(horizontal = FirefoxTheme.layout.space.static200),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
                 modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.CenterEnd,
+                contentAlignment = Alignment.CenterStart,
             ) {
                 FloatingToolbarActions(
                     state = state,
@@ -130,7 +131,7 @@ internal fun TabManagerFloatingToolbar(
 
             Box(
                 modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.CenterStart,
+                contentAlignment = Alignment.CenterEnd,
             ) {
                 FloatingToolbarFAB(
                     state = state,

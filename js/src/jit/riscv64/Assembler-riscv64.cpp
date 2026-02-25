@@ -1564,11 +1564,6 @@ bool Assembler::appendRawCode(const uint8_t* code, size_t numBytes) {
   if (m_buffer.oom()) {
     return false;
   }
-  while (numBytes > SliceSize) {
-    m_buffer.putBytes(SliceSize, code);
-    numBytes -= SliceSize;
-    code += SliceSize;
-  }
   m_buffer.putBytes(numBytes, code);
   return !m_buffer.oom();
 }

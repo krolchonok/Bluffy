@@ -1544,29 +1544,22 @@ unsafe fn borrow_assert_main_thread<T>(cell: &atomic_refcell::AtomicRefCell<T>) 
 pub extern "C" fn Servo_Element_IsDisplayNone(element: &RawGeckoElement) -> bool {
     let element = GeckoElement(element);
     let data = element
-        .get_data()
-        .expect("Invoking Servo_Element_IsDisplayNone on unstyled element");
-
-    let is_display_none = unsafe { borrow_assert_main_thread(data) }
-        .styles
-        .is_display_none();
-    is_display_none
+        .borrow_data()
+        .expect("Invoking Servo_Element_IsDisplayContents on unstyled element");
+    data.styles.is_display_none()
 }
 
 #[no_mangle]
 pub extern "C" fn Servo_Element_IsDisplayContents(element: &RawGeckoElement) -> bool {
     let element = GeckoElement(element);
     let data = element
-        .get_data()
+        .borrow_data()
         .expect("Invoking Servo_Element_IsDisplayContents on unstyled element");
-
-    let is_display_contents = unsafe { borrow_assert_main_thread(data) }
-        .styles
+    data.styles
         .primary()
         .get_box()
         .clone_display()
-        .is_contents();
-    is_display_contents
+        .is_contents()
 }
 
 #[no_mangle]

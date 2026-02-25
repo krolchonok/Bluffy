@@ -76,6 +76,7 @@ gecko_metrics = [
     "toolkit/components/antitracking/metrics.yaml",
     "toolkit/components/backgroundhangmonitor/metrics.yaml",
     "toolkit/components/captchadetection/metrics.yaml",
+    "toolkit/components/cleardata/metrics.yaml",
     "toolkit/components/cookiebanners/metrics.yaml",
     "toolkit/components/doh/metrics.yaml",
     "toolkit/components/downloads/metrics.yaml",

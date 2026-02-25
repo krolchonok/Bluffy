@@ -21,6 +21,7 @@ add_setup(async function () {
       ["browser.smartwindow.endpoint", "http://localhost:0/v1"],
       ["browser.smartwindow.enabled", true],
       ["browser.smartwindow.firstrun.hasCompleted", true],
+      ["browser.smartwindow.chat.interactionCount", 0],
     ],
   });
 });

@@ -207,10 +207,10 @@ body {
   }
 }
 
-/* It's hard to make a theme's background images work with something other
- * than the toolbox, so for now we keep them there rather than on the <body>.
- * See bug 1952602 for potentially changing this. */
-:root[lwtheme] #navigator-toolbox {
+/* Images go on the body by default, unless they are aligned in the y axis in
+ * which case they go on the toolbox for backwards compatibility */
+:root[lwtheme]:not([lwtheme-image-y-align]) body,
+:root[lwtheme][lwtheme-image-y-align] #navigator-toolbox {
   background-image: var(--lwt-additional-images);
   background-repeat: var(--lwt-background-tiling);
   background-position: var(--lwt-background-alignment);

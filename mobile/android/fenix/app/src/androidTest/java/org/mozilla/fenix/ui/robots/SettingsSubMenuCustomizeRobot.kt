@@ -263,7 +263,6 @@ class SettingsSubMenuCustomizeRobot {
 
     fun selectExpandedToolbarLayout() {
         Log.i(TAG, "selectExpandedToolbarLayout: Trying to click the \"Expanded\" toolbar layout option")
-        scrollToElementByText("Scroll to hide toolbar")
         expandedToolbarLayoutToggle().click()
         Log.i(TAG, "selectExpandedToolbarLayout: Clicked the \"Expanded\" toolbar layout option")
     }
@@ -279,6 +278,10 @@ class SettingsSubMenuCustomizeRobot {
         Log.i(TAG, "clickShowTabBarToggle: Trying to click the \"Show tab bar\" toggle")
         showTabBarToggle().click()
         Log.i(TAG, "clickShowTabBarToggle: Clicked the \"Show tab bar\" toggle")
+    }
+
+    fun scrollToTheScrollToHideToolbarOption() {
+        scrollToElementByText("Scroll to hide toolbar")
     }
 
     class Transition {

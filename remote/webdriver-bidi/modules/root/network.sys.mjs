@@ -2364,7 +2364,11 @@ class NetworkModule extends RootBiDiModule {
       return;
     }
 
-    if (!(response instanceof lazy.NetworkResponse) && !response.isDataURL) {
+    if (
+      !(response instanceof lazy.NetworkResponse) &&
+      !response.isDataURL &&
+      !response.hasCachedResponseBody
+    ) {
       lazy.logger.trace(
         `Network data not collected for request "${request.requestId}" and data type "${DataType.Response}"` +
           `: unsupported response (read from memory cache)`
@@ -2394,6 +2398,13 @@ class NetworkModule extends RootBiDiModule {
           isBase64: !isText,
         });
       size = body.length;
+    } else if (response.hasCachedResponseBody) {
+      readAndProcessBodyFn = () =>
+        new lazy.NetworkDataBytes({
+          getBytesValue: () => response.cachedResponseBody,
+          isBase64: false,
+        });
+      size = response.cachedResponseBody.length;
     } else {
       readAndProcessBodyFn = response.readAndProcessResponseBody;
       size = response.encodedBodySize;

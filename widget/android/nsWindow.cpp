@@ -2210,6 +2210,15 @@ void GeckoViewSupport::PrintToPdf(
   }
   CreatePdf(geckoResult, cbc);
 }
+
+void GeckoViewSupport::PerformHapticFeedback(int32_t aEffect) {
+  GeckoSession::Window::LocalRef window(mGeckoViewWindow);
+  if (!window) {
+    return;
+  }
+  window->PerformHapticFeedback(aEffect);
+}
+
 }  // namespace widget
 }  // namespace mozilla
 
@@ -2911,6 +2920,19 @@ void nsWindow::InitEvent(WidgetGUIEvent& event, LayoutDeviceIntPoint* aPoint) {
   } else {
     event.mRefPoint = LayoutDeviceIntPoint(0, 0);
   }
+}
+
+void nsWindow::PerformHapticFeedback(int32_t aEffect) {
+  if (Destroyed()) {
+    return;
+  }
+
+  auto acc(mGeckoViewSupport.Access());
+  if (!acc) {
+    return;
+  }
+
+  acc->PerformHapticFeedback(aEffect);
 }
 
 void nsWindow::UpdateOverscrollVelocity(const float aX, const float aY) {

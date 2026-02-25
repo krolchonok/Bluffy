@@ -178,7 +178,6 @@ class SettingsCustomizeTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3333174
-    @Ignore("Failing, see: https://bugzilla.mozilla.org/show_bug.cgi?id=2018626")
     @Test
     fun verifyTheToolbarLayoutSectionTest() {
         homeScreen(composeTestRule) {

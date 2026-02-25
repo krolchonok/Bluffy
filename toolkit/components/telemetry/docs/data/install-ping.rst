@@ -148,7 +148,7 @@ had_old_install (both)
 
   full: Checks for the installation directory given in the ``Software\Mozilla\${BrandFullName}`` registry keys, either :abbr:`HKLM` or :abbr:`HKCU`
 
-  stub: Checks for the top level profile directory ``%LOCALAPPDATA%\Mozilla\Firefox``
+  stub: Checks for the installation directory given in the ``Software\Mozilla\${BrandFullName}`` registry keys, either :abbr:`HKLM` or :abbr:`HKCU`
 
 old_version, old_build_id (stub)
   Version number and Build ID (from ``application.ini``) of a previous installation of Firefox in the install directory, 0 if not found

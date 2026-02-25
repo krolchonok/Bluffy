@@ -2670,6 +2670,7 @@ ClearDataService.prototype = Object.freeze({
 
     gPBMCleanupInProgress = true;
 
+    let timerId = Glean.privateBrowsingCleanup.duration.start();
     let collector = new PBMCleanupCollector();
 
     // Fire the notification with collector as subject. Sync observers
@@ -2682,13 +2683,19 @@ ClearDataService.prototype = Object.freeze({
     collector.promise
       .then(hadFailures => {
         gPBMCleanupInProgress = false;
+        Glean.privateBrowsingCleanup.duration.stopAndAccumulate(timerId);
+        Glean.privateBrowsingCleanup.errorRate.addToDenominator(1);
         if (hadFailures) {
+          Glean.privateBrowsingCleanup.errorRate.addToNumerator(1);
           console.error("PBM cleanup: one or more observers reported failure");
         }
         aCallback.onDataDeleted(hadFailures ? 1 : 0);
       })
       .catch(e => {
         gPBMCleanupInProgress = false;
+        Glean.privateBrowsingCleanup.duration.cancel(timerId);
+        Glean.privateBrowsingCleanup.errorRate.addToDenominator(1);
+        Glean.privateBrowsingCleanup.errorRate.addToNumerator(1);
         console.error("PBM cleanup error:", e);
         aCallback.onDataDeleted(1);
       });

@@ -12,8 +12,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE
 import com.google.android.material.snackbar.Snackbar.LENGTH_LONG
 import com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
-import io.mockk.every
-import io.mockk.mockk
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -35,6 +33,7 @@ import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.eq
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
+import mozilla.components.support.test.whenever
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -69,7 +68,6 @@ import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.TranslationI
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.UserAccountAuthenticated
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.WebCompatReportSent
 import org.mozilla.fenix.components.metrics.MetricsUtils.BookmarkAction.Source
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.tabClosedUndoMessage
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.getSnackbarTimeout
@@ -86,10 +84,8 @@ class SnackbarBindingTest {
 
     @Before
     fun setup() = runTest(testDispatcher) {
-        settings = mockk(relaxed = true) {
-            every { accessibilityServicesEnabled } returns false
-        }
-        every { testContext.settings() } returns settings
+        settings = mock()
+        whenever(settings.accessibilityServicesEnabled).thenReturn(false)
     }
 
     @Test

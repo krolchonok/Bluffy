@@ -36,7 +36,6 @@
 #include "nsFrameSelection.h"
 #include "nsGenericHTMLElement.h"
 #include "nsIFrame.h"
-#include "nsIHapticFeedback.h"
 #include "nsLayoutUtils.h"
 #include "nsServiceManagerUtils.h"
 
@@ -297,6 +296,12 @@ void AccessibleCaretManager::UpdateCaretsForCursorMode(
 
   mIsCaretPositionChanged = (result == PositionChangedResult::Position);
 
+  // Perform haptic feedback when the user drags the caret
+  if (mIsCaretPositionChanged && mActiveCaret) {
+    ProvideHapticFeedback(
+        nsIHapticFeedback::HapticFeedbackType::TextHandleMove);
+  }
+
   if (!aHints.contains(UpdateCaretsHint::DispatchNoEvent) && !mActiveCaret) {
     DispatchCaretStateChangedEvent(CaretChangedReason::Updateposition);
   }
@@ -373,6 +378,11 @@ void AccessibleCaretManager::UpdateCaretsForSelectionMode(
       secondCaretResult == PositionChangedResult::Position;
 
   if (mIsCaretPositionChanged) {
+    // Perform haptic feedback when the user drags the caret
+    if (mActiveCaret) {
+      ProvideHapticFeedback(
+          nsIHapticFeedback::HapticFeedbackType::TextHandleMove);
+    }
     // Flush layout to make the carets intersection correct.
     if (MaybeFlushLayout() == Terminated::Yes) {
       return;
@@ -485,11 +495,12 @@ void AccessibleCaretManager::UpdateCaretsForAlwaysTilt(
   }
 }
 
-void AccessibleCaretManager::ProvideHapticFeedback() {
+void AccessibleCaretManager::ProvideHapticFeedback(
+    nsIHapticFeedback::HapticFeedbackType aEffect) {
   if (StaticPrefs::layout_accessiblecaret_hapticfeedback()) {
     if (nsCOMPtr<nsIHapticFeedback> haptic =
             do_GetService("@mozilla.org/widget/hapticfeedback;1")) {
-      haptic->PerformSimpleAction(haptic->LongPress);
+      haptic->PerformSimpleAction(aEffect);
     }
   }
 }
@@ -583,7 +594,7 @@ nsresult AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint) {
       GetSelection()->ContainsPoint(aPoint)) {
     AC_LOG("%s: UpdateCarets() for current selection", __FUNCTION__);
     UpdateCarets();
-    ProvideHapticFeedback();
+    ProvideHapticFeedback(nsIHapticFeedback::HapticFeedbackType::LongPress);
     return NS_OK;
   }
 
@@ -634,7 +645,7 @@ nsresult AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint) {
     // We need to update carets to get correct information before dispatching
     // CaretStateChangedEvent.
     UpdateCarets();
-    ProvideHapticFeedback();
+    ProvideHapticFeedback(nsIHapticFeedback::HapticFeedbackType::LongPress);
     DispatchCaretStateChangedEvent(CaretChangedReason::Longpressonemptycontent);
     return NS_OK;
   }
@@ -695,7 +706,7 @@ nsresult AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint) {
         }
 
         UpdateCarets();
-        ProvideHapticFeedback();
+        ProvideHapticFeedback(nsIHapticFeedback::HapticFeedbackType::LongPress);
         DispatchCaretStateChangedEvent(
             CaretChangedReason::Longpressonemptycontent);
 
@@ -707,7 +718,7 @@ nsresult AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint) {
   // Then try select a word under point.
   nsresult rv = SelectWord(ptFrame, ptInFrame);
   UpdateCarets();
-  ProvideHapticFeedback();
+  ProvideHapticFeedback(nsIHapticFeedback::HapticFeedbackType::LongPress);
 
   return rv;
 }

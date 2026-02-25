@@ -106,9 +106,33 @@ bool RenderCompositorLayerNative::ShouldUseLayerCompositor() const {
 
 bool RenderCompositorLayerNative::UseLayerCompositor() const { return true; }
 
+bool RenderCompositorLayerNative::EnableAsyncScreenshot() {
+#if defined(XP_DARWIN)
+  // On macOS, NativeLayerRootSnapshotterCA supports to take snapshot with
+  // multiple layers.
+  return true;
+#else
+  // Request WebRender to use only one layer for content rendering during taking
+  // snapshot. In addition to the content layer, one debug layer could exist.
+  mAsyncScreenshotLastFrameUsed = mCurrentFrame;
+  if (!mEnableAsyncScreenshot) {
+    mEnableAsyncScreenshotInNextFrame = true;
+    return false;
+  }
+  return true;
+#endif
+}
+
 void RenderCompositorLayerNative::GetCompositorCapabilities(
     CompositorCapabilities* aCaps) {
   RenderCompositor::GetCompositorCapabilities(aCaps);
+}
+
+void RenderCompositorLayerNative::GetWindowProperties(
+    WindowProperties* aProperties) {
+  // XXX
+  aProperties->is_opaque = false;
+  aProperties->enable_screenshot = mEnableAsyncScreenshot;
 }
 
 RenderCompositorLayerNative::Surface::~Surface() = default;
@@ -215,6 +239,11 @@ void RenderCompositorLayerNative::CompositorBeginFrame() {
   mBeginFrameTimeStamp = TimeStamp::Now();
   mSurfacePoolHandle->OnBeginFrame();
   mNativeLayerRoot->PrepareForCommit();
+  mCurrentFrame++;
+  if (mEnableAsyncScreenshotInNextFrame) {
+    mEnableAsyncScreenshot = true;
+    mEnableAsyncScreenshotInNextFrame = false;
+  }
 }
 
 void RenderCompositorLayerNative::CompositorEndFrame() {
@@ -226,6 +255,10 @@ void RenderCompositorLayerNative::CompositorEndFrame() {
   mNativeLayerRoot->SetLayers(mAddedLayers);
   mNativeLayerRoot->CommitToScreen();
   mSurfacePoolHandle->OnEndFrame();
+  if (mEnableAsyncScreenshot &&
+      (mCurrentFrame - mAsyncScreenshotLastFrameUsed) > 1) {
+    mEnableAsyncScreenshot = false;
+  }
 }
 
 void RenderCompositorLayerNative::BindNativeLayer(wr::NativeSurfaceId aId) {
@@ -508,7 +541,12 @@ void RenderCompositorLayerNativeOGL::BindSwapChain(
       int right = std::clamp((int)rect.max.x, 0, size.width);
       int bottom = std::clamp((int)rect.max.y, 0, size.height);
 
-      return gfx::IntRect(left, top, right, bottom);
+      int width = right - left;
+      int height = bottom - top;
+      MOZ_RELEASE_ASSERT(width >= 0);
+      MOZ_RELEASE_ASSERT(height >= 0);
+
+      return gfx::IntRect(left, top, width, height);
     }
 
     return gfx::IntRect(0, 0, size.width, size.height);

@@ -127,10 +127,8 @@ static const Scale ScalePointer = TimesEight;
 
 class Assembler;
 
-static constexpr int32_t SliceSize = 1024;
-
-typedef js::jit::AssemblerBufferWithConstantPools<
-    SliceSize, 4, Instruction, Assembler, NumShortBranchRangeTypes>
+typedef js::jit::AssemblerBufferWithConstantPools<4, Instruction, Assembler,
+                                                  NumShortBranchRangeTypes>
     Buffer;
 
 class Assembler : public AssemblerShared,

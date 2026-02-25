@@ -85,6 +85,8 @@ void CSSUnitValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
       case eCSSProperty_flex_basis:
       case eCSSProperty_font_size:
       case eCSSProperty_perspective:
+      case eCSSProperty_column_gap:
+      case eCSSProperty_row_gap:
       case eCSSProperty_max_block_size:
       case eCSSProperty_max_height:
       case eCSSProperty_max_inline_size:

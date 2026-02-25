@@ -123,12 +123,6 @@ static_assert(JS_STACK_GROWTH_DIRECTION < 0,
               "JS-PI implemented only for native stacks that grows towards 0");
 
 SuspenderObject* SuspenderObject::create(JSContext* cx) {
-  if (cx->wasm().suspenders_.count() >= SuspendableStacksMaxCount) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_JSPI_SUSPENDER_LIMIT);
-    return nullptr;
-  }
-
   Rooted<SuspenderObject*> suspender(
       cx, NewBuiltinClassInstance<SuspenderObject>(cx));
   if (!suspender) {

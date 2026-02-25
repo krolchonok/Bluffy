@@ -385,6 +385,17 @@ LightweightThemeConsumer.prototype = {
     this._doc.forceNonNativeTheme = !!builtinThemeConfig?.nonNative;
     let root = this._doc.documentElement;
     root.toggleAttribute("lwtheme-image", !!(hasTheme && theme.headerURL));
+    root.toggleAttribute(
+      "lwtheme-image-y-align",
+      hasTheme &&
+        !!theme.backgroundsAlignment?.split(",").some(alignment => {
+          if (alignment == "center" || alignment == "bottom") {
+            return true;
+          }
+          let [, y] = alignment.split(" ");
+          return y == "center" || y == "bottom";
+        })
+    );
     this._setExperiment(hasTheme, themeData.experiment, theme.experimental);
     _setImage(this._win, root, hasTheme, "--lwt-header-image", theme.headerURL);
     _setImage(

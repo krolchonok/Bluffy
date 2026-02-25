@@ -486,6 +486,10 @@ class IMContextWrapper final : public TextEventDispatcherListener {
   // mSetInputPurposeAndInputHints is set if `SetInputContext` wants `Focus`
   // to set input-purpose and input-hints.
   bool mSetInputPurposeAndInputHints;
+  // mPendingSetSurrounding is set if "retrieve_surrounding" signal is received
+  // but the surrounding text is not set yet. We retry setting the surrounding
+  // text when selection is changed in Gecko.
+  bool mPendingSetSurrounding = false;
 
   // sLastFocusedContext is a pointer to the last focused instance of this
   // class.  When a instance is destroyed and sLastFocusedContext refers it,

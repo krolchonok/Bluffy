@@ -21,6 +21,7 @@ const UNITS_GROUPS = [
     degree: 1,
     deg: "degree",
     d: "degree",
+    "°": "degree",
     radian: Math.PI / 180.0,
     rad: "radian",
     r: "radian",
@@ -113,8 +114,16 @@ const UNITS_GROUPS = [
     // Length
     meter: 1,
     m: "meter",
+    femtometer: 1e15,
+    fermi: "femtometer",
+    fm: "femtometer",
+    picometer: 1e12,
+    pm: "picometer",
+    angstrom: 1e10,
     nanometer: 1e9,
+    nm: "nanometer",
     micrometer: 1e6,
+    μm: "micrometer",
     millimeter: 1000,
     mm: "millimeter",
     centimeter: 100,
@@ -131,6 +140,14 @@ const UNITS_GROUPS = [
     inch: M_TO_IN,
     inches: "inch",
     in: "inch",
+    "nautical-mile": 1 / 1852,
+    nmi: "nautical-mile",
+    NM: "nautical-mile",
+    "light-year": 1 / 9460730472580800,
+    lyr: "light-year",
+    ly: "light-year",
+    "astronomical-unit": 1 / 149597870700,
+    au: "astronomical-unit",
   },
   {
     // Mass
@@ -161,10 +178,10 @@ const UNITS_GROUPS = [
 // There are some units that will be same in lower case in same unit group.
 // e.g. Mn: meganewton and mn: millinewton on force group.
 // Handle them as case-sensitive.
-const CASE_SENSITIVE_UNITS = ["PN", "Pn", "MN", "Mn"];
+const CASE_SENSITIVE_UNITS = ["PN", "Pn", "MN", "Mn", "NM"];
 
 const NUMBER_REGEX = "-?\\d+(?:\\.\\d+)?\\s*";
-const UNIT_REGEX = "[A-Za-zµ0-9_./-]+";
+const UNIT_REGEX = "[A-Za-zµ°_./-]+";
 
 // NOTE: This regex need to be localized upon supporting multi locales
 //       since it supports en-US input format only.

@@ -24,8 +24,8 @@ import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.AppAndSystemHelper
-import org.mozilla.fenix.helpers.AppAndSystemHelper.assertNativeAppOpens
 import org.mozilla.fenix.helpers.AppAndSystemHelper.denyPermission
+import org.mozilla.fenix.helpers.AppAndSystemHelper.denyPermissionAndDontAskAgainButton
 import org.mozilla.fenix.helpers.AppAndSystemHelper.grantSystemPermission
 import org.mozilla.fenix.helpers.AppAndSystemHelper.verifyKeyboardVisibility
 import org.mozilla.fenix.helpers.Constants
@@ -54,6 +54,7 @@ import org.mozilla.fenix.ui.robots.longClickPageObject
 import org.mozilla.fenix.ui.robots.multipleSelectionToolbar
 import org.mozilla.fenix.ui.robots.navigationToolbar
 import org.mozilla.fenix.ui.robots.searchScreen
+import org.mozilla.fenix.ui.robots.settingsTurnOnSyncScreen
 import java.util.Locale
 
 /**
@@ -187,8 +188,7 @@ class SearchTest : TestSetup() {
         }
     }
 
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1059459
-    @Ignore("Disabled after enabling the composable toolbar and main menu: https://bugzilla.mozilla.org/show_bug.cgi?id=2006295")
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135010
     @SmokeTest
     @Test
     fun verifyQRScanningCameraAccessDialogTest() {
@@ -201,13 +201,21 @@ class SearchTest : TestSetup() {
             clickScanButton()
             denyPermission()
             clickScanButton()
-            clickDismissPermissionRequiredDialog()
+            denyPermissionAndDontAskAgainButton()
+        }.dismissSearchBar {
+        }.openThreeDotMenu {
+        }.clickSignInToSyncButton {
         }
-        homeScreen(composeTestRule) {
-        }.openSearch {
-            clickScanButton()
-            clickGoToPermissionsSettings()
-            assertNativeAppOpens(composeTestRule, Constants.PackageName.ANDROID_SETTINGS)
+        settingsTurnOnSyncScreen(composeTestRule) {
+            clickReadyToScanButton()
+            clickDismissPermissionRequiredDialog()
+            clickReadyToScanButton()
+        }.clickGoToPermissionsSettings {
+            openAppSystemPermissionsSettings()
+            switchAppPermissionSystemSetting("Camera", "Allow")
+        }.goBackToSignInToSync(composeTestRule) {
+            clickReadyToScanButton()
+            verifyQRScannerIsOpen()
         }
     }
 

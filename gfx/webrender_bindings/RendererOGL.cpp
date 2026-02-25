@@ -205,6 +205,12 @@ RenderedFrameId RendererOGL::UpdateAndRender(
 
     // XXX set clear color if MOZ_WIDGET_ANDROID is defined.
 
+    if (aReadbackBuffer.isSome() || layers::ProfilerScreenshots::IsEnabled()) {
+      if (mCompositor->UseLayerCompositor()) {
+        mCompositor->EnableAsyncScreenshot();
+      }
+    }
+
     if (!mCompositor->BeginFrame()) {
       beginFrame = false;
     }

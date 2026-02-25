@@ -514,6 +514,10 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
       session.getMagnifier().setView(null);
     }
 
+    if (mSession.getHapticFeedbackController().getView() == this) {
+      mSession.getHapticFeedbackController().setView(null);
+    }
+
     if (isFocused()) {
       mSession.setFocused(false);
     }
@@ -610,6 +614,10 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
 
     if (session.getMagnifier().getView() == null) {
       session.getMagnifier().setView(mSurfaceWrapper.getView());
+    }
+
+    if (session.getHapticFeedbackController().getView() == null) {
+      session.getHapticFeedbackController().setView(this);
     }
 
     if (session.getPrintDelegate() == null && mPrintDelegate != null) {

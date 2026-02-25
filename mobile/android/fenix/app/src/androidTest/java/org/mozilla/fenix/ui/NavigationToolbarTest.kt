@@ -862,6 +862,7 @@ class NavigationToolbarTest : TestSetup() {
         }.clickSettingsButton {
         }.openCustomizeSubMenu {
             clickShowTabBarToggle()
+            scrollToTheScrollToHideToolbarOption()
             selectExpandedToolbarLayout()
         }.goBack {
         }.goBack(composeTestRule) {
@@ -889,6 +890,7 @@ class NavigationToolbarTest : TestSetup() {
         }.clickSettingsButton {
         }.openCustomizeSubMenu {
             clickShowTabBarToggle()
+            scrollToTheScrollToHideToolbarOption()
             selectExpandedToolbarLayout()
         }.goBack {
         }.goBack(composeTestRule) {
@@ -928,6 +930,7 @@ class NavigationToolbarTest : TestSetup() {
         }.clickSettingsButton {
         }.openCustomizeSubMenu {
             clickShowTabBarToggle()
+            scrollToTheScrollToHideToolbarOption()
             selectExpandedToolbarLayout()
         }.goBack {
         }.goBack(composeTestRule) {
@@ -955,6 +958,7 @@ class NavigationToolbarTest : TestSetup() {
         }.clickSettingsButton {
         }.openCustomizeSubMenu {
             clickShowTabBarToggle()
+            scrollToTheScrollToHideToolbarOption()
             selectExpandedToolbarLayout()
         }.goBack {
         }.goBack(composeTestRule) {

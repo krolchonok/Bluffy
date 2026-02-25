@@ -811,14 +811,6 @@ let JSWINDOWACTORS = {
     allFrames: true,
   },
 
-  TLSCertificateBinding: {
-    child: {
-      esModuleURI: "resource:///actors/TLSCertificateBindingChild.sys.mjs",
-    },
-
-    messageManagerGroups: ["browsers"],
-  },
-
   UITour: {
     parent: {
       esModuleURI: "moz-src:///browser/components/uitour/UITourParent.sys.mjs",

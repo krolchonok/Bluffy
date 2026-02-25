@@ -12,6 +12,7 @@ import mozpack.path as mozpath
 from mach.decorators import Command, CommandArgument
 
 from mozbuild.backend import backends
+from mozbuild.bootstrap import bootstrap_toolchain
 from mozbuild.mozconfig import MozconfigLoader
 from mozbuild.util import (
     MOZBUILD_METRICS_PATH,
@@ -277,6 +278,17 @@ def build(
         orig_topobjdir = instr._topobjdir
         instr._topobjdir = mozpath.join(instr._topobjdir, "instrumented")
 
+        # Allow opt-in of using the pgo-extended-corpus
+        use_extended_corpus = (
+            configure_args and "MOZ_PGO_EXTENDED_CORPUS=1" in configure_args
+        )
+
+        # Get the location of the pgo-extended-corpus, if we are using it
+        if use_extended_corpus:
+            pgo_extended_corpus = bootstrap_toolchain("pgo-extended-corpus")
+            if not pgo_extended_corpus:
+                raise Exception("Cannot find pgo-extended-corpus.")
+
         append_env = {"MOZ_PROFILE_GENERATE": "1"}
         status = instr.build(
             command_context.metrics,
@@ -314,6 +326,9 @@ def build(
             command_context.virtualenv_manager.python_path,
             mozpath.join(command_context.topsrcdir, "build/pgo/profileserver.py"),
         ]
+        if use_extended_corpus:
+            pgo_cmd.extend(["--extended-corpus", str(pgo_extended_corpus)])
+
         subprocess.check_call(pgo_cmd, cwd=instr.topobjdir, env=pgo_env)
 
         # Set the default build to MOZ_PROFILE_USE

@@ -9,7 +9,10 @@
 #include "ScriptLoadHandler.h"  // ScriptLoadHandler
 #include "ScriptLoader.h"       // ScriptLoader
 #include "ScriptTrace.h"        // TRACE_FOR_TEST
+#include "js/RootingAPI.h"      // JS::MutableHandle
+#include "js/Value.h"           // JS::Value
 #include "js/experimental/CompileScript.h"  // JS::FrontendContext, JS::NewFrontendContext, JS::DestroyFrontendContext
+#include "js/experimental/JSStencil.h"  // JS::GetScriptSourceText
 #include "mozilla/Maybe.h"              // Maybe, Some, Nothing
 #include "mozilla/TaskController.h"     // TaskController, Task
 #include "mozilla/dom/ContentParent.h"  // dom::ContentParent
@@ -34,7 +37,6 @@ ScriptHashKey::ScriptHashKey(
       mKind(aRequest->mKind),
       mCORSMode(aFetchOptions->mCORSMode),
       mReferrerPolicy(aReferrerPolicy),
-      mSRIMetadata(aRequest->mIntegrity),
       mNonce(aFetchOptions->mNonce) {
   if (mKind == JS::loader::ScriptKind::eClassic) {
     if (aRequest->GetScriptLoadContext()->HasScriptElement()) {
@@ -82,11 +84,6 @@ bool ScriptHashKey::KeyEquals(const ScriptHashKey& aKey) const {
     return false;
   }
 
-  if (!mSRIMetadata.CanTrustBeDelegatedTo(aKey.mSRIMetadata) ||
-      !aKey.mSRIMetadata.CanTrustBeDelegatedTo(mSRIMetadata)) {
-    return false;
-  }
-
   if (mNonce != aKey.mNonce) {
     return false;
   }
@@ -99,6 +96,151 @@ bool ScriptHashKey::KeyEquals(const ScriptHashKey& aKey) const {
   }
 
   return true;
+}
+
+void ScriptHashKey::ToStringForLookup(nsACString& aResult) {
+  aResult.Truncate();
+
+  aResult.AppendLiteral("SharedScriptCache:");
+  switch (mKind) {
+    case JS::loader::ScriptKind::eClassic:
+      aResult.Append('c');
+      break;
+    case JS::loader::ScriptKind::eModule:
+      aResult.Append('m');
+      break;
+    case JS::loader::ScriptKind::eEvent:
+      aResult.Append('e');
+      break;
+    case JS::loader::ScriptKind::eImportMap:
+      aResult.Append('i');
+      break;
+  }
+
+  switch (mCORSMode) {
+    case CORS_NONE:
+      aResult.Append('n');
+      break;
+    case CORS_ANONYMOUS:
+      aResult.Append('a');
+      break;
+    case CORS_USE_CREDENTIALS:
+      aResult.Append('c');
+      break;
+  }
+
+  switch (mReferrerPolicy) {
+    case ReferrerPolicy::_empty:
+      aResult.Append('_');
+      break;
+    case ReferrerPolicy::No_referrer:
+      aResult.Append('n');
+      break;
+    case ReferrerPolicy::No_referrer_when_downgrade:
+      aResult.Append('d');
+      break;
+    case ReferrerPolicy::Origin:
+      aResult.Append('o');
+      break;
+    case ReferrerPolicy::Origin_when_cross_origin:
+      aResult.Append('c');
+      break;
+    case ReferrerPolicy::Unsafe_url:
+      aResult.Append('u');
+      break;
+    case ReferrerPolicy::Same_origin:
+      aResult.Append('s');
+      break;
+    case ReferrerPolicy::Strict_origin:
+      aResult.Append('S');
+      break;
+    case ReferrerPolicy::Strict_origin_when_cross_origin:
+      aResult.Append('C');
+      break;
+  }
+
+  nsAutoCString partitionPrincipal;
+  BasePrincipal::Cast(mPartitionPrincipal)->ToJSON(partitionPrincipal);
+  aResult.Append(partitionPrincipal);
+}
+
+/* static */
+Maybe<ScriptHashKey> ScriptHashKey::FromStringsForLookup(
+    const nsACString& aKey, const nsACString& aURI, const nsACString& aNonce,
+    const nsACString& aHintCharset) {
+  if (aKey.Length() < 22) {
+    return Nothing();
+  }
+
+  if (Substring(aKey, 0, 18) != "SharedScriptCache:") {
+    return Nothing();
+  }
+
+  JS::loader::ScriptKind kind;
+  char kindChar = aKey[18];
+  if (kindChar == 'c') {
+    kind = JS::loader::ScriptKind::eClassic;
+  } else if (kindChar == 'm') {
+    kind = JS::loader::ScriptKind::eModule;
+  } else if (kindChar == 'e') {
+    kind = JS::loader::ScriptKind::eEvent;
+  } else if (kindChar == 'i') {
+    kind = JS::loader::ScriptKind::eImportMap;
+  } else {
+    return Nothing();
+  }
+
+  CORSMode corsMode;
+  char corsModeChar = aKey[19];
+  if (corsModeChar == 'n') {
+    corsMode = CORS_NONE;
+  } else if (corsModeChar == 'a') {
+    corsMode = CORS_ANONYMOUS;
+  } else if (corsModeChar == 'c') {
+    corsMode = CORS_USE_CREDENTIALS;
+  } else {
+    return Nothing();
+  }
+
+  mozilla::dom::ReferrerPolicy referrerPolicy;
+  char referrerPolicyChar = aKey[20];
+  if (referrerPolicyChar == '_') {
+    referrerPolicy = ReferrerPolicy::_empty;
+  } else if (referrerPolicyChar == 'n') {
+    referrerPolicy = ReferrerPolicy::No_referrer;
+  } else if (referrerPolicyChar == 'd') {
+    referrerPolicy = ReferrerPolicy::No_referrer_when_downgrade;
+  } else if (referrerPolicyChar == 'o') {
+    referrerPolicy = ReferrerPolicy::Origin;
+  } else if (referrerPolicyChar == 'c') {
+    referrerPolicy = ReferrerPolicy::Origin_when_cross_origin;
+  } else if (referrerPolicyChar == 'u') {
+    referrerPolicy = ReferrerPolicy::Unsafe_url;
+  } else if (referrerPolicyChar == 's') {
+    referrerPolicy = ReferrerPolicy::Same_origin;
+  } else if (referrerPolicyChar == 'S') {
+    referrerPolicy = ReferrerPolicy::Strict_origin;
+  } else if (referrerPolicyChar == 'C') {
+    referrerPolicy = ReferrerPolicy::Strict_origin_when_cross_origin;
+  } else {
+    return Nothing();
+  }
+
+  nsCOMPtr<nsIPrincipal> partitionPrincipal =
+      BasePrincipal::FromJSON(Substring(aKey, 21));
+  if (!partitionPrincipal) {
+    return Nothing();
+  }
+
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = NS_NewURI(getter_AddRefs(uri), aURI);
+  if (NS_FAILED(rv)) {
+    return Nothing();
+  }
+
+  return Some(ScriptHashKey(uri, partitionPrincipal, kind, corsMode,
+                            referrerPolicy, NS_ConvertUTF8toUTF16(aNonce),
+                            NS_ConvertUTF8toUTF16(aHintCharset)));
 }
 
 NS_IMPL_ISUPPORTS(ScriptLoadData, nsISupports)
@@ -190,6 +332,41 @@ void SharedScriptCache::Invalidate() {
     sSingleton->InvalidateInProcess();
   }
   TRACE_FOR_TEST_0("memorycache:invalidate");
+}
+
+/* static */
+bool SharedScriptCache::GetCachedScriptSource(
+    JSContext* aCx, const nsACString& aKey, const nsACString& aURI,
+    const nsACString& aNonce, const nsACString& aHintCharset,
+    JS::MutableHandle<JS::Value> aRetval) {
+  if (!sSingleton) {
+    aRetval.setUndefined();
+    return true;
+  }
+
+  Maybe<ScriptHashKey> maybeKey =
+      ScriptHashKey::FromStringsForLookup(aKey, aURI, aNonce, aHintCharset);
+  if (!maybeKey) {
+    aRetval.setUndefined();
+    return true;
+  }
+
+  JS::Stencil* stencil = nullptr;
+  if (auto lookup = sSingleton->mComplete.Lookup(*maybeKey)) {
+    JS::loader::LoadedScript* loadedScript = lookup.Data().mResource;
+    // NOTE: We don't check the SRIMetadata here, because this is not a
+    //       request from <script> element.
+    stencil = loadedScript->GetStencil();
+  } else {
+    aRetval.setUndefined();
+    return true;
+  }
+
+  if (!JS::GetScriptSourceText(aCx, stencil, aRetval)) {
+    return false;
+  }
+
+  return true;
 }
 
 void SharedScriptCache::InvalidateInProcess() {

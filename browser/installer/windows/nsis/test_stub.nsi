@@ -150,6 +150,9 @@ Function .onInit
     ${UnitTest} TestGetInstallationTypeFull_UTF16
     ${UnitTest} TestGetInstallationTypeOther_UTF16
 
+    ${UnitTest} TestGetHadOldInstallFailure
+    ${UnitTest} TestGetHadOldInstallSuccess
+
     ${UnitTest} TestIsInstallerLaunchedByDesktopLauncherNoParameter
     ${UnitTest} TestIsInstallerLaunchedByDesktopLauncherUnknownParameter
     ${UnitTest} TestIsInstallerLaunchedByDesktopLauncherSuccess
@@ -568,6 +571,20 @@ FunctionEnd
 !macroend
 !insertmacro GetInstallationTypeTests FileWrite ACP
 !insertmacro GetInstallationTypeTests FileWriteUTF16LE UTF16
+
+Function TestGetHadOldInstallFailure
+  StrCpy $PreviousInstallDir ""
+  Call GetHadOldInstall
+  Pop $0
+  ${AssertEqual} 0 "0"
+FunctionEnd
+
+Function TestGetHadOldInstallSuccess
+  StrCpy $PreviousInstallDir "foo"
+  Call GetHadOldInstall
+  Pop $0
+  ${AssertEqual} 0 "1"
+FunctionEnd
 
 Function TestIsInstallerLaunchedByDesktopLauncherNoParameter
   StrCpy $MockParameters ""

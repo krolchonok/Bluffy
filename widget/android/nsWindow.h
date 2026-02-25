@@ -122,7 +122,10 @@ class nsWindow final : public nsIWidget {
   static mozilla::TimeStamp GetEventTimeStamp(int64_t aEventTime);
 
   void InitEvent(mozilla::WidgetGUIEvent& event,
-                 LayoutDeviceIntPoint* aPoint = 0);
+                 LayoutDeviceIntPoint* aPoint = nullptr);
+
+  // See nsIHapticFeedback::HapticFeedbackType for available effects.
+  void PerformHapticFeedback(int32_t aEffect);
 
   void UpdateOverscrollVelocity(const float aX, const float aY);
   void UpdateOverscrollOffset(const float aX, const float aY);

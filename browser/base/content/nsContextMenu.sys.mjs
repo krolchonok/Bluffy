@@ -1573,12 +1573,9 @@ export class nsContextMenu {
       inBackground: false,
       resolveOnNewTabCreated: browser => {
         let linkTab = win.gBrowser.getTabForBrowser(browser);
-        if (linkTab) {
-          let openTabsTab = win.gBrowser.addTrustedTab("about:opentabs", {
-            userContextId,
-          });
-          win.gBrowser.addTabSplitView([linkTab, openTabsTab]);
-          win.gBrowser.selectedTab = openTabsTab;
+        if (linkTab && currentTab) {
+          win.gBrowser.addTabSplitView([currentTab, linkTab]);
+          win.gBrowser.selectedTab = linkTab;
         }
       },
     };

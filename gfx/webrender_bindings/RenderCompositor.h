@@ -125,6 +125,11 @@ class RenderCompositor {
 
   virtual bool UseLayerCompositor() const { return false; }
 
+  // Request RenderCompositor to enable taking screenshot
+  // In WebRender layer compositor case, taking screenshot will be ready in at
+  // most one WebRender composition.
+  //
+  // @return true if taking screenshot is ready.
   virtual bool EnableAsyncScreenshot() { return false; }
 
   // Interface for wr::Compositor
@@ -182,6 +187,16 @@ class RenderCompositor {
   virtual void GetCompositorCapabilities(CompositorCapabilities* aCaps);
 
   virtual void GetWindowVisibility(WindowVisibility* aVisibility);
+
+  // Called from WebRender Renderer::composite_simple().
+  // WindowProperties is used to control how to composite with WebRender layer
+  // compositor.
+  //
+  // @param WindowProperties::is_opaque Notify if rendering window is opaque.
+  // WebRender might use this to optimize layer allocation.
+  // @param WindowProperties::enable_screenshot Requests to WebRender to use
+  // only one content layer during composite for taking screenshot except debug
+  // layer.
   virtual void GetWindowProperties(WindowProperties* aProperties);
 
   // Interface for partial present

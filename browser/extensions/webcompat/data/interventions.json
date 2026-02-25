@@ -860,6 +860,10 @@
       "1818818": {
         "issue": "broken-interactive-elements",
         "matches": ["*://*.wellcare.com/*"]
+      },
+      "2012965": {
+        "issue": "broken-interactive-elements",
+        "matches": ["*://www.coolstuffinc.com/*"]
       }
     },
     "interventions": [
@@ -1142,6 +1146,10 @@
       "1964350": {
         "issue": "firefox-blocked-completely",
         "matches": ["*://*.bonusblitz.com/*"]
+      },
+      "2017590": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://*.slotsofvegas.com/*"]
       }
     },
     "interventions": [
@@ -6155,6 +6163,71 @@
       }
     ]
   },
+  "2009174": {
+    "label": "otr.oregon.gov",
+    "bugs": {
+      "2009174": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://otr.oregon.gov/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "ua_string": ["Chrome_with_FxQuantum"]
+      }
+    ]
+  },
+  "2009380": {
+    "label": "circuitdesremparts.com",
+    "bugs": {
+      "2009380": {
+        "issue": "page-fails-to-load",
+        "matches": [
+          "*://www.circuitdesremparts.com/prochaine-edition/billetterie/*"
+        ]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "skip_if": ["relaxed_name_validation_rules"],
+        "ua_string": ["add_Chrome"]
+      }
+    ]
+  },
+  "2009947": {
+    "label": "app.indiapost.gov.in",
+    "bugs": {
+      "2009947": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://app.indiapost.gov.in/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "ua_string": ["add_Chrome"]
+      }
+    ]
+  },
+  "2010102": {
+    "label": "osmosis.org",
+    "bugs": {
+      "2010102": {
+        "issue": "broken-layout",
+        "matches": ["*://www.osmosis.org/notes/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "content_scripts": {
+          "css": ["bug2010102-osmosis.org-center-pages.css"]
+        }
+      }
+    ]
+  },
   "2010794": {
     "label": "ipn2.paymentus.com",
     "bugs": {
@@ -6168,6 +6241,23 @@
     "interventions": [
       {
         "platforms": ["all"]
+      }
+    ]
+  },
+  "2011819": {
+    "label": "ogcrush.com",
+    "bugs": {
+      "2011819": {
+        "issue": "broken-scrolling",
+        "matches": ["*://www.ogcrush.ogcrush.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "content_scripts": {
+          "css": ["bug2011819-ogcrush.com-fix-slick-slide-height.css"]
+        }
       }
     ]
   },
@@ -6185,6 +6275,119 @@
         "content_scripts": {
           "all_frames": true,
           "js": ["bug2011862-copilot.zenwork.com-fix-chatbot.js"]
+        }
+      }
+    ]
+  },
+  "2011898": {
+    "label": "vanguard.com",
+    "bugs": {
+      "2011898": {
+        "issue": "broken-interactive-elements",
+        "matches": ["*://funds.web.vanguard.com/n/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "content_scripts": {
+          "css": ["bug2011898-vanguard.com-fix-obscured-inputs.css"]
+        }
+      }
+    ]
+  },
+  "2012708": {
+    "label": "myordbok.com",
+    "bugs": {
+      "2012708": {
+        "issue": "broken-layout",
+        "matches": ["*://myordbok.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["desktop"],
+        "content_scripts": {
+          "css": ["bug2012708-myordbok.com-fix-layout.css"]
+        }
+      }
+    ]
+  },
+  "2012789": {
+    "label": "zoopla.co.uk",
+    "bugs": {
+      "2012789": {
+        "issue": "broken-interactive-elements",
+        "matches": ["*://www.zoopla.co.uk/for-sale/map/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["desktop"],
+        "content_scripts": {
+          "js": ["bug2012789-zoopla.co.uk-fix-drawing.js"]
+        }
+      }
+    ]
+  },
+  "2013856": {
+    "label": "4gamer.net",
+    "bugs": {
+      "2013856": {
+        "issue": "desktop-layout-not-mobile",
+        "matches": ["*://www.4gamer.net/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "ua_string": ["Chrome_with_FxQuantum"]
+      }
+    ]
+  },
+  "2013906": {
+    "label": "tibi.be",
+    "bugs": {
+      "2013906": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://tibi.monconteneur.be/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "ua_string": ["add_Chrome"]
+      }
+    ]
+  },
+  "2014713": {
+    "label": "javalab.org",
+    "bugs": {
+      "2014713": {
+        "issue": "broken-interactive-elements",
+        "matches": ["*://javalab.org/*potential_energy_by_gravity*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "ua_string": ["add_Safari"]
+      }
+    ]
+  },
+  "2015962": {
+    "label": "usbank.com",
+    "bugs": {
+      "2015962": {
+        "issue": "broken-layout",
+        "matches": ["*://onlinebanking.usbank.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "content_scripts": {
+          "css": ["bug2015962-usbank.com-font-fix.css"]
         }
       }
     ]

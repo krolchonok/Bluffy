@@ -219,6 +219,15 @@ var InterventionHelpers = {
     InstallTrigger_undefined: () => {
       return !("InstallTrigger" in window);
     },
+    relaxed_name_validation_rules: () => {
+      const n = document.createElement("div");
+      try {
+        n.setAttribute(",", "");
+      } catch (_) {
+        return false;
+      }
+      return true;
+    },
     text_event_supported: () => {
       return !!window.TextEvent;
     },

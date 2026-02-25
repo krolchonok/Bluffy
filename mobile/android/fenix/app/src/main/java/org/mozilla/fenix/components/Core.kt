@@ -408,10 +408,11 @@ class Core(
                         rootStorageDirectory = context.filesDir,
                         readJson = readJson,
                         collectionName = COLLECTION_NAME,
-                        serverUrl = if (context.settings().useProductionRemoteSettingsServer) {
-                            REMOTE_PROD_ENDPOINT_URL
-                        } else {
-                            REMOTE_STAGE_ENDPOINT_URL
+                        serverUrl = when (context.settings().remoteSettingsServer) {
+                            context.getString(R.string.remote_settings_server_prod) -> REMOTE_PROD_ENDPOINT_URL
+                            context.getString(R.string.remote_settings_server_dev) -> REMOTE_DEV_ENDPOINT_URL
+                            context.getString(R.string.remote_settings_server_stage) -> REMOTE_STAGE_ENDPOINT_URL
+                            else -> REMOTE_PROD_ENDPOINT_URL
                         },
                     ).updateProviderList()
                 }
@@ -746,5 +747,6 @@ class Core(
         const val COLLECTION_NAME = "search-telemetry-v2"
         internal const val REMOTE_PROD_ENDPOINT_URL = "https://firefox.settings.services.mozilla.com"
         internal const val REMOTE_STAGE_ENDPOINT_URL = "https://firefox.settings.services.allizom.org"
+        internal const val REMOTE_DEV_ENDPOINT_URL = "https://remote-settings-dev.allizom.org"
     }
 }

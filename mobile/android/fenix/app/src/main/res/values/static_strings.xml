@@ -27,8 +27,20 @@
     <string name="preferences_debug_settings">Secret Settings</string>
     <!-- Label for the secret settings preference -->
     <string name="preferences_debug_info" translatable="false">Secret Debug Info</string>
-    <!-- Label for using remote settings server url -->
-    <string name="preferences_debug_settings_remote_settings_server" translatable="false">Use Remote Settings Production server \n(Staging will be used when disabled) \n(requires restart)</string>
+    <!-- Label for remote settings server preference -->
+    <string name="preferences_debug_settings_remote_settings_server_label" translatable="false">Remote Settings Server (requires restart)</string>
+    <!-- Label for Production server option -->
+    <string name="preferences_remote_settings_server_prod_label" translatable="false">Production</string>
+    <!-- Label for Staging server option -->
+    <string name="preferences_remote_settings_server_stage_label" translatable="false">Staging</string>
+    <!-- Label for Development server option -->
+    <string name="preferences_remote_settings_server_dev_label" translatable="false">Development</string>
+    <!-- Toast message shown when starting to sync remote settings -->
+    <string name="preferences_remote_settings_syncing" translatable="false">Syncing remote settings…</string>
+    <!-- Toast message shown when remote settings sync completes successfully -->
+    <string name="preferences_remote_settings_synced" translatable="false">Remote settings synced successfully</string>
+    <!-- Toast message shown when remote settings sync fails. %s is replaced with the error message -->
+    <string name="preferences_remote_settings_sync_failed" translatable="false">Failed to sync remote settings: %s</string>
     <!-- Label for allowing third party root certificates from the Android OS CA store preference -->
     <string name="preferences_debug_settings_allow_third_party_root_certs">Use third party CA certificates</string>
     <!-- Label for a longer description of allowing third party root certificates from the Android OS CA store preference -->

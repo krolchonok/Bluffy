@@ -2563,13 +2563,15 @@ class XPCShellTests:
         if self.try_again_list:
             self.log.info("Retrying tests that failed when run in parallel.")
             self.log.group_start(name="retry")
+
+        try_again_kwargs = kwargs.copy()
+        try_again_kwargs["retry"] = False
         for test_object in self.try_again_list:
             test = testClass(
                 test_object,
-                retry=False,
                 verbose=self.verbose,
                 mobileArgs=mobileArgs,
-                **kwargs,
+                **try_again_kwargs,
             )
             self.start_test(test)
             test.join()

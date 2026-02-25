@@ -10,8 +10,8 @@
 
 body {
   --tabpanel-background-color: transparent;
-  background-color: white;
-  background-image: var(--ai-gradient);
+  background-color: white !important;
+  background-image: var(--ai-gradient) !important;
 }
 
 /* LightWeightThemeConsumer forces these backgrounds to be opaque, but we want

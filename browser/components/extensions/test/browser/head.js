@@ -56,10 +56,6 @@ const { AppUiTestDelegate, AppUiTestInternals } = ChromeUtils.importESModule(
   "resource://testing-common/AppUiTestDelegate.sys.mjs"
 );
 
-const { Preferences } = ChromeUtils.importESModule(
-  "resource://gre/modules/Preferences.sys.mjs"
-);
-
 ChromeUtils.defineESModuleGetters(this, {
   Management: "resource://gre/modules/Extension.sys.mjs",
 });
@@ -858,15 +854,6 @@ async function triggerPageActionWithKeyboardInPanel(
 
 function closePageAction(extension, win = window) {
   return AppUiTestDelegate.closePageAction(win, extension.id);
-}
-
-function promisePrefChangeObserved(pref) {
-  return new Promise(resolve =>
-    Preferences.observe(pref, function prefObserver() {
-      Preferences.ignore(pref, prefObserver);
-      resolve();
-    })
-  );
 }
 
 function promiseWindowRestored(window) {

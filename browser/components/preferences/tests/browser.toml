@@ -108,9 +108,6 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt",
 ]
 
-
-["browser_defaultbrowser_alwayscheck.js"]
-
 ["browser_dns_over_https_exceptions_subdialog.js"]
 
 ["browser_downloads.js"]

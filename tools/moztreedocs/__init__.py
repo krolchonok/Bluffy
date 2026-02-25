@@ -137,7 +137,9 @@ class _SphinxManager:
         m = InstallManifest()
 
         with open(os.path.join(MAIN_DOC_PATH, "config.yml")) as fh:
-            tree_config = yaml.safe_load(fh)["categories"]
+            config = yaml.safe_load(fh)
+            tree_config = config["categories"]
+            exclude_patterns = config.get("exclude_patterns", [])
 
         m.add_link(self.conf_py_path, "conf.py")
 
@@ -148,6 +150,11 @@ class _SphinxManager:
                     source_path = os.path.normpath(os.path.join(root, f))
                     rel_source = source_path[len(source_dir) + 1 :]
                     target = os.path.normpath(os.path.join(dest, rel_source))
+
+                    # Skip files matching exclude patterns
+                    if any(pattern in source_path for pattern in exclude_patterns):
+                        continue
+
                     m.add_link(source_path, target)
 
         copier = FileCopier()

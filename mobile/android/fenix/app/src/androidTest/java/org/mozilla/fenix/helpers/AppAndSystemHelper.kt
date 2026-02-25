@@ -510,6 +510,15 @@ object AppAndSystemHelper {
         Log.i(TAG, "denyPermission: Clicked the negative camera system permission button.")
     }
 
+    fun denyPermissionAndDontAskAgainButton() {
+        Log.i(TAG, "denyPermissionAndDontAskAgainButton: Waiting $waitingTime ms for the negative camera system permission button to exist.")
+        itemWithResId("com.android.permissioncontroller:id/permission_deny_and_dont_ask_again_button").waitForExists(waitingTime)
+        Log.i(TAG, "denyPermissionAndDontAskAgainButton: Waited for $waitingTime ms for the negative camera system permission button to exist.")
+        Log.i(TAG, "denyPermissionAndDontAskAgainButton: Trying to click the negative camera system permission button.")
+        itemWithResId("com.android.permissioncontroller:id/permission_deny_and_dont_ask_again_button").click()
+        Log.i(TAG, "denyPermissionAndDontAskAgainButton: Clicked the negative camera system permission button.")
+    }
+
     fun verifySystemPhotoAndVideoPickerExists() {
         assertUIObjectExists(itemWithResId("com.google.android.providers.media.module:id/bottom_sheet"))
     }

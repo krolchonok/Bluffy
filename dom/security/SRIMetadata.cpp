@@ -196,4 +196,18 @@ bool SRIMetadata::CanTrustBeDelegatedTo(const SRIMetadata& aOther) const {
   return true;
 }
 
+size_t SRIMetadata::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
+  size_t bytes = aMallocSizeOf(this);
+
+  for (const auto& hash : mHashes) {
+    bytes += hash.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+  }
+
+  bytes += mIntegrityString.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+
+  bytes += mAlgorithm.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+
+  return bytes;
+}
+
 }  // namespace mozilla::dom

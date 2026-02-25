@@ -312,7 +312,6 @@ config = {
         },
     },  # end suite_definitions
     "unstructured_suites": [
-        "gtest",
         "jittest",
     ],
 }

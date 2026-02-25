@@ -497,6 +497,9 @@ class PromptFeature private constructor(
                                     strongPasswordPromptViewListener?.dismissCurrentSuggestStrongPassword(
                                         activePromptRequest as SelectLoginPrompt,
                                     )
+                                    emailMaskPromptViewListener?.dismissCurrentEmailMaskPrompt(
+                                        activePromptRequest as SelectLoginPrompt,
+                                    )
                                 }
 
                                 is SaveLoginPrompt -> {

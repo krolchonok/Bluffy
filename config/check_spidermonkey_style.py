@@ -76,6 +76,7 @@ included_inclnames_to_ignore = set([
     "jit/LIROpsGenerated.h",  # generated in $OBJDIR
     "jit/MIROpsGenerated.h",  # generated in $OBJDIR
     "js/PrefsGenerated.h",  # generated in $OBJDIR
+    "js/normalizer_glue.h",  # generated
     "mozilla/ProfilingCategoryList.h",  # comes from mozglue/baseprofiler
     "mozilla/glue/Debug.h",  # comes from mozglue/misc, shadowed by <mozilla/Debug.h>
     "mozilla/glean/JsSrcMetrics.h",  # generated in $OBJDIR"

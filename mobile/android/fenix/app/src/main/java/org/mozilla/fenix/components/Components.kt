@@ -214,10 +214,11 @@ class Components(private val context: Context) {
     val remoteSettingsService = lazyMonitored {
         RemoteSettingsService(
             context,
-            if (context.settings().useProductionRemoteSettingsServer) {
-                RemoteSettingsServer.Prod.into()
-            } else {
-                RemoteSettingsServer.Stage.into()
+            when (context.settings().remoteSettingsServer) {
+                context.getString(R.string.remote_settings_server_prod) -> RemoteSettingsServer.Prod.into()
+                context.getString(R.string.remote_settings_server_dev) -> RemoteSettingsServer.Dev.into()
+                context.getString(R.string.remote_settings_server_stage) -> RemoteSettingsServer.Stage.into()
+                else -> RemoteSettingsServer.Prod.into()
             },
             channel = BuildConfig.BUILD_TYPE,
             // Need to send this value separately, since `isLargeScreenSize()` is a fenix extension

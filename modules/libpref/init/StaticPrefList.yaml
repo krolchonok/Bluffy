@@ -272,7 +272,7 @@
 
 - name: accessibility.ariaNotify.enabled
   type: bool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # Whether to enable all accessibility cache domains on startup.
@@ -1867,19 +1867,19 @@
 # Global Cache
 - name: browser.safebrowsing.globalCache.enabled
   type: bool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # SafeBrowsing Real-Time Lookup
 - name: browser.safebrowsing.realTime.enabled
   type: bool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # SafeBrowsing Real-Time Request Simulation
 - name: browser.safebrowsing.realTime.simulation.enabled
   type: bool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # Hit probability for the simulation, expressed as parts per million.
@@ -1887,7 +1887,7 @@
 # Lower values = more simulated requests over time.
 - name: browser.safebrowsing.realTime.simulation.hitProbability
   type: RelaxedAtomicUint32
-  value: 100
+  value: 5
   mirror: always
 
 # TTL for cached full hashes in the simulation cache (seconds)

@@ -23,6 +23,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -174,6 +175,9 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                 onRequestDismiss = ::dismiss,
                 handlebarContentDescription = "",
             ) {
+                val websiteInfoState by remember {
+                    store.stateFlow.map { state -> state.websiteInfoState }
+                }.collectAsState(initial = store.state.websiteInfoState)
                 val baseDomain by remember {
                     store.stateFlow.map { state -> state.baseDomain }
                 }.collectAsState(initial = null)
@@ -251,6 +255,10 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                     )
                 }
 
+                LaunchedEffect(Unit) {
+                    store.dispatch(TrustPanelAction.RequestQWAC)
+                }
+
                 AnimatedContent(
                     targetState = contentState,
                     transitionSpec = trustPanelTransitionSpec(contentState),
@@ -259,7 +267,7 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                     when (route) {
                         Route.ProtectionPanel -> {
                             ProtectionPanel(
-                                websiteInfoState = store.state.websiteInfoState,
+                                websiteInfoState = websiteInfoState,
                                 icon = sessionState?.content?.icon,
                                 isTrackingProtectionEnabled = isTrackingProtectionEnabled,
                                 isGlobalTrackingProtectionEnabled = isGlobalTrackingProtectionEnabled,
@@ -287,6 +295,9 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                                 },
                                 onViewCertificateClick = {
                                     store.dispatch(TrustPanelAction.Navigate.SecurityCertificate)
+                                },
+                                onViewQWACClick = {
+                                    store.dispatch(TrustPanelAction.Navigate.QWAC)
                                 },
                             )
                         }
