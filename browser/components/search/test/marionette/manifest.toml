@@ -2,6 +2,7 @@
 run-if = [
   "buildapp == 'browser'",
 ]
+subsuite = "integration"
 
 ["include:telemetry/manifest.toml"]
 

@@ -1,3 +1,4 @@
 [DEFAULT]
+subsuite = "integration"
 
 ["test_persistent_notification_restart.py"]

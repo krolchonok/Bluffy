@@ -576,6 +576,9 @@ public final class GeckoRuntime implements Parcelable {
       mScreenChangeListener.enable();
     }
 
+    // Warm up window context of default display.
+    GeckoAppShell.maybeInitScreen();
+
     ProfilerController.addMarker(
         "GeckoView Initialization START", ProfilerController.getProfilerTime());
     return true;

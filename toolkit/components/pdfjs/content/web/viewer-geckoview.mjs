@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.135
- * pdfjsBuild = 909a700af
+ * pdfjsVersion = 5.5.146
+ * pdfjsBuild = 4ecbd0cbe
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -80,6 +80,9 @@ const {
   isDataScheme,
   isPdfFile,
   isValidExplicitDest,
+  makeArr,
+  makeMap,
+  makeObj,
   MathClamp,
   noContextMenu,
   normalizeUnicode,
@@ -6926,12 +6929,7 @@ class StructTreeLayerBuilder {
       const label = removeNullCharacters(alt);
       for (const child of structElement.children) {
         if (child.type === "annotation") {
-          let attrs = this.#elementAttributes.get(child.id);
-          if (!attrs) {
-            attrs = new Map();
-            this.#elementAttributes.set(child.id, attrs);
-          }
-          attrs.set("aria-label", label);
+          this.#elementAttributes.getOrInsertComputed(child.id, makeMap).set("aria-label", label);
           added = true;
         }
       }
@@ -8558,7 +8556,7 @@ class PDFViewer {
   #viewerAlert = null;
   #copiedPageViews = null;
   constructor(options) {
-    const viewerVersion = "5.5.135";
+    const viewerVersion = "5.5.146";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -9893,7 +9891,7 @@ class PDFViewer {
             if (percent === 0 || widthPercent < 100) {
               continue;
             }
-            pageLayout.getOrInsert(y, []).push(id);
+            pageLayout.getOrInsertComputed(y, makeArr).push(id);
           }
           for (const yArray of pageLayout.values()) {
             const currentIndex = yArray.indexOf(currentPageNumber);

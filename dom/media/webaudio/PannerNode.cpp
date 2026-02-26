@@ -353,37 +353,29 @@ void PannerNode::SetPanningModel(PanningModelType aPanningModel) {
   SendInt32ParameterToTrack(PANNING_MODEL, int32_t(mPanningModel));
 }
 
-static bool SetParamFromDouble(AudioParam* aParam, double aValue,
-                               const char (&aParamName)[2], ErrorResult& aRv) {
-  float value = static_cast<float>(aValue);
-  if (!std::isfinite(value)) {
-    aRv.ThrowTypeError<MSG_NOT_FINITE>(aParamName);
-    return false;
-  }
-  aParam->SetValue(value, aRv);
-  return !aRv.Failed();
-}
-
-void PannerNode::SetPosition(double aX, double aY, double aZ,
-                             ErrorResult& aRv) {
-  if (!SetParamFromDouble(mPositionX, aX, "x", aRv)) {
+void PannerNode::SetPosition(float aX, float aY, float aZ, ErrorResult& aRv) {
+  mPositionX->SetValue(aX, aRv);
+  if (aRv.Failed()) {
     return;
   }
-  if (!SetParamFromDouble(mPositionY, aY, "y", aRv)) {
+  mPositionY->SetValue(aY, aRv);
+  if (aRv.Failed()) {
     return;
   }
-  SetParamFromDouble(mPositionZ, aZ, "z", aRv);
+  mPositionZ->SetValue(aZ, aRv);
 }
 
-void PannerNode::SetOrientation(double aX, double aY, double aZ,
+void PannerNode::SetOrientation(float aX, float aY, float aZ,
                                 ErrorResult& aRv) {
-  if (!SetParamFromDouble(mOrientationX, aX, "x", aRv)) {
+  mOrientationX->SetValue(aX, aRv);
+  if (aRv.Failed()) {
     return;
   }
-  if (!SetParamFromDouble(mOrientationY, aY, "y", aRv)) {
+  mOrientationY->SetValue(aY, aRv);
+  if (aRv.Failed()) {
     return;
   }
-  SetParamFromDouble(mOrientationZ, aZ, "z", aRv);
+  mOrientationZ->SetValue(aZ, aRv);
 }
 
 size_t PannerNode::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {

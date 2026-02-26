@@ -101,3 +101,7 @@ marionette-integration:
                     .*-asan.*: 2
                     .*-tsan.*: 2
                     default: 1
+    mozharness:
+        extra-options:
+            - --subsuite=integration
+            - --test-manifest=integration-tests.toml

@@ -266,6 +266,7 @@ exports.ANIMATION_TYPE_FOR_LONGHANDS = [
       "scroll-timeline-axis",
       "scroll-timeline-name",
       "size",
+      "timeline-scope",
       "transition-behavior",
       "transition-delay",
       "transition-duration",

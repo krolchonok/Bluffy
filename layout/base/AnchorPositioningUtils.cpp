@@ -175,7 +175,7 @@ bool IsAnchorInScopeForPositionedElement(const ScopedNameRef& aName,
     for (nsIContent* cp = aFrame->GetContent();
          cp && cp != positionedContainingBlockContent;
          cp = cp->GetFlattenedTreeParentElementForStyle()) {
-      const auto* anchorScope = [&]() -> const StyleAnchorScope* {
+      const auto* anchorScope = [&]() -> const StyleScopedName* {
         const nsIFrame* f = nsLayoutUtils::GetStyleFrame(cp);
         if (MOZ_LIKELY(f)) {
           return &f->StyleDisplay()->mAnchorScope;

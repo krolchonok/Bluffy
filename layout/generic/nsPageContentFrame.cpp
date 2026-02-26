@@ -68,7 +68,11 @@ void nsPageContentFrame::Reflow(nsPresContext* aPresContext,
     nsIFrame* const frame = mFrames.FirstChild();
     const WritingMode frameWM = frame->GetWritingMode();
     const LogicalSize logicalSize(frameWM, maxSize);
-    ReflowInput kidReflowInput(aPresContext, aReflowInput, frame, logicalSize);
+    LogicalSize availSize = logicalSize;
+    if (aReflowInput.mFlags.mIsInFragmentainerMeasuringReflow) {
+      availSize.BSize(frameWM) = NS_UNCONSTRAINEDSIZE;
+    }
+    ReflowInput kidReflowInput(aPresContext, aReflowInput, frame, availSize);
     kidReflowInput.SetComputedBSize(logicalSize.BSize(frameWM));
     ReflowOutput kidReflowOutput(kidReflowInput);
     ReflowChild(frame, aPresContext, kidReflowOutput, kidReflowInput, 0, 0,
@@ -165,7 +169,8 @@ void nsPageContentFrame::Reflow(nsPresContext* aPresContext,
                "fixed frames can be truncated, but not incomplete");
 
   if (StaticPrefs::layout_display_list_improve_fragmentation() &&
-      mFrames.NotEmpty()) {
+      mFrames.NotEmpty() &&
+      !aReflowInput.mFlags.mIsInFragmentainerMeasuringReflow) {
     auto* const previous =
         static_cast<nsPageContentFrame*>(GetPrevContinuation());
     const nscoord previousPageOverflow =
@@ -420,11 +425,12 @@ void nsPageContentFrame::AppendDirectlyOwnedAnonBoxes(
 }
 
 void nsPageContentFrame::EnsurePageName() {
-  MOZ_ASSERT(HasAnyStateBits(NS_FRAME_FIRST_REFLOW),
-             "Should only have been called on first reflow");
   if (mPageName) {
     return;
   }
+  MOZ_ASSERT(HasAnyStateBits(NS_FRAME_FIRST_REFLOW),
+             "Should only have been called on first reflow");
+
   MOZ_ASSERT(!GetPrevInFlow(),
              "Only the first page should initially have a null page name.");
   // This was the first page, we need to find our own page name and then set

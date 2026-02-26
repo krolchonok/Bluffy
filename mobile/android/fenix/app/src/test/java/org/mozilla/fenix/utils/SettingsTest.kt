@@ -31,6 +31,7 @@ import org.mozilla.fenix.nimbus.FakeNimbusEventStore
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataOnQuitType
+import org.mozilla.fenix.wallpapers.Wallpaper
 import org.robolectric.RobolectricTestRunner
 import java.util.Calendar
 
@@ -142,6 +143,13 @@ class SettingsTest {
 
         // Then
         assertEquals("Mozilla", settings.defaultSearchEngineName)
+    }
+
+    @Test
+    fun defaultWallpaperIsEdgeToEdge() {
+        // When just created
+        // Then
+        assertEquals(Wallpaper.EdgeToEdge.name, settings.currentWallpaperName)
     }
 
     @Test

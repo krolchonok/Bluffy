@@ -667,7 +667,7 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowColumns(
       kidReflowInput.mFlags.mIsColumnBalancing = aConfig.mIsBalancing;
       kidReflowInput.mFlags.mIsInLastColumnBalancingReflow =
           aConfig.mIsLastBalancingReflow;
-      kidReflowInput.mFlags.mIsInColumnMeasuringReflow =
+      kidReflowInput.mFlags.mIsInFragmentainerMeasuringReflow =
           aConfig.mIsInMeasuringReflow;
       kidReflowInput.mBreakType = ReflowInput::BreakType::Column;
 
@@ -1245,7 +1245,7 @@ void nsColumnSetFrame::Reflow(nsPresContext* aPresContext,
       // Only the top-level multicol can initiate a measuring reflow. If we are
       // a nested multicol, perform a measuring reflow only when the top-level
       // one is doing it.
-      return aReflowInput.mFlags.mIsInColumnMeasuringReflow;
+      return aReflowInput.mFlags.mIsInFragmentainerMeasuringReflow;
     }
     // Below is logic for top-level multicols.
     if (GetPrevInFlow()) {

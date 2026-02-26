@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.135
- * pdfjsBuild = 909a700af
+ * pdfjsVersion = 5.5.146
+ * pdfjsBuild = 4ecbd0cbe
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -892,6 +892,9 @@ function _isValidExplicitDest(validRef, validName, dest) {
   }
   return true;
 }
+const makeArr = () => [];
+const makeMap = () => new Map();
+const makeObj = () => Object.create(null);
 function MathClamp(v, min, max) {
   return Math.min(Math.max(v, min), max);
 }
@@ -7060,7 +7063,7 @@ class AnnotationStorage {
         if (key === "type") {
           continue;
         }
-        const counters = map.getOrInsertComputed(key, () => new Map());
+        const counters = map.getOrInsertComputed(key, makeMap);
         counters.set(val, (counters.get(val) ?? 0) + 1);
       }
     }
@@ -10386,7 +10389,7 @@ class CanvasGraphics {
     if ((img.bitmap || img.data) && img.count > 1) {
       const mainKey = img.bitmap || img.data.buffer;
       cacheKey = JSON.stringify(isPatternFill ? currentTransform : [currentTransform.slice(0, 4), fillColor]);
-      cache = this._cachedBitmapsMap.getOrInsertComputed(mainKey, () => new Map());
+      cache = this._cachedBitmapsMap.getOrInsertComputed(mainKey, makeMap);
       const cachedImage = cache.get(cacheKey);
       if (cachedImage && !isPatternFill) {
         const offsetX = Math.round(Math.min(currentTransform[0], currentTransform[2]) + currentTransform[4]);
@@ -11424,7 +11427,7 @@ class CanvasGraphics {
     copyCtxState(currentCtx, groupCtx);
     this.ctx = groupCtx;
     this.dependencyTracker?.inheritSimpleDataAsFutureForcedDependencies(["fillAlpha", "strokeAlpha", "globalCompositeOperation"]).pushBaseTransform(currentCtx);
-    this.setGState(opIdx, [["BM", "source-over"], ["ca", 1], ["CA", 1]]);
+    this.setGState(opIdx, [["BM", "source-over"], ["ca", 1], ["CA", 1], ["TR", null]]);
     this.groupStack.push(currentCtx);
     this.groupLevel++;
   }
@@ -12897,13 +12900,14 @@ class PDFDataTransportStreamRangeReader extends BasePDFStreamRangeReader {
 
 ;// ./src/display/pdf_objects.js
 const INITIAL_DATA = Symbol("INITIAL_DATA");
+const dataObj = () => ({
+  ...Promise.withResolvers(),
+  data: INITIAL_DATA
+});
 class PDFObjects {
   #objs = new Map();
   #ensureObj(objId) {
-    return this.#objs.getOrInsertComputed(objId, () => ({
-      ...Promise.withResolvers(),
-      data: INITIAL_DATA
-    }));
+    return this.#objs.getOrInsertComputed(objId, dataObj);
   }
   get(objId, callback = null) {
     if (callback) {
@@ -13396,7 +13400,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "5.5.135",
+    apiVersion: "5.5.146",
     data,
     password,
     disableAutoFetch,
@@ -13762,7 +13766,7 @@ class PDFPageProxy {
     } = intentArgs;
     this.#pendingCleanup = false;
     optionalContentConfigPromise ||= this._transport.getOptionalContentConfig(renderingIntent);
-    const intentState = this._intentStates.getOrInsertComputed(cacheKey, () => Object.create(null));
+    const intentState = this._intentStates.getOrInsertComputed(cacheKey, makeObj);
     if (intentState.streamReaderCancelTimeout) {
       clearTimeout(intentState.streamReaderCancelTimeout);
       intentState.streamReaderCancelTimeout = null;
@@ -15023,8 +15027,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "5.5.135";
-const build = "909a700af";
+const version = "5.5.146";
+const build = "4ecbd0cbe";
 
 ;// ./src/display/editor/color_picker.js
 
@@ -18559,7 +18563,7 @@ class AnnotationLayer {
       if (!isPopupAnnotation) {
         this.#elements.push(element);
         if (data.popupRef) {
-          popupToElements.getOrInsert(data.popupRef, []).push(element);
+          popupToElements.getOrInsertComputed(data.popupRef, makeArr).push(element);
         }
       }
       const rendered = element.render();
@@ -25252,6 +25256,9 @@ globalThis.pdfjsLib = {
   isDataScheme: isDataScheme,
   isPdfFile: isPdfFile,
   isValidExplicitDest: isValidExplicitDest,
+  makeArr: makeArr,
+  makeMap: makeMap,
+  makeObj: makeObj,
   MathClamp: MathClamp,
   noContextMenu: noContextMenu,
   normalizeUnicode: normalizeUnicode,
@@ -25280,4 +25287,4 @@ globalThis.pdfjsLib = {
   XfaLayer: XfaLayer
 };
 
-export { AbortException, AnnotationEditorLayer, AnnotationEditorParamsType, AnnotationEditorType, AnnotationEditorUIManager, AnnotationLayer, AnnotationMode, AnnotationType, CSSConstants, ColorPicker, DOMSVGFactory, DrawLayer, FeatureTest, GlobalWorkerOptions, ImageKind, InvalidPDFException, MathClamp, OPS, OutputScale, PDFDataRangeTransport, PDFDateString, PDFWorker, PasswordResponses, PermissionFlag, PixelsPerInch, RenderingCancelledException, ResponseException, SignatureExtractor, SupportedImageMimeTypes, TextLayer, TouchManager, Util, VerbosityLevel, XfaLayer, applyOpacity, build, createValidAbsoluteUrl, fetchData, findContrastColor, getDocument, getFilenameFromUrl, getPdfFilenameFromUrl, getRGB, getUuid, getXfaPageViewport, isDataScheme, isPdfFile, isValidExplicitDest, noContextMenu, normalizeUnicode, renderRichText, setLayerDimensions, shadow, stopEvent, updateUrlHash, version };
+export { AbortException, AnnotationEditorLayer, AnnotationEditorParamsType, AnnotationEditorType, AnnotationEditorUIManager, AnnotationLayer, AnnotationMode, AnnotationType, CSSConstants, ColorPicker, DOMSVGFactory, DrawLayer, FeatureTest, GlobalWorkerOptions, ImageKind, InvalidPDFException, MathClamp, OPS, OutputScale, PDFDataRangeTransport, PDFDateString, PDFWorker, PasswordResponses, PermissionFlag, PixelsPerInch, RenderingCancelledException, ResponseException, SignatureExtractor, SupportedImageMimeTypes, TextLayer, TouchManager, Util, VerbosityLevel, XfaLayer, applyOpacity, build, createValidAbsoluteUrl, fetchData, findContrastColor, getDocument, getFilenameFromUrl, getPdfFilenameFromUrl, getRGB, getUuid, getXfaPageViewport, isDataScheme, isPdfFile, isValidExplicitDest, makeArr, makeMap, makeObj, noContextMenu, normalizeUnicode, renderRichText, setLayerDimensions, shadow, stopEvent, updateUrlHash, version };

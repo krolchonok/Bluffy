@@ -195,6 +195,40 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
   Preferences.addSetting({
     id: "customHomepageReplaceWithCurrentPagesButton",
     deps: ["homepageDisplayPref", "disableCurrentPagesButton"],
+    // Re-evaluate disabled state on tab open/close (add/remove tabs) and
+    // pin/unpin (changes what getTabsForCustomHomepage() captures).
+    setup(emitChange) {
+      let win = /** @type {any} */ (
+        Services.wm.getMostRecentWindow("navigator:browser")
+      );
+      if (!win) {
+        return () => {};
+      }
+      const { tabContainer } = win.gBrowser;
+      // Best-effort filter: skip events from tabs already showing about:preferences.
+      // TabOpen fires before the URI is set, so it isn't caught here;
+      // the real exclusion happens inside getTabsForCustomHomepage().
+      const onTabChange = (/** @type {Event & { target: any }} */ event) => {
+        if (
+          event.target.linkedBrowser?.currentURI?.spec?.startsWith(
+            "about:preferences"
+          )
+        ) {
+          return;
+        }
+        emitChange();
+      };
+      tabContainer.addEventListener("TabOpen", onTabChange);
+      tabContainer.addEventListener("TabClose", onTabChange);
+      tabContainer.addEventListener("TabPinned", onTabChange);
+      tabContainer.addEventListener("TabUnpinned", onTabChange);
+      return () => {
+        tabContainer.removeEventListener("TabOpen", onTabChange);
+        tabContainer.removeEventListener("TabClose", onTabChange);
+        tabContainer.removeEventListener("TabPinned", onTabChange);
+        tabContainer.removeEventListener("TabUnpinned", onTabChange);
+      };
+    },
     onUserClick(e, { homepageDisplayPref }) {
       let tabs = lazy.HomePage.getTabsForCustomHomepage();
 

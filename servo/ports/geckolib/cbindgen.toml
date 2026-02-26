@@ -96,7 +96,7 @@ exclude = [
 include = [
   "AlignmentBaseline",
   "AnchorName",
-  "AnchorScope",
+  "ScopedName",
   "AnimationName",
   "AnimationTimeline",
   "AnimationIterationCount",
@@ -1125,9 +1125,9 @@ renaming_overrides_prefixing = true
   StyleAnimationName() : _0(nsGkAtoms::_empty) {}
 """
 
-"TimelineName" = """
+"TimelineIdent" = """
  public:
-  StyleTimelineName() : _0(nsGkAtoms::_empty) {}
+  StyleTimelineIdent() : _0(nsGkAtoms::_empty) {}
   nsAtom* AsAtom() const { return _0.AsAtom(); }
 """
 

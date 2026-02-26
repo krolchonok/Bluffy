@@ -102,9 +102,13 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
     return {};
   }
 
-  ReflowInput kidReflowInput(
-      aPresContext, aPageReflowInput, frame,
-      LogicalSize(frame->GetWritingMode(), availableSpace));
+  const auto kidWM = frame->GetWritingMode();
+  LogicalSize availSizeForKid(kidWM, availableSpace);
+  if (aPageReflowInput.mFlags.mIsInFragmentainerMeasuringReflow) {
+    availSizeForKid.BSize(kidWM) = NS_UNCONSTRAINEDSIZE;
+  }
+  ReflowInput kidReflowInput(aPresContext, aPageReflowInput, frame,
+                             availSizeForKid);
   kidReflowInput.mFlags.mIsTopOfPage = true;
   kidReflowInput.mFlags.mTableIsSplittable = true;
 

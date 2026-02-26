@@ -198,6 +198,10 @@ class ComputedStyle {
     mCachedInheritingStyles.AppendTo(aArray);
   }
 
+  void GetCachedLazyPseudoEntries(nsTArray<CachedStyleEntry>& aArray) const {
+    mCachedInheritingStyles.AppendEntriesTo(aArray);
+  }
+
   // Is the only link whose visitedness is allowed to influence the
   // style of the node this ComputedStyle is for (which is that element
   // or its nearest ancestor that is a link) visited?
@@ -225,17 +229,24 @@ class ComputedStyle {
   }
 
   void SetCachedInheritedAnonBoxStyle(ComputedStyle* aStyle) {
-    mCachedInheritingStyles.Insert(aStyle);
+    mCachedInheritingStyles.Insert(aStyle, aStyle->GetPseudoType());
   }
 
   ComputedStyle* GetCachedLazyPseudoStyle(const PseudoStyleRequest&) const;
 
-  void SetCachedLazyPseudoStyle(ComputedStyle* aStyle,
+  // aStyle may be null to record a probe that returned no matching rules.
+  void SetCachedLazyPseudoStyle(ComputedStyle* aStyle, PseudoStyleType aType,
                                 nsAtom* aFunctionalPseudoParameter) {
-    MOZ_ASSERT(aStyle->IsPseudoElement());
-    MOZ_ASSERT(!GetCachedLazyPseudoStyle(
-        {aStyle->GetPseudoType(), aFunctionalPseudoParameter}));
-    MOZ_ASSERT(aStyle->IsLazilyCascadedPseudoElement());
+    MOZ_ASSERT_IF(aStyle, aStyle->IsPseudoElement());
+    MOZ_ASSERT_IF(aStyle, aStyle->GetPseudoType() == aType);
+    // If a null entry was already cached for this pseudo (from a prior probe),
+    // avoid re-inserting. Lookup() returns nullptr for both "not cached" and
+    // "cached as null", so we need HasEntry() to distinguish them.
+    if (!aStyle &&
+        mCachedInheritingStyles.HasEntry({aType, aFunctionalPseudoParameter})) {
+      return;
+    }
+    MOZ_ASSERT(!GetCachedLazyPseudoStyle({aType, aFunctionalPseudoParameter}));
 
     // Since we're caching lazy pseudo styles on the ComputedValues of the
     // originating element, we can assume that we either have the same
@@ -246,11 +257,11 @@ class ComputedStyle {
     //
     // The one place this optimization breaks is with pseudo-elements that
     // support state (like :hover). So we just avoid sharing in those cases.
-    if (PseudoStyle::SupportsUserActionState(aStyle->GetPseudoType())) {
+    if (PseudoStyle::SupportsUserActionState(aType)) {
       return;
     }
 
-    mCachedInheritingStyles.Insert(aStyle, aFunctionalPseudoParameter);
+    mCachedInheritingStyles.Insert(aStyle, aType, aFunctionalPseudoParameter);
   }
 
 #define GENERATE_ACCESSOR(name_)                                         \

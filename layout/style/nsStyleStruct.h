@@ -1561,7 +1561,7 @@ struct StyleScrollTimeline {
   StyleScrollTimeline() = default;
   explicit StyleScrollTimeline(const StyleScrollTimeline& aCopy) = default;
 
-  nsAtom* GetName() const { return mName.AsAtom(); }
+  nsAtom* GetName() const { return mName.value.AsAtom(); }
   StyleScrollAxis GetAxis() const { return mAxis; }
 
   bool operator==(const StyleScrollTimeline&) const = default;
@@ -1576,7 +1576,7 @@ struct StyleViewTimeline {
   StyleViewTimeline() = default;
   explicit StyleViewTimeline(const StyleViewTimeline& aCopy) = default;
 
-  nsAtom* GetName() const { return mName.AsAtom(); }
+  nsAtom* GetName() const { return mName.value.AsAtom(); }
   StyleScrollAxis GetAxis() const { return mAxis; }
   const StyleViewTimelineInset& GetInset() const { return mInset; }
 
@@ -1700,7 +1700,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
 
   // 'none', 'all', or a list of one or more `<dashed-ident>` identifiers that
   // may identify anchor positioning anchor elements.
-  mozilla::StyleAnchorScope mAnchorScope;
+  mozilla::StyleScopedName mAnchorScope;
+
+  mozilla::StyleScopedName mTimelineScope;
 
   mozilla::Maybe<mozilla::WindowButtonType> GetWindowButtonType() const {
     if (MOZ_LIKELY(mDefaultAppearance == mozilla::StyleAppearance::None)) {

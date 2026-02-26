@@ -14856,7 +14856,11 @@
 
 - name: network.proxy.detect_system_proxy_changes
   type: RelaxedAtomicBool
+#ifdef XP_WIN
+  value: @IS_EARLY_BETA_OR_EARLIER@
+#else
   value: false
+#endif
   mirror: always
 
 # If all non-direct proxies have failed, we retry all of them in case they

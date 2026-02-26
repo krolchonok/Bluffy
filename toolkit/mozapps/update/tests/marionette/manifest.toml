@@ -1,4 +1,5 @@
 [DEFAULT]
+subsuite = "integration"
 
 ["test_no_window_update_restart.py"]
 run-if = [

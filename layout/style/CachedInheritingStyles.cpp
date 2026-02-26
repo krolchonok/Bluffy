@@ -14,28 +14,44 @@
 namespace mozilla {
 
 void CachedInheritingStyles::Insert(ComputedStyle* aStyle,
+                                    PseudoStyleType aType,
                                     nsAtom* aFunctionalPseudoParameter) {
-  MOZ_ASSERT(aStyle);
-  MOZ_ASSERT(aStyle->IsInheritingAnonBox() ||
-             aStyle->IsLazilyCascadedPseudoElement());
+  MOZ_ASSERT_IF(aStyle, aStyle->IsInheritingAnonBox() ||
+                            aStyle->IsLazilyCascadedPseudoElement());
+  MOZ_ASSERT_IF(aStyle, aStyle->GetPseudoType() == aType);
 
-  // For entries with a functional parameter, we always use indirect storage
-  // since direct mode only stores a ComputedStyle* without the parameter.
+  // Direct mode stores a single ComputedStyle* without a functional parameter.
+  // Null-direct mode stores a single probed-null result without a functional
+  // parameter (PseudoStyleType encoded in the upper bits of mBits).
+  // Functional parameters always require indirect storage.
   const bool needsIndirect = aFunctionalPseudoParameter != nullptr;
 
   if (IsEmpty() && !needsIndirect) {
-    RefPtr<ComputedStyle> s = aStyle;
-    mBits = reinterpret_cast<uintptr_t>(s.forget().take());
-    MOZ_ASSERT(!IsEmpty() && !IsIndirect());
+    if (aStyle) {
+      RefPtr<ComputedStyle> s = aStyle;
+      mBits = reinterpret_cast<uintptr_t>(s.forget().take());
+      MOZ_ASSERT(!IsEmpty() && !IsIndirect() && !IsNullDirect());
+    } else {
+      mBits = (static_cast<uintptr_t>(aType) << 2) | 2;
+      MOZ_ASSERT(IsNullDirect());
+    }
   } else if (IsIndirect()) {
     AsIndirect()->AppendElement(
-        CachedStyleEntry{aStyle, aFunctionalPseudoParameter});
+        CachedStyleEntry{aStyle, aFunctionalPseudoParameter, aType});
   } else {
     IndirectCache* cache = new IndirectCache();
     if (!IsEmpty()) {
-      cache->AppendElement(CachedStyleEntry{dont_AddRef(AsDirect()), nullptr});
+      if (IsNullDirect()) {
+        cache->AppendElement(
+            CachedStyleEntry{nullptr, nullptr, NullDirectType()});
+      } else {
+        auto* direct = AsDirect();
+        cache->AppendElement(CachedStyleEntry{dont_AddRef(direct), nullptr,
+                                              direct->GetPseudoType()});
+      }
     }
-    cache->AppendElement(CachedStyleEntry{aStyle, aFunctionalPseudoParameter});
+    cache->AppendElement(
+        CachedStyleEntry{aStyle, aFunctionalPseudoParameter, aType});
     mBits = reinterpret_cast<uintptr_t>(cache) | 1;
     MOZ_ASSERT(IsIndirect());
   }
@@ -47,7 +63,10 @@ ComputedStyle* CachedInheritingStyles::Lookup(
              PseudoStyle::IsInheritingAnonBox(aRequest.mType));
   if (IsIndirect()) {
     for (const auto& entry : *AsIndirect()) {
-      if (entry.mStyle->GetPseudoType() == aRequest.mType &&
+      if (!entry.mStyle) {
+        continue;
+      }
+      if (entry.mPseudoType == aRequest.mType &&
           entry.mFunctionalPseudoParameter == aRequest.mIdentifier) {
         return entry.mStyle;
       }
@@ -56,8 +75,12 @@ ComputedStyle* CachedInheritingStyles::Lookup(
     return nullptr;
   }
 
-  // Direct mode only stores non-functional entries.
+  // Direct modes only store non-functional entries.
   if (aRequest.mIdentifier) {
+    return nullptr;
+  }
+
+  if (IsNullDirect()) {
     return nullptr;
   }
 
@@ -65,15 +88,42 @@ ComputedStyle* CachedInheritingStyles::Lookup(
   return direct && direct->GetPseudoType() == aRequest.mType ? direct : nullptr;
 }
 
+bool CachedInheritingStyles::HasEntry(
+    const PseudoStyleRequest& aRequest) const {
+  if (IsIndirect()) {
+    for (const auto& entry : *AsIndirect()) {
+      if (entry.mPseudoType == aRequest.mType &&
+          entry.mFunctionalPseudoParameter == aRequest.mIdentifier) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  if (aRequest.mIdentifier) {
+    return false;
+  }
+
+  if (IsNullDirect()) {
+    return NullDirectType() == aRequest.mType;
+  }
+
+  ComputedStyle* direct = AsDirect();
+  return direct && direct->GetPseudoType() == aRequest.mType;
+}
+
 void CachedInheritingStyles::AppendTo(
     nsTArray<const ComputedStyle*>& aArray) const {
-  if (IsEmpty()) {
+  if (IsEmpty() || IsNullDirect()) {
     return;
   }
 
   if (IsIndirect()) {
     for (const auto& entry : *AsIndirect()) {
-      aArray.AppendElement(entry.mStyle.get());
+      if (entry.mStyle) {
+        aArray.AppendElement(entry.mStyle.get());
+      }
     }
     return;
   }
@@ -81,15 +131,40 @@ void CachedInheritingStyles::AppendTo(
   aArray.AppendElement(AsDirect());
 }
 
+void CachedInheritingStyles::AppendEntriesTo(
+    nsTArray<CachedStyleEntry>& aArray) const {
+  if (IsEmpty()) {
+    return;
+  }
+
+  if (IsIndirect()) {
+    aArray.AppendElements(*AsIndirect());
+    return;
+  }
+
+  if (IsNullDirect()) {
+    aArray.AppendElement(CachedStyleEntry{nullptr, nullptr, NullDirectType()});
+    return;
+  }
+
+  auto* direct = AsDirect();
+  aArray.AppendElement(
+      CachedStyleEntry{do_AddRef(direct), nullptr, direct->GetPseudoType()});
+}
+
 void CachedInheritingStyles::AddSizeOfIncludingThis(nsWindowSizes& aSizes,
                                                     size_t* aCVsSize) const {
   if (IsIndirect()) {
     for (const auto& entry : *AsIndirect()) {
-      if (!aSizes.mState.HaveSeenPtr(entry.mStyle)) {
+      if (entry.mStyle && !aSizes.mState.HaveSeenPtr(entry.mStyle)) {
         entry.mStyle->AddSizeOfIncludingThis(aSizes, aCVsSize);
       }
     }
 
+    return;
+  }
+
+  if (IsNullDirect()) {
     return;
   }
 

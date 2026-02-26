@@ -636,7 +636,7 @@ cbindgen-types = [
     { gecko = "StyleListStyleType", servo = "crate::values::computed::ListStyleType" },
     { gecko = "StyleAu", servo = "app_units::Au" },
     { gecko = "StyleAnchorName", servo = "crate::values::computed::position::AnchorName" },
-    { gecko = "StyleAnchorScope", servo = "crate::values::computed::position::AnchorScope" },
+    { gecko = "StyleScopedName", servo = "crate::values::computed::position::ScopedName" },
     { gecko = "StyleBorderSideWidth", servo = "crate::values::computed::border::BorderSideWidth" },
     { gecko = "StylePositionAnchor", servo = "crate::values::computed::position::PositionAnchor" },
     { gecko = "StylePositionArea", servo = "crate::values::computed::position::PositionArea" },

@@ -1,4 +1,5 @@
 [DEFAULT]
+subsuite = "integration"
 
 ["include:xdg_config/manifest.toml"]
 

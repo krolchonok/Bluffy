@@ -1612,6 +1612,22 @@ public class GeckoAppShell {
   /** The display id that is associated with the GeckoView object. */
   private static volatile int sDisplayId = Display.DEFAULT_DISPLAY;
 
+  /** Initialize screen information. This should be called at startup */
+  public static void maybeInitScreen() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+      return;
+    }
+
+    ThreadUtils.postToBackgroundThread(
+        new Runnable() {
+          @Override
+          public void run() {
+            // Since creating window context is expensive, we initialize it at startup.
+            sScreenCompat.getDisplay(sDisplayId);
+          }
+        });
+  }
+
   /* package */ static Rect getScreenSizeIgnoreOverride() {
     return sScreenCompat.getScreenSize(sDisplayId);
   }

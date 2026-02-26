@@ -27,6 +27,8 @@ struct CallBasicStats {
   std::optional<int64_t> ccfb_messages_received = std::nullopt;
   flat_map<uint32_t, SentCongestionControllerFeedbackStats>
       sent_ccfb_stats_per_ssrc;
+  flat_map<uint32_t, ReceivedCongestionControlFeedbackStats>
+      received_ccfb_stats_per_ssrc;
 };
 
 }  // namespace webrtc

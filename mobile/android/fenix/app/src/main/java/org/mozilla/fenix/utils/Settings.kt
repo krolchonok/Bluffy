@@ -435,7 +435,7 @@ class Settings(
 
     var currentWallpaperName by stringPreference(
         appContext.getPreferenceKey(R.string.pref_key_current_wallpaper),
-        default = Wallpaper.Default.name,
+        default = Wallpaper.EdgeToEdge.name,
     )
 
     /**

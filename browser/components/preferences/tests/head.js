@@ -1007,6 +1007,25 @@ async function openHomePreferences() {
 }
 
 /**
+ * Opens the custom homepage subpage directly and waits for it to fully render.
+ *
+ * @returns {Promise<object>} Object containing win, doc, and tab references.
+ */
+async function openCustomHomepageSubpage() {
+  await openPreferencesViaOpenPreferencesAPI("customHomepage", {
+    leaveOpen: true,
+  });
+  let doc = gBrowser.contentDocument;
+
+  await BrowserTestUtils.waitForCondition(
+    () => doc.querySelector("#setting-control-customHomepageAddUrlInput"),
+    "Wait for custom homepage subpage to fully render"
+  );
+
+  return { win: gBrowser.contentWindow, doc, tab: gBrowser.selectedTab };
+}
+
+/**
  * Waits for a setting control to render and complete any async updates.
  *
  * @param {string} settingId - The setting identifier.

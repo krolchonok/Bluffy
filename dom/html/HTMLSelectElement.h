@@ -354,7 +354,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   // Returns the text node that has the selected <option>'s text.
   // Note that it might return null for printing.
   Text* GetSelectedContentText() const;
-  void SelectedContentTextMightHaveChanged();
+  void SelectedContentTextMightHaveChanged(bool aNotify = true);
 
  protected:
   virtual ~HTMLSelectElement() = default;

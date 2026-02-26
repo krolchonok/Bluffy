@@ -138,14 +138,14 @@ static LogicalPoint* GetUnfragmentedPosition(const ReflowInput& aCBReflowInput,
   // If the absolute containing block is in a measuring reflow, then aFrame's
   // unfragmented position is going to be updated. Don't return the obsolete
   // value in the property.
-  return aCBReflowInput.mFlags.mIsInColumnMeasuringReflow
+  return aCBReflowInput.mFlags.mIsInFragmentainerMeasuringReflow
              ? nullptr
              : aFrame->GetProperty(UnfragmentedPositionProperty());
 }
 
 static LogicalSize* GetUnfragmentedSize(const ReflowInput& aCBReflowInput,
                                         const nsIFrame* aFrame) {
-  return aCBReflowInput.mFlags.mIsInColumnMeasuringReflow
+  return aCBReflowInput.mFlags.mIsInFragmentainerMeasuringReflow
              ? nullptr
              // Later fragment frames need to know the size for resolving
              // automatic sizes.
@@ -613,7 +613,7 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
 
   const auto* unfragmentedContainingBlockRects =
       [&]() -> const ContainingBlockRects* {
-    if (aReflowInput.mFlags.mIsInColumnMeasuringReflow) {
+    if (aReflowInput.mFlags.mIsInFragmentainerMeasuringReflow) {
       // Doing the measuring reflow, so set the unfragmented containing sizes
       // here.
       NS_WARNING_ASSERTION(aDelegatingFrame->FirstInFlow() == aDelegatingFrame,
@@ -772,10 +772,7 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
                             anchorPosResolutionCache.ptrOr(nullptr),
                             reuseUnfragmentedAnchorPosReferences);
 
-        // TODO(TYLin, Bug 2009647): We'll support a measuring reflow in
-        // printing scenario for fragmentainer-aware abspos positioning such
-        // that nsIFrame::UnfragmentedPositionProperty() will be set.
-        if (aReflowInput.mFlags.mIsInColumnMeasuringReflow) {
+        if (aReflowInput.mFlags.mIsInFragmentainerMeasuringReflow) {
           kidFrame->SetOrUpdateDeletableProperty(
               UnfragmentedPositionProperty(),
               kidFrame->GetLogicalPosition(containerWM, cbBorderBoxSize));

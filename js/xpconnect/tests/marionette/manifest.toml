@@ -1,4 +1,5 @@
 [DEFAULT]
+subsuite = "integration"
 
 ["test_preloader_cache_bypass.py"]
 

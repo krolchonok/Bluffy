@@ -14266,6 +14266,31 @@ if (IsCSSPropertyPrefEnabled("layout.css.scroll-driven-animations.enabled")) {
     ],
     invalid_values: ["", ",", "--abc --abc", "x --a", "block --abc"],
   };
+
+  gCSSProperties["timeline-scope"] = {
+    domProp: "timelineScope",
+    inherited: false,
+    type: CSS_TYPE_LONGHAND,
+    initial_values: ["none"],
+    other_values: [
+      "all",
+      "--foo",
+      "--foo, --baz",
+      "--foo,--baz",
+      "--foo ,--baz",
+    ],
+    invalid_values: [
+      "all, --foo",
+      "--foo, all",
+      "--foo --bar",
+      "foo",
+      "none bar",
+      "none --baz",
+      "--foo bar",
+      ",--foo",
+      "--foo,",
+    ],
+  };
 }
 
 gCSSProperties["scrollbar-gutter"] = {

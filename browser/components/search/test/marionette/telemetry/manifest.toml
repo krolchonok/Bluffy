@@ -2,5 +2,6 @@
 run-if = [
   "buildapp == 'browser'",
 ]
+subsuite = "integration"
 
 ["test_ping_submitted.py"]

@@ -1,4 +1,5 @@
 [DEFAULT]
+subsuite = "unittest"
 
 ["test_accessibility.py"]
 
