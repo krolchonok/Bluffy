@@ -516,6 +516,8 @@ fn copy_minidumps_files(profile_path: &Path) -> WebDriverResult<()> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(unsafe_code)]
+
     use super::*;
     use crate::browser::read_marionette_port;
     use crate::capabilities::{FirefoxOptions, ProfileType};
@@ -527,13 +529,8 @@ mod tests {
     use std::fs::File;
     use std::io::{Read, Write};
     use std::path::Path;
-    use std::sync::Mutex;
+    use std::sync::{LazyLock, Mutex, MutexGuard};
     use tempfile::TempDir;
-
-    // Mutex used to run environment variable–related tests sequentially.
-    lazy_static::lazy_static! {
-        static ref ENV_MUTEX: Mutex<()> = Mutex::new(());
-    }
 
     fn example_profile() -> Value {
         let mut profile_data = Vec::with_capacity(1024);
@@ -714,6 +711,45 @@ mod tests {
         assert!(extra_file_present);
     }
 
+    static ENV_MUTEX: LazyLock<Mutex<()>> = LazyLock::new(Mutex::default);
+    static MINIDUMP_KEY: &str = "MINIDUMP_SAVE_PATH";
+
+    pub(crate) struct MinidumpEnvironment<'environment> {
+        initial_environment: Option<String>,
+        #[allow(dead_code)]
+        guard: MutexGuard<'environment, ()>,
+    }
+
+    impl<'environment> MinidumpEnvironment<'environment> {
+        pub(crate) fn new() -> MinidumpEnvironment<'environment> {
+            MinidumpEnvironment {
+                initial_environment: env::var(MINIDUMP_KEY).ok(),
+                guard: ENV_MUTEX.lock().unwrap(),
+            }
+        }
+
+        pub(crate) fn set(&self, value: Option<&str>) {
+            fn set_env(key: &str, value: Option<&str>) {
+                // SAFETY: Safe as long as no other threads try to modify the environment
+                // This is enforced by Environment taking a mutex, so tests can't run
+                // in parallel.
+                unsafe {
+                    match value {
+                        Some(value) => env::set_var(key, value),
+                        None => env::remove_var(key),
+                    }
+                }
+            }
+            set_env(MINIDUMP_KEY, value);
+        }
+    }
+
+    impl Drop for MinidumpEnvironment<'_> {
+        fn drop(&mut self) {
+            self.set(self.initial_environment.clone().as_deref());
+        }
+    }
+
     fn create_file(folder: &Path, filename: &str) {
         let file = folder.join(filename);
         File::create(&file).unwrap();
@@ -742,7 +778,7 @@ mod tests {
 
     #[test]
     fn test_copy_minidumps() {
-        let _lock = ENV_MUTEX.lock().unwrap();
+        let env = MinidumpEnvironment::new();
 
         let tmp_dir_profile = TempDir::new().unwrap();
         let profile_path = tmp_dir_profile.path();
@@ -753,9 +789,8 @@ mod tests {
         let tmp_dir_minidumps = TempDir::new().unwrap();
         let minidumps_path = tmp_dir_minidumps.path();
 
-        std::env::set_var("MINIDUMP_SAVE_PATH", minidumps_path);
+        env.set(minidumps_path.to_str());
         assert!(copy_minidumps_files(profile_path).is_ok());
-        env::remove_var("MINIDUMP_SAVE_PATH");
 
         assert_minidump_files(minidumps_path, filename);
 
@@ -765,7 +800,7 @@ mod tests {
 
     #[test]
     fn test_copy_multiple_minidumps() {
-        let _lock = ENV_MUTEX.lock().unwrap();
+        let env = MinidumpEnvironment::new();
 
         let tmp_dir_profile = TempDir::new().unwrap();
         let profile_path = tmp_dir_profile.path();
@@ -779,9 +814,8 @@ mod tests {
         let tmp_dir_minidumps = TempDir::new().unwrap();
         let minidumps_path = tmp_dir_minidumps.path();
 
-        std::env::set_var("MINIDUMP_SAVE_PATH", minidumps_path);
+        env.set(minidumps_path.to_str());
         assert!(copy_minidumps_files(profile_path).is_ok());
-        env::remove_var("MINIDUMP_SAVE_PATH");
 
         assert_minidump_files(minidumps_path, filename_1);
         assert_minidump_files(minidumps_path, filename_1);
@@ -792,37 +826,35 @@ mod tests {
 
     #[test]
     fn test_copy_minidumps_with_non_existent_manifest_path() {
-        let _lock = ENV_MUTEX.lock().unwrap();
+        let env = MinidumpEnvironment::new();
 
         let tmp_dir_profile = TempDir::new().unwrap();
         let profile_path = tmp_dir_profile.path();
 
         create_minidump_folder(profile_path);
 
-        std::env::set_var("MINIDUMP_SAVE_PATH", Path::new("/non-existent"));
+        env.set(Path::new("/non-existent").to_str());
         assert!(copy_minidumps_files(profile_path).is_ok());
-        env::remove_var("MINIDUMP_SAVE_PATH");
 
         tmp_dir_profile.close().unwrap();
     }
 
     #[test]
     fn test_copy_minidumps_with_non_existent_profile_path() {
-        let _lock = ENV_MUTEX.lock().unwrap();
+        let env = MinidumpEnvironment::new();
 
         let tmp_dir_profile = TempDir::new().unwrap();
         let profile_path = tmp_dir_profile.path();
 
-        std::env::set_var("MINIDUMP_SAVE_PATH", Path::new("/non-existent"));
+        env.set(Path::new("/non-existent").to_str());
         assert!(copy_minidumps_files(profile_path).is_ok());
-        env::remove_var("MINIDUMP_SAVE_PATH");
 
         tmp_dir_profile.close().unwrap();
     }
 
     #[test]
     fn test_copy_minidumps_with_no_minidump_files() {
-        let _lock = ENV_MUTEX.lock().unwrap();
+        let env = MinidumpEnvironment::new();
 
         let tmp_dir_profile = TempDir::new().unwrap();
         let profile_path = tmp_dir_profile.path();
@@ -840,9 +872,8 @@ mod tests {
         let tmp_dir_minidumps = TempDir::new().unwrap();
         let minidumps_path = tmp_dir_minidumps.path();
 
-        std::env::set_var("MINIDUMP_SAVE_PATH", minidumps_path);
+        env.set(minidumps_path.to_str());
         assert!(copy_minidumps_files(profile_path).is_ok());
-        env::remove_var("MINIDUMP_SAVE_PATH");
 
         // Check that the non minidump file and the folder were not copied.
         assert!(minidumps_path.read_dir().unwrap().next().is_none());

@@ -15975,22 +15975,11 @@ nsresult OpenDatabaseOp::BeginVersionChange() {
   MOZ_ASSERT(!info->mWaitingFactoryOp);
   MOZ_ASSERT(info->mMetadata == mMetadata);
 
-  auto transaction = MakeSafeRefPtr<VersionChangeTransaction>(this);
-
-  if (NS_WARN_IF(!transaction->CopyDatabaseMetadata())) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-
-  MOZ_ASSERT(info->mMetadata != mMetadata);
-  mMetadata = info->mMetadata.clonePtr();
-
   const Maybe<uint64_t> newVersion = Some(mRequestedVersion);
 
   QM_TRY(MOZ_TO_RESULT(SendVersionChangeMessages(
       info, mDatabase.maybeDeref(), mMetadata->mCommonMetadata.version(),
       newVersion)));
-
-  mVersionChangeTransaction = std::move(transaction);
 
   if (mMaybeBlockedDatabases.IsEmpty()) {
     // We don't need to wait on any databases, just jump to the transaction
@@ -16026,16 +16015,37 @@ void OpenDatabaseOp::SendBlockedNotification() {
 nsresult OpenDatabaseOp::DispatchToWorkThread() {
   AssertIsOnOwningThread();
   MOZ_ASSERT(mState == State::WaitingForTransactionsToComplete);
-  MOZ_ASSERT(mVersionChangeTransaction);
-  MOZ_ASSERT(mVersionChangeTransaction->GetMode() ==
-             IDBTransaction::Mode::VersionChange);
   MOZ_ASSERT(mMaybeBlockedDatabases.IsEmpty());
+  // There's no other place which creates a version change transaction
+  // and sets mVersionChangeTransaction.
+  MOZ_ASSERT(!mVersionChangeTransaction);
 
   if (NS_WARN_IF(QuotaClient::IsShuttingDownOnBackgroundThread()) ||
       IsActorDestroyed() || mDatabase->IsInvalidated()) {
     IDB_REPORT_INTERNAL_ERR();
     return NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
   }
+
+  DatabaseActorInfo* info;
+  MOZ_ALWAYS_TRUE(gLiveDatabaseHashtable->Get(mDatabaseId.ref(), &info));
+
+  MOZ_ASSERT(info->mLiveDatabases.contains(mDatabase.unsafeGetRawPtr()));
+  MOZ_ASSERT(!info->mWaitingFactoryOp);
+  MOZ_ASSERT(info->mMetadata == mMetadata);
+
+  auto transaction = MakeSafeRefPtr<VersionChangeTransaction>(this);
+
+  if (NS_WARN_IF(!transaction->CopyDatabaseMetadata())) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  MOZ_ASSERT(info->mMetadata != mMetadata);
+  mMetadata = info->mMetadata.clonePtr();
+
+  mVersionChangeTransaction = std::move(transaction);
+
+  MOZ_ASSERT(mVersionChangeTransaction->GetMode() ==
+             IDBTransaction::Mode::VersionChange);
 
   mState = State::DatabaseWorkVersionChange;
 

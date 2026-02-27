@@ -6381,11 +6381,18 @@ void nsContentUtils::SetHTML(FragmentOrElement* aTarget, Element* aContext,
                    /* aSafe */ true, aError);
 }
 
+/* https://html.spec.whatwg.org/#unsafely-set-html */
+/* https://html.spec.whatwg.org/#dom-shadowroot-sethtmlunsafe */
+/* https://html.spec.whatwg.org/#dom-element-sethtmlunsafe */
 /* static */
 void nsContentUtils::SetHTMLUnsafe(
     FragmentOrElement* aTarget, Element* aContext,
     const TrustedHTMLOrString& aSource, const SetHTMLUnsafeOptions& aOptions,
     bool aIsShadowRoot, nsIPrincipal* aSubjectPrincipal, ErrorResult& aError) {
+  // Element's setHTMLUnsafe() step 1 / ShadowRoot's setHTMLUnsafe() step 1.
+  // "Let compliantHTML be the result of invoking the get trusted type compliant
+  // string algorithm with TrustedHTML, this's relevant global object, html,
+  // «Element setHTMLUnsafe» or «ShadowRoot setHTMLUnsafe», and «script»."
   constexpr nsLiteralString elementSink = u"Element setHTMLUnsafe"_ns;
   constexpr nsLiteralString shadowRootSink = u"ShadowRoot setHTMLUnsafe"_ns;
   Maybe<nsAutoString> compliantStringHolder;
@@ -6422,6 +6429,8 @@ void nsContentUtils::SetHTMLUnsafe(
     RefPtr<Document> doc = aTarget->OwnerDoc();
     fragment = doc->CreateDocumentFragment();
 
+    // XXX: Steps 1-3 are performed together by ParseFragment, which parses
+    // directly into the DocumentFragment.
     nsresult rv = sHTMLFragmentParser->ParseFragment(
         *compliantString, fragment, contextLocalName, contextNameSpaceID,
         fragment->OwnerDoc()->GetCompatibilityMode() ==
@@ -6432,6 +6441,7 @@ void nsContentUtils::SetHTMLUnsafe(
     }
   }
 
+  // Step 4. "Replace all with fragment within target."
   aTarget->ReplaceChildren(fragment, IgnoreErrors());
 }
 
@@ -6492,6 +6502,7 @@ uint32_t ComputeSanitizationFlags(nsIPrincipal* aPrincipal, int32_t aFlags) {
   return 0;
 }
 
+/* https://html.spec.whatwg.org/#html-fragment-parsing-algorithm */
 /* static */
 nsresult nsContentUtils::ParseFragmentHTML(
     const nsAString& aSourceBuffer, nsIContent* aTargetNode,
@@ -11245,8 +11256,11 @@ bool nsContentUtils::ComputeIsSecureContext(nsIChannel* aChannel) {
   return principal->GetIsOriginPotentiallyTrustworthy();
 }
 
-/* static */
+/* https://html.spec.whatwg.org/#concept-try-upgrade */
 void nsContentUtils::TryToUpgradeElement(Element* aElement) {
+  // 1. "Let definition be the result of looking up a custom element definition
+  //    given element's custom element registry, element's namespace, element's
+  //    local name, and element's is value."
   NodeInfo* nodeInfo = aElement->NodeInfo();
   RefPtr<nsAtom> typeAtom =
       aElement->GetCustomElementData()->GetCustomElementType();
@@ -11256,11 +11270,13 @@ void nsContentUtils::TryToUpgradeElement(Element* aElement) {
       nsContentUtils::LookupCustomElementDefinition(
           nodeInfo->GetDocument(), nodeInfo->NameAtom(),
           nodeInfo->NamespaceID(), typeAtom);
+  // 2. "If definition is not null, then enqueue a custom element upgrade
+  //    reaction given element and definition."
   if (definition) {
     nsContentUtils::EnqueueUpgradeReaction(aElement, definition);
   } else {
-    // Add an unresolved custom element that is a candidate for upgrade when a
-    // custom element is connected to the document.
+    // XXX: Not in spec. Add an unresolved custom element that is a candidate
+    // for upgrade when a custom element is connected to the document.
     nsContentUtils::RegisterUnresolvedElement(aElement, typeAtom);
   }
 }
@@ -11312,7 +11328,7 @@ static void DoCustomElementCreate(Element** aElement, JSContext* aCx,
   element.forget(aElement);
 }
 
-/* static */
+/* https://dom.spec.whatwg.org/#concept-create-element */
 nsresult nsContentUtils::NewXULOrHTMLElement(
     Element** aResult, mozilla::dom::NodeInfo* aNodeInfo,
     FromParser aFromParser, nsAtom* aIsAtom,
@@ -11359,10 +11375,8 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
 
   MOZ_ASSERT_IF(aDefinition, isCustomElement);
 
-  // https://dom.spec.whatwg.org/#concept-create-element
-  // We only handle the "synchronous custom elements flag is set" now.
-  // For the unset case (e.g. cloning a node), see bug 1319342 for that.
-  // Step 4.
+  // 3. "Let definition be the result of looking up a custom element definition
+  //    given registry, namespace, localName, and is."
   RefPtr<CustomElementDefinition> definition = aDefinition;
   if (isCustomElement && !definition) {
     MOZ_ASSERT(nodeInfo->NameAtom()->Equals(nodeInfo->LocalName()));
@@ -11416,12 +11430,11 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
     JSContext* cx = aes.cx();
     ErrorResult rv;
 
-    // Step 5.
+    // 4. "If definition is non-null, and definition's name is not equal to its
+    //    local name (i.e., definition represents a customized built-in
+    //    element):"
     if (definition->IsCustomBuiltIn()) {
-      // SetupCustomElement() should be called with an element that don't have
-      // CustomElementData setup, if not we will hit the assertion in
-      // SetCustomElementData().
-      // Built-in element
+      // 4.2. "Set result to the result of creating an element internal..."
       if (nodeInfo->NamespaceEquals(kNameSpaceID_XHTML)) {
         *aResult =
             CreateHTMLElement(tag, nodeInfo.forget(), aFromParser).take();
@@ -11430,25 +11443,38 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
       }
       (*aResult)->SetCustomElementData(MakeUnique<CustomElementData>(typeAtom));
       if (synchronousCustomElements) {
+        // 4.3. "If synchronousCustomElements is true, then run this step while
+        //       catching any exceptions: Upgrade result using definition."
         CustomElementRegistry::Upgrade(*aResult, definition, rv);
         if (rv.MaybeSetPendingException(cx)) {
           aes.ReportException();
         }
       } else {
+        // 4.4. "Otherwise, enqueue a custom element upgrade reaction given
+        //       result and definition."
         nsContentUtils::EnqueueUpgradeReaction(*aResult, definition);
       }
 
       return NS_OK;
     }
 
-    // Step 6.1.
+    // 5. "Otherwise, if definition is non-null:"
+    // 5.1. "If synchronousCustomElements is true:"
     if (synchronousCustomElements) {
+      // 5.1.1. "Let C be definition's constructor."
+      // 5.1.2. "Set the surrounding agent's active custom element constructor
+      //         map[C] to registry."
+      // 5.1.3. "Run these steps while catching any exceptions:
+      //         Set result to the result of constructing C, with no arguments."
       definition->mPrefixStack.AppendElement(nodeInfo->GetPrefixAtom());
       RefPtr<Document> doc = nodeInfo->GetDocument();
       DoCustomElementCreate(aResult, cx, doc, nodeInfo,
                             MOZ_KnownLive(definition->mConstructor), rv,
                             aFromParser);
       if (rv.MaybeSetPendingException(cx)) {
+        // "If any of these steps threw an exception: ... Set result to the
+        //  result of creating an element internal given document,
+        //  HTMLUnknownElement..."
         if (nodeInfo->NamespaceEquals(kNameSpaceID_XHTML)) {
           NS_IF_ADDREF(*aResult = NS_NewHTMLUnknownElement(nodeInfo.forget(),
                                                            aFromParser));
@@ -11461,7 +11487,9 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
       return NS_OK;
     }
 
-    // Step 6.2.
+    // 5.2. "Otherwise:"
+    // 5.2.1. "Set result to the result of creating an element internal given
+    //         document, HTMLElement, localName..."
     if (nodeInfo->NamespaceEquals(kNameSpaceID_XHTML)) {
       NS_IF_ADDREF(*aResult =
                        NS_NewHTMLElement(nodeInfo.forget(), aFromParser));
@@ -11470,10 +11498,15 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
     }
     (*aResult)->SetCustomElementData(
         MakeUnique<CustomElementData>(definition->mType));
+    // 5.2.2. "Enqueue a custom element upgrade reaction given result and
+    //         definition."
     nsContentUtils::EnqueueUpgradeReaction(*aResult, definition);
     return NS_OK;
   }
 
+  // 6. "Otherwise:"
+  // 6.1. "Let interface be the element interface for localName and namespace."
+  // 6.2. "Set result to the result of creating an element internal..."
   if (nodeInfo->NamespaceEquals(kNameSpaceID_XHTML)) {
     // Per the Custom Element specification, unknown tags that are valid
     // custom element names should be HTMLElement instead of
@@ -11492,16 +11525,29 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
+  // 6.3. "If namespace is the HTML namespace, and either localName is a valid
+  //       custom element name or is is non-null, then set result's custom
+  //       element state to "undefined"."
   if (isCustomElement) {
     (*aResult)->SetCustomElementData(MakeUnique<CustomElementData>(typeAtom));
     nsContentUtils::RegisterCallbackUpgradeElement(*aResult, typeAtom);
   }
 
+  // 7. "Return result."
   return NS_OK;
 }
 
+/* https://html.spec.whatwg.org/#look-up-a-custom-element-registry */
 CustomElementRegistry* nsContentUtils::GetCustomElementRegistry(
     Document* aDoc) {
+  // 1. If node is an Element object, then return node's custom element
+  //    registry.
+  // 2. If node is a ShadowRoot object, then return node's custom element
+  //    registry.
+  // 3. If node is a Document object, then return node's custom element
+  //    registry.
+  // 4. Return null.
+  // TODO(keithamus): Scoped Registries
   MOZ_ASSERT(aDoc);
 
   if (!aDoc->GetDocShell()) {
@@ -11516,19 +11562,29 @@ CustomElementRegistry* nsContentUtils::GetCustomElementRegistry(
   return window->CustomElements();
 }
 
-/* static */
+/* https://html.spec.whatwg.org/#look-up-a-custom-element-definition */
 CustomElementDefinition* nsContentUtils::LookupCustomElementDefinition(
     Document* aDoc, nsAtom* aNameAtom, uint32_t aNameSpaceID,
     nsAtom* aTypeAtom) {
+  // 2. If namespace is not the HTML namespace, then return null.
   if (aNameSpaceID != kNameSpaceID_XUL && aNameSpaceID != kNameSpaceID_XHTML) {
     return nullptr;
   }
 
+  // 1. If registry is null, then return null.
+  // TODO(keithamus): re-order for Scoped Registries
   RefPtr<CustomElementRegistry> registry = GetCustomElementRegistry(aDoc);
   if (!registry) {
     return nullptr;
   }
 
+  // XXX: Steps 3-5 performed by
+  // CustomElementRegistry::LookupCustomElementDefinition:
+  // 3. If registry's custom element definition set contains an item with name
+  //    and local name both equal to localName, then return that item.
+  // 4. If registry's custom element definition set contains an item with name
+  //    equal to is and local name equal to localName, then return that item.
+  // 5. Return null.
   return registry->LookupCustomElementDefinition(aNameAtom, aNameSpaceID,
                                                  aTypeAtom);
 }
@@ -11894,6 +11950,9 @@ void nsContentUtils::StructuredClone(JSContext* aCx, nsIGlobalObject* aGlobal,
     clonePolicy.allowSharedMemoryObjects();
   }
 
+  // 2.7.10 Structured cloning API
+  // Step 1: Let serialized be
+  //   ? StructuredSerializeWithTransfer(value, options["transfer"])
   StructuredCloneHolder holder(StructuredCloneHolder::CloningSupported,
                                StructuredCloneHolder::TransferringSupported,
                                JS::StructuredCloneScope::SameProcess);
@@ -11902,11 +11961,16 @@ void nsContentUtils::StructuredClone(JSContext* aCx, nsIGlobalObject* aGlobal,
     return;
   }
 
+  // Step 2: Let deserializeRecord be
+  //   ? StructuredDeserializeWithTransfer(serialized, this's relevant realm).
+  JSAutoRealm ar(aCx, aGlobal->GetGlobalJSObject());
   holder.Read(aCx, aRetval, clonePolicy, aError);
   if (NS_WARN_IF(aError.Failed())) {
     return;
   }
 
+  // Step 3: Return deserializeRecord.[[Deserialized]].
+  //   (discarding deserializeRecord.[[TransferredValues]])
   nsTArray<RefPtr<MessagePort>> ports = holder.TakeTransferredPorts();
   (void)ports;
 }

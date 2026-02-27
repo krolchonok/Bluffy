@@ -167,7 +167,8 @@ nsresult DateInputType::GetBadInputMessage(nsAString& aMessage) {
       mInputElement->OwnerDoc(), aMessage);
 }
 
-auto DateInputType::ConvertStringToNumber(const nsAString& aValue) const
+auto DateInputType::ConvertStringToNumber(const nsAString& aValue,
+                                          Localized) const
     -> StringToNumberResult {
   uint32_t year, month, day;
   if (!ParseDate(aValue, &year, &month, &day)) {
@@ -209,7 +210,8 @@ nsresult TimeInputType::GetBadInputMessage(nsAString& aMessage) {
       mInputElement->OwnerDoc(), aMessage);
 }
 
-auto TimeInputType::ConvertStringToNumber(const nsAString& aValue) const
+auto TimeInputType::ConvertStringToNumber(const nsAString& aValue,
+                                          Localized) const
     -> StringToNumberResult {
   uint32_t milliseconds;
   if (!ParseTime(aValue, &milliseconds)) {
@@ -326,7 +328,8 @@ nsresult WeekInputType::GetBadInputMessage(nsAString& aMessage) {
       mInputElement->OwnerDoc(), aMessage);
 }
 
-auto WeekInputType::ConvertStringToNumber(const nsAString& aValue) const
+auto WeekInputType::ConvertStringToNumber(const nsAString& aValue,
+                                          Localized) const
     -> StringToNumberResult {
   uint32_t year, week;
   if (!ParseWeek(aValue, &year, &week)) {
@@ -402,7 +405,8 @@ nsresult MonthInputType::GetBadInputMessage(nsAString& aMessage) {
       mInputElement->OwnerDoc(), aMessage);
 }
 
-auto MonthInputType::ConvertStringToNumber(const nsAString& aValue) const
+auto MonthInputType::ConvertStringToNumber(const nsAString& aValue,
+                                           Localized) const
     -> StringToNumberResult {
   uint32_t year, month;
   if (!ParseMonth(aValue, &year, &month)) {
@@ -456,8 +460,9 @@ nsresult DateTimeLocalInputType::GetBadInputMessage(nsAString& aMessage) {
       mInputElement->OwnerDoc(), aMessage);
 }
 
-auto DateTimeLocalInputType::ConvertStringToNumber(
-    const nsAString& aValue) const -> StringToNumberResult {
+auto DateTimeLocalInputType::ConvertStringToNumber(const nsAString& aValue,
+                                                   Localized) const
+    -> StringToNumberResult {
   uint32_t year, month, day, timeInMs;
   if (!ParseDateTimeLocal(aValue, &year, &month, &day, &timeInMs)) {
     return {};

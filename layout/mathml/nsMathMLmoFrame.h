@@ -95,6 +95,8 @@ class nsMathMLmoFrame final : public nsMathMLTokenFrame {
 
   // helper to double check thar our char should be rendered as a selected char
   bool IsFrameInSelection(nsIFrame* aFrame);
+
+  nscoord FixInterFrameSpacing(ReflowOutput& aDesiredSize) final;
 };
 
 #endif /* nsMathMLmoFrame_h_ */

@@ -89,6 +89,8 @@ def server_has_file(filename):
 
 
 def process_file(dump_syms, path, arch, verbose, write_all):
+    if os.path.basename(path) == "[":
+        return None, None
     arch_arg = ["-a", arch]
     try:
         stderr = None if verbose else subprocess.DEVNULL

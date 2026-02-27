@@ -8,7 +8,7 @@ import pickle
 import sys
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
-from functools import lru_cache
+from functools import cache
 
 import mozpack.path as mozpath
 from manifestparser import TestManifest, combine_fields
@@ -736,7 +736,7 @@ class TestResolver(MozbuildObject):
                 self._test_dirs.add(test["dir_relpath"])
         return self._test_dirs
 
-    @lru_cache(maxsize=1024)
+    @cache
     def _get_metadata_paths(self, metadata_base, dir_path):
 
         paths = []

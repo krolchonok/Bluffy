@@ -1128,7 +1128,7 @@ void nsAppShell::OnMemoryPressureChanged(
 
 // Called by the OS after [MacApplicationDelegate applicationShouldTerminate:]
 // has returned NSTerminateNow.  This method "subclasses" and replaces the
-// OS's original implementation.  The only thing the orginal method does which
+// OS's original implementation.  The only thing the original method does which
 // we need is that it posts NSApplicationWillTerminateNotification.  Everything
 // else is unneeded (because it's handled elsewhere), or actively interferes
 // with Gecko's shutdown sequence.  For example the original terminate: method

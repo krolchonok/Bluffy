@@ -247,10 +247,6 @@ skip-if = [
 ["browser_restoreLastActionCorrectOrder.js"]
 
 ["browser_restoreLastClosedTabOrWindowOrSession.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1838996
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1838996
-]
 
 ["browser_restoreTabContainer.js"]
 
@@ -374,6 +370,8 @@ skip-if = [
 
 ["browser_tab_label_during_restore.js"]
 https_first_disabled = true
+
+["browser_tab_notes_canonicalurl.js"]
 
 ["browser_tabicon_after_bg_tab_crash.js"]
 run-if = [

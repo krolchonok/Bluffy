@@ -363,7 +363,7 @@ static uint32_t gLastTouchID = 0;
 // event is a correct one when we get it.
 // Store it and issue it later from enter notify event if it's correct,
 // throw it away otherwise.
-MOZ_RUNINIT static GUniquePtr<GdkEventCrossing> sStoredLeaveNotifyEvent;
+constinit static GUniquePtr<GdkEventCrossing> sStoredLeaveNotifyEvent;
 
 // GDK's MAX_WL_BUFFER_SIZE is 4083 (4096 minus header, string
 // argument length and NUL byte). Here truncates the string length
@@ -9634,6 +9634,11 @@ static void relative_pointer_handle_relative_motion(
   event.mRefPoint.x += int(wl_fixed_to_double(dx_w) * scale);
   event.mRefPoint.y += int(wl_fixed_to_double(dy_w) * scale);
 
+  LOGW(
+      "[%p] relative_pointer_handle_relative_motion center dx = %f, "
+      "dy = %f scale %f",
+      data, wl_fixed_to_double(dx_w), wl_fixed_to_double(dy_w), scale);
+
   event.AssignEventTime(window->GetWidgetEventTime(time_lo));
   window->DispatchInputEvent(&event);
 }
@@ -9662,6 +9667,7 @@ void nsWindow::LockNativePointer() {
 
   auto* relativePointerMgr = waylandDisplay->GetRelativePointerManager();
   if (!relativePointerMgr) {
+    LOG("nsWindow::LockNativePointer() - quit, missing pointer manager.");
     return;
   }
 
@@ -9672,7 +9678,8 @@ void nsWindow::LockNativePointer() {
 
   GdkDevice* device = gdk_device_manager_get_client_pointer(manager);
   if (!device) {
-    NS_WARNING("Could not find Wayland pointer to lock");
+    LOG("nsWindow::LockNativePointer() - quit, could not find Wayland pointer "
+        "to lock.");
     return;
   }
   wl_pointer* pointer = gdk_wayland_device_get_wl_pointer(device);
@@ -9681,6 +9688,7 @@ void nsWindow::LockNativePointer() {
   wl_surface* surface =
       gdk_wayland_window_get_wl_surface(GetToplevelGdkWindow());
   if (!surface) {
+    LOG("nsWindow::LockNativePointer() - quit, toplevel surface is hidden.");
     /* Can be null when the window is hidden.
      * Though it's unlikely that a lock request comes in that case, be
      * defensive. */
@@ -9689,18 +9697,20 @@ void nsWindow::LockNativePointer() {
 
   UnlockNativePointer();
 
+  LOG("nsWindow::LockNativePointer()");
+
   mLockedPointer = zwp_pointer_constraints_v1_lock_pointer(
       pointerConstraints, surface, pointer, nullptr,
       ZWP_POINTER_CONSTRAINTS_V1_LIFETIME_PERSISTENT);
   if (!mLockedPointer) {
-    NS_WARNING("Could not lock Wayland pointer");
+    LOG("  can't lock Wayland pointer");
     return;
   }
 
   mRelativePointer = zwp_relative_pointer_manager_v1_get_relative_pointer(
       relativePointerMgr, pointer);
   if (!mRelativePointer) {
-    NS_WARNING("Could not create relative Wayland pointer");
+    LOG("  can't create relative Wayland pointer");
     zwp_locked_pointer_v1_destroy(mLockedPointer);
     mLockedPointer = nullptr;
     return;

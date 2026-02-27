@@ -33,6 +33,7 @@ class FetchClientMlpaServiceTest {
                 request = AuthenticationService.Request(
                     userId = UserId("my-user-id"),
                     integrityToken = IntegrityToken("my-integrity-token"),
+                    packageName = PackageName("my.package.name"),
                 ),
             )
 
@@ -64,6 +65,7 @@ class FetchClientMlpaServiceTest {
                 request = AuthenticationService.Request(
                     userId = UserId("my-user-id"),
                     integrityToken = IntegrityToken("my-integrity-token"),
+                    packageName = PackageName("my.package.name"),
                 ),
             )
 
@@ -84,6 +86,7 @@ class FetchClientMlpaServiceTest {
                 request = AuthenticationService.Request(
                     userId = UserId("my-user-id"),
                     integrityToken = IntegrityToken("my-integrity-token"),
+                    packageName = PackageName("my.package.name"),
                 ),
             )
 
@@ -179,7 +182,7 @@ class FetchClientMlpaServiceTest {
             assertTrue(response.isFailure)
 
             response.onFailure {
-                assertEquals("Verification Service Failed: Received status code 401", it.message)
+                assertEquals("Chat Service Failed: Received status code 401", it.message)
             }
         }
 }

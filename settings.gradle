@@ -32,7 +32,6 @@ plugins {
 ext.topsrcdir = rootProject.projectDir.absolutePath
 
 apply from: "${topsrcdir}/mobile/android/shared-settings.gradle"
-apply from: "${topsrcdir}/mobile/android/autopublish-settings.gradle"
 
 if (gradle.ext.mozconfig.substs.MOZ_APPSERVICES_IN_TREE) {
     apply from: "${topsrcdir}/services/app-services/settings.gradle"

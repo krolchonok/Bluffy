@@ -1149,7 +1149,7 @@ SettingGroupManager.registerGroups({
   assistantModelGroup: {
     l10nId: "smart-window-model-section",
     headingLevel: 2,
-    supportPage: "smart-window-model",
+    supportPage: "smart-window-models",
     items: [
       {
         id: "modelSelection",
@@ -1202,7 +1202,8 @@ SettingGroupManager.registerGroups({
                     l10nId: "smart-window-model-custom-more-link",
                     slot: "support-link",
                     controlAttrs: {
-                      href: "",
+                      is: "moz-support-link",
+                      "support-page": "smart-window-byom",
                     },
                   },
                 ],
@@ -1224,7 +1225,6 @@ SettingGroupManager.registerGroups({
   memoriesGroup: {
     l10nId: "ai-window-memories-section",
     headingLevel: 2,
-    // TODO: Finalize SUMO support page slug (GENAI-3016)
     supportPage: "smart-window-memories",
     items: [
       {

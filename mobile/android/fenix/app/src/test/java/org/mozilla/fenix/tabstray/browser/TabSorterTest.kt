@@ -10,7 +10,7 @@ import mozilla.components.browser.state.state.createTab
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import org.mozilla.fenix.tabstray.TabsTrayStore
+import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.utils.Settings
 
 class TabSorterTest {

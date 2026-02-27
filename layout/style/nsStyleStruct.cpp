@@ -2811,12 +2811,14 @@ nsChangeHint nsStyleVisibility::CalcDifference(
   nsChangeHint hint = nsChangeHint(0);
 
   if (mDirection != aNewData.mDirection ||
-      mWritingMode != aNewData.mWritingMode) {
+      mWritingMode != aNewData.mWritingMode ||
+      mTextOrientation != aNewData.mTextOrientation) {
     // It's important that a change in mWritingMode results in frame
     // reconstruction, because it may affect intrinsic size (see
     // nsSubDocumentFrame::GetIntrinsicISize/BSize).
-    // Also, the used writing-mode value is now a field on nsIFrame and some
-    // classes (e.g. table rows/cells) copy their value from an ancestor.
+    // Also, the used WritingMode value is now a field on nsIFrame and some
+    // classes (e.g. table rows/cells) copy their value from an ancestor, and
+    // that is a combo of direction+writing-mode+text-orientation.
     return nsChangeHint_ReconstructFrame;
   }
   if (mImageOrientation != aNewData.mImageOrientation) {
@@ -2834,8 +2836,7 @@ nsChangeHint nsStyleVisibility::CalcDifference(
       hint |= NS_STYLE_HINT_VISUAL;
     }
   }
-  if (mTextOrientation != aNewData.mTextOrientation ||
-      mMozBoxCollapse != aNewData.mMozBoxCollapse ||
+  if (mMozBoxCollapse != aNewData.mMozBoxCollapse ||
       mDominantBaseline != aNewData.mDominantBaseline) {
     hint |= NS_STYLE_HINT_REFLOW;
   }

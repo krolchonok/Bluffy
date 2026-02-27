@@ -164,7 +164,7 @@ import org.mozilla.fenix.search.toolbar.DefaultSearchSelectorController
 import org.mozilla.fenix.search.toolbar.SearchSelectorMenu
 import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
 import org.mozilla.fenix.snackbar.SnackbarBinding
-import org.mozilla.fenix.tabstray.Page
+import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.ui.AccessPoint
 import org.mozilla.fenix.termsofuse.store.DefaultPrivacyNoticeBannerRepository
 import org.mozilla.fenix.termsofuse.store.PrivacyNoticeBannerAction

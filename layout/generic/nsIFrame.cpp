@@ -11642,21 +11642,14 @@ StyleDominantBaseline nsIFrame::DominantBaseline() const {
   if (dominantBaseline != StyleDominantBaseline::Auto) {
     return dominantBaseline;
   }
-
-  WritingMode writingMode = GetWritingMode();
-  StyleTextOrientation textOrientation = StyleVisibility()->mTextOrientation;
-
   // https://drafts.csswg.org/css-inline-3/#alignment-baseline-property
   // > Equivalent to alphabetic in horizontal writing modes and
   // > in vertical writing modes when text-orientation is sideways.
   // > Equivalent to central in vertical writing modes when
   // > text-orientation is mixed or upright.
-  if (writingMode.IsVertical() &&
-      textOrientation != StyleTextOrientation::Sideways) {
-    return StyleDominantBaseline::Central;
-  }
-
-  return StyleDominantBaseline::Alphabetic;
+  return GetWritingMode().IsCentralBaseline()
+             ? StyleDominantBaseline::Central
+             : StyleDominantBaseline::Alphabetic;
 }
 
 StyleAlignmentBaseline nsIFrame::AlignmentBaseline() const {

@@ -6,9 +6,9 @@ Support for running jobs that are invoked via the `run-task` script.
 """
 
 import dataclasses
+import functools
 import os
 
-from mozbuild.util import memoize
 from mozpack import path
 from taskgraph.transforms.run.common import support_caches
 from taskgraph.util.schema import LegacySchema
@@ -111,7 +111,7 @@ worker_defaults = {
 }
 
 
-load_yaml = memoize(load_yaml)
+load_yaml = functools.cache(load_yaml)
 
 
 def script_url(config, script):

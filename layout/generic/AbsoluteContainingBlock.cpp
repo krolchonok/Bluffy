@@ -738,8 +738,6 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
       }
     }
     if (kidNeedsReflow && !aPresContext->HasPendingInterrupt()) {
-      // TODO(TYLin, Bug 2009643): To get the correct cbSize, we should refactor
-      // the lambda that gets |cb| in ReflowAbsoluteFrame(), and call it here.
       const LogicalSize cbSize(containerWM,
                                unfragmentedContainingBlockRects->mLocal.Size());
       const LogicalMargin border =

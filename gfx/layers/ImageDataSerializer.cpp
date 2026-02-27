@@ -338,6 +338,8 @@ void ConvertAndScaleFromYCbCrDescriptor(uint8_t* aBuffer,
                                         unsigned char* aDestBuffer,
                                         int32_t aStride) {
   MOZ_ASSERT(aBuffer);
+  MOZ_ASSERT(gfx::IntRect(gfx::IntPoint(), aDescriptor.ySize())
+                 .Contains(aDescriptor.display()));
 
   layers::PlanarYCbCrData ycbcrData;
   ycbcrData.mYChannel = GetYChannel(aBuffer, aDescriptor);

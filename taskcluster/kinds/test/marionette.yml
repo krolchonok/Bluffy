@@ -93,14 +93,12 @@ marionette-integration:
             .*/debug: 3600
             default: 2700
     instance-size: default
-    chunks:
-        by-variant:
-            inc-origin-init: dynamic
-            default:
-                by-test-platform:
-                    .*-asan.*: 2
-                    .*-tsan.*: 2
-                    default: 1
+    chunks: dynamic
+    default-chunks:
+        by-test-platform:
+            .*-asan.*: 2
+            .*-tsan.*: 2
+            default: 1
     mozharness:
         extra-options:
             - --subsuite=integration

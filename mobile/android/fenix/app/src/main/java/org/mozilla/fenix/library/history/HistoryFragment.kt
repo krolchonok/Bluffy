@@ -133,7 +133,7 @@ import org.mozilla.fenix.search.SearchFragmentAction.SuggestionSelected
 import org.mozilla.fenix.search.SearchFragmentStore
 import org.mozilla.fenix.search.awesomebar.DeleteHistoryEntryDelegate
 import org.mozilla.fenix.search.createInitialSearchFragmentState
-import org.mozilla.fenix.tabstray.Page
+import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.allowUndo
 import org.mozilla.fenix.GleanMetrics.History as GleanHistory

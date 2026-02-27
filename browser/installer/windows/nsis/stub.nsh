@@ -70,7 +70,7 @@ Var StubBuildID
 
 Var InitialInstallRequirementsCode
 Var HadOldInstall
-Var ExistingProfile
+Var HadExistingProfile
 Var ExistingVersion
 Var ExistingBuildID
 Var DownloadedBytes
@@ -104,7 +104,7 @@ Var ArchToInstall
 ; the stub installer
 ;!define STUB_DEBUG
 
-!define StubURLVersion "v13"
+!define StubURLVersion "v14"
 
 ; Successful install exit code
 !define ERR_SUCCESS 0
@@ -464,12 +464,8 @@ Function createInstall
     StrCpy $ExistingBuildID "0"
   ${EndIf}
 
-  ${GetLocalAppDataFolder} $0
-  ${If} ${FileExists} "$0\Mozilla\Firefox"
-    StrCpy $ExistingProfile "1"
-  ${Else}
-    StrCpy $ExistingProfile "0"
-  ${EndIf}
+  Call GetHadExistingProfile
+  Pop $HadExistingProfile
 
   StrCpy $DownloadServerIP ""
 
@@ -497,6 +493,15 @@ Function createInstall
   File /oname=$PLUGINSDIR\installing_page.css "installing_page.css"
   File /oname=$PLUGINSDIR\installing.js "installing.js"
   WebBrowser::ShowPage "$PLUGINSDIR\installing.html"
+FunctionEnd
+
+Function GetHadExistingProfile
+  ${GetLocalAppDataFolder} $0
+  ${If} ${FileExists} "$0\Mozilla\Firefox"
+    Push 1
+  ${Else}
+    Push 0
+  ${EndIf}
 FunctionEnd
 
 Function StartDownload
@@ -1005,7 +1010,8 @@ Function SendPing
                       $\nStub Installer Build ID = $StubBuildID \
                       $\nLaunched by = $R4 \
                       $\nCount of rejected download requests = $DownloadRequestsBlockedByServer \
-                      $\nDesktop Launcher Status = $DesktopLauncherStatus"
+                      $\nDesktop Launcher Status = $DesktopLauncherStatus \
+                      $\nHad Existing Profile = $HadExistingProfile"
     ; The following will exit the installer
     SetAutoClose true
     StrCpy $R9 "2"
@@ -1014,7 +1020,7 @@ Function SendPing
     ${StartTimer} ${DownloadIntervalMS} OnPing
     ; See https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/data/install-ping.html#stub-ping
     ; for instructions on how to make changes to data being reported in this ping
-    InetBgDL::Get "${BaseURLStubPing}/${StubURLVersion}${StubURLVersionAppend}/${Channel}/${UpdateChannel}/${AB_CD}/$R0/$R1/$5/$6/$7/$8/$9/$ExitCode/$FirefoxLaunchCode/$DownloadRetryCount/$DownloadedBytes/$DownloadSizeBytes/$IntroPhaseSeconds/$OptionsPhaseSeconds/$0/$1/$DownloadFirstTransferSeconds/$2/$3/$4/$InitialInstallRequirementsCode/$OpenedDownloadPage/$HadOldInstall/$ExistingVersion/$ExistingBuildID/$R5/$R6/$R7/$R8/$R2/$R3/$DownloadServerIP/$PostSigningData/$ProfileCleanupPromptType/$CheckboxCleanupProfile/$DistributionID/$DistributionVersion/$WindowsUBR/$StubBuildID/$R4/$DownloadRequestsBlockedByServer/$DesktopLauncherStatus" \
+    InetBgDL::Get "${BaseURLStubPing}/${StubURLVersion}${StubURLVersionAppend}/${Channel}/${UpdateChannel}/${AB_CD}/$R0/$R1/$5/$6/$7/$8/$9/$ExitCode/$FirefoxLaunchCode/$DownloadRetryCount/$DownloadedBytes/$DownloadSizeBytes/$IntroPhaseSeconds/$OptionsPhaseSeconds/$0/$1/$DownloadFirstTransferSeconds/$2/$3/$4/$InitialInstallRequirementsCode/$OpenedDownloadPage/$HadOldInstall/$ExistingVersion/$ExistingBuildID/$R5/$R6/$R7/$R8/$R2/$R3/$DownloadServerIP/$PostSigningData/$ProfileCleanupPromptType/$CheckboxCleanupProfile/$DistributionID/$DistributionVersion/$WindowsUBR/$StubBuildID/$R4/$DownloadRequestsBlockedByServer/$DesktopLauncherStatus/$HadExistingProfile" \
                   "$PLUGINSDIR\_temp" /END
 !endif
   ${Else}

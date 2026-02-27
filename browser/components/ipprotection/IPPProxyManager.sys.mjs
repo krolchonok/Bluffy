@@ -254,8 +254,10 @@ class IPPProxyManagerSingleton extends EventTarget {
    *
    * @param {boolean} userAction
    * True if started by user action, false if system action
+   * @param {boolean} inPrivateBrowsing
+   * True if started from a private browsing window
    */
-  async start(userAction = true) {
+  async start(userAction = true, inPrivateBrowsing = false) {
     if (this.#state === IPPProxyStates.NOT_READY) {
       throw new Error("This method should not be called when not ready");
     }
@@ -335,9 +337,9 @@ class IPPProxyManagerSingleton extends EventTarget {
           return;
         }
         this.#setState(IPPProxyStates.ACTIVE);
-        Glean.ipprotection.toggled.record({
+        Glean.ipprotection.started.record({
           userAction,
-          enabled: true,
+          inPrivateBrowsing,
         });
       })
       .finally(() => {
@@ -457,10 +459,9 @@ class IPPProxyManagerSingleton extends EventTarget {
       ? ChromeUtils.now() - this.#activatedAt
       : 0;
 
-    Glean.ipprotection.toggled.record({
+    Glean.ipprotection.stopped.record({
       userAction,
-      duration: sessionLength,
-      enabled: false,
+      duration: String(sessionLength),
     });
     if (this.#state === IPPProxyStates.PAUSED) {
       this.#setState(IPPProxyStates.NOT_READY);

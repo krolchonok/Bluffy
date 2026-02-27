@@ -23,8 +23,8 @@ import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import org.mozilla.fenix.R
 import org.mozilla.fenix.pbmlock.UnlockPrivateTabsTrayScreen
-import org.mozilla.fenix.tabstray.TabsTrayState
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR

@@ -8,7 +8,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.createTab
-import mozilla.components.support.test.ext.joinBlocking
 import org.junit.Test
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
@@ -16,9 +15,9 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.tabstray.InactiveTabsBinding
-import org.mozilla.fenix.tabstray.TabsTrayAction
-import org.mozilla.fenix.tabstray.TabsTrayState
-import org.mozilla.fenix.tabstray.TabsTrayStore
+import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
+import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class InactiveTabsBindingTest {

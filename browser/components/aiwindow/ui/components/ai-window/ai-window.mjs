@@ -262,7 +262,7 @@ export class AIWindow extends MozLitElement {
       this.openConversation(event.detail);
     } else {
       // Handle a null conversation reference by starting a new empty conversation
-      this.#onCreateNewChatClick();
+      this.onCreateNewChatClick();
     }
   }
 
@@ -988,11 +988,12 @@ export class AIWindow extends MozLitElement {
   };
 
   #handleError(error) {
+    const errorMessage = error.error ?? error.metadata?.errorMessage;
     const newErrorMessage = {
       role: "",
       content: {
         isError: true,
-        status: error?.status,
+        error: errorMessage,
       },
     };
     this.#dispatchMessageToChatContent(newErrorMessage);
@@ -1141,7 +1142,7 @@ export class AIWindow extends MozLitElement {
         this.#pendingMessageDelivery = true;
       }
     } else {
-      this.#onCreateNewChatClick();
+      this.onCreateNewChatClick();
     }
 
     this.#dispatchChromeEvent(
@@ -1150,7 +1151,7 @@ export class AIWindow extends MozLitElement {
     );
   }
 
-  #onCreateNewChatClick() {
+  onCreateNewChatClick() {
     // Clear the conversation state locally
     this.#conversation = new lazy.ChatConversation({});
 
@@ -1341,7 +1342,7 @@ export class AIWindow extends MozLitElement {
               class="new-chat-icon-button"
               size="default"
               iconsrc="chrome://browser/content/aiwindow/assets/new-chat.svg"
-              @click=${this.#onCreateNewChatClick}
+              @click=${this.onCreateNewChatClick}
             ></moz-button>
           </div>`
         : ""}

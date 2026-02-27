@@ -122,9 +122,7 @@ namespace mozilla {
 
 bool TextAutospace::ShouldSuppressLetterNumeralSpacing(const nsIFrame* aFrame) {
   const auto wm = aFrame->GetWritingMode();
-  if (wm.IsVertical() && !wm.IsVerticalSideways() &&
-      aFrame->StyleVisibility()->mTextOrientation ==
-          StyleTextOrientation::Upright) {
+  if (wm.IsUpright()) {
     // The characters are in vertical writing mode with forced upright glyph
     // orientation.
     return true;

@@ -36,6 +36,7 @@ export class AIChatContentChild extends JSWindowActorChild {
     "AIChatContent:Ready",
     "AIChatContent:DispatchAction",
     "AIChatContent:OpenLink",
+    "AIChatContent:DispatchNewChat",
   ]);
 
   /**
@@ -54,13 +55,23 @@ export class AIChatContentChild extends JSWindowActorChild {
         this.#handleSearchDispatch(event);
         break;
 
-      case "AIChatContent:DispatchAction": {
+      case "AIChatContent:DispatchAction":
         this.#handleActionDispatch(event);
         break;
-      }
 
       case "AIChatContent:DispatchFollowUp":
         this.#handleFollowUpDispatch(event);
+        break;
+
+      case "AIChatContent:DispatchNewChat":
+        /*
+         * This message round-trips:
+         * child
+         * -> parent (to reset conversation state in ai-window)
+         * -> child (to clear the UI via "clear-conversation").
+         * The parent owns the conversation state, so we must go through it to start a new chat.
+         */
+        this.sendAsyncMessage("AIChatContent:DispatchNewChat");
         break;
 
       case "AIChatContent:Ready":

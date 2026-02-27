@@ -64,9 +64,9 @@ class nsHttpConnectionInfo final : public ARefBase {
   DeserializeHttpConnectionInfoCloneArgs(
       const HttpConnectionInfoCloneArgs& aInfoArgs);
 
-  static void BuildOriginFrameHashKey(nsACString& newKey,
-                                      nsHttpConnectionInfo* ci,
-                                      const nsACString& host, int32_t port);
+  static HashNumber BuildOriginFrameHashKey(nsHttpConnectionInfo* ci,
+                                            const nsACString& host,
+                                            int32_t port);
 
  private:
   virtual ~nsHttpConnectionInfo() {

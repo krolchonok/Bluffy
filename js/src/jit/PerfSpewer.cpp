@@ -116,7 +116,7 @@ MOZ_RUNINIT static ProfilerJitCodeVector profilerData;
 
 static bool IsGeckoProfiling() { return geckoProfiling; }
 #ifdef JS_ION_PERF
-MOZ_RUNINIT static UniqueChars spew_dir;
+constinit static UniqueChars spew_dir;
 static FILE* JitDumpFilePtr = nullptr;
 static void* mmap_address = nullptr;
 static char* jitDumpBuffer = nullptr;

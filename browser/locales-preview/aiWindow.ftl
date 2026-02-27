@@ -114,7 +114,7 @@ aiwindow-new-chat =
 
 ## Sign out dialog
 
-fxa-signout-dialog-body-aiwindow = Synced data will remain in your account. Your open Smart Windows will switch to standard windows.
+fxa-signout-dialog-body-aiwindow = Synced data will remain in your account. Open Smart Windows will switch to Classic Windows.
 
 ## Smart Window Toggle Button (in-page)
 

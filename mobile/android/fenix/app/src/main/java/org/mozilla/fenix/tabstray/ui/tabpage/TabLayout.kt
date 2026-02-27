@@ -58,12 +58,12 @@ import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.support.utils.ext.isLandscape
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.SwipeToDismissState2
-import org.mozilla.fenix.tabstray.TabsTrayState
 import org.mozilla.fenix.tabstray.browser.compose.DragItemContainer
 import org.mozilla.fenix.tabstray.browser.compose.createGridReorderState
 import org.mozilla.fenix.tabstray.browser.compose.createListReorderState
 import org.mozilla.fenix.tabstray.browser.compose.detectGridPressAndDragGestures
 import org.mozilla.fenix.tabstray.browser.compose.detectListPressAndDrag
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.ui.tabitems.GridItemThumbnailPadding
 import org.mozilla.fenix.tabstray.ui.tabitems.TabGridItem
 import org.mozilla.fenix.tabstray.ui.tabitems.TabListItem

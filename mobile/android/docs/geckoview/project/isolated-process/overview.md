@@ -132,9 +132,9 @@ Key indicator: `app_zygote` type
 ✅ Yes, isolated process that launched via app zygote:
 
 ```text
-u:r:isolated_app:s0:c512,c768 u0_i0 6525 6475 18017956 315748 do_epoll_wait 0 S org.mozilla.fenix.debug:isolatedTabWithZygote0:org.mozilla.gecko.process.GeckoChildProcessServices
-    ^^^^^^^^^^^^              ^^^^^                                                                      ^^^^^^^^^^^^^^^^^^^^^^
-   (isolated_app)            (u0_i)                                                                      (isolatedTabWithZygote)
+u:r:isolated_app:s0:c512,c768 u0_i0 6525 6475 18017956 315748 do_epoll_wait 0 S org.mozilla.fenix.debug:zygoteTab:org.mozilla.gecko.process.GeckoChildProcessServices
+    ^^^^^^^^^^^^              ^^^^^                                                                     ^^^^^^^^^
+   (isolated_app)            (u0_i)                                                                    (zygoteTab)
 ```
 
-Key indicators: `isolated_app` type, `u0_i` prefix in UID, and `isolatedTabWithZygote` in the process name
+Key indicators: `isolated_app` type, `u0_i` prefix in UID, and `zygoteTab` in the process name

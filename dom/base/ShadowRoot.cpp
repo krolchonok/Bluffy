@@ -56,6 +56,7 @@ NS_INTERFACE_MAP_END_INHERITING(DocumentFragment)
 NS_IMPL_ADDREF_INHERITED(ShadowRoot, DocumentFragment)
 NS_IMPL_RELEASE_INHERITED(ShadowRoot, DocumentFragment)
 
+/* Part of https://dom.spec.whatwg.org/#concept-attach-a-shadow-root step 5 */
 ShadowRoot::ShadowRoot(Element* aElement, ShadowRootMode aMode,
                        Element::DelegatesFocus aDelegatesFocus,
                        SlotAssignmentMode aSlotAssignment,
@@ -901,6 +902,7 @@ void ShadowRoot::SetHTML(const nsAString& aHTML, const SetHTMLOptions& aOptions,
   nsContentUtils::SetHTML(this, host, aHTML, aOptions, aError);
 }
 
+/* https://html.spec.whatwg.org/#dom-shadowroot-sethtmlunsafe */
 void ShadowRoot::SetHTMLUnsafe(const TrustedHTMLOrString& aHTML,
                                const SetHTMLUnsafeOptions& aOptions,
                                nsIPrincipal* aSubjectPrincipal,

@@ -509,6 +509,20 @@ LoginManager.prototype = {
     return loginsCount;
   },
 
+  async countLoginsAsync(origin, formActionOrigin, httpRealm) {
+    const loginsCount = await this._storage.countLoginsAsync(
+      origin,
+      formActionOrigin,
+      httpRealm
+    );
+
+    lazy.log.debug(
+      `Found ${loginsCount} matching origin: ${origin}, formActionOrigin: ${formActionOrigin} and realm: ${httpRealm}`
+    );
+
+    return loginsCount;
+  },
+
   /* Sync metadata functions */
   async getSyncID() {
     return this._storage.getSyncID();

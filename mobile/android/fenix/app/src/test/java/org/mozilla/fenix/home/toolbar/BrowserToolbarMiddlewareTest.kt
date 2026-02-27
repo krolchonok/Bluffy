@@ -88,7 +88,7 @@ import org.mozilla.fenix.home.toolbar.TabCounterInteractions.TabCounterLongClick
 import org.mozilla.fenix.search.fixtures.assertSearchSelectorEquals
 import org.mozilla.fenix.search.fixtures.buildExpectedSearchSelector
 import org.mozilla.fenix.settings.ShortcutType
-import org.mozilla.fenix.tabstray.Page
+import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.utils.Settings
 import mozilla.components.ui.icons.R as iconsR
 import mozilla.components.ui.tabcounter.R as tabcounterR

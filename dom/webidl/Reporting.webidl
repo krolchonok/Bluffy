@@ -29,7 +29,7 @@ interface Report {
 [Pref="dom.reporting.enabled",
  Exposed=(Window,Worker)]
 interface ReportingObserver {
-  [Throws]
+  [UseCounter, Throws]
   constructor(ReportingObserverCallback callback, optional ReportingObserverOptions options = {});
   undefined observe();
   undefined disconnect();

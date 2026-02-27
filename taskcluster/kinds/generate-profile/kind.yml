@@ -268,7 +268,7 @@ tasks:
         worker-type: b-win-aarch64
         worker:
             chain-of-trust: true
-            max-run-time: 2400
+            max-run-time: 3600
             env:
                 UPLOAD_PATH: "artifacts"
             artifacts:

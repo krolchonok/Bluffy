@@ -1032,6 +1032,14 @@ bool ConnectionEntry::MaybeProcessCoalescingKeys(nsIDNSAddrRecord* dnsRecord,
     return false;
   }
 
+  nsAutoCString suffix;
+  mConnInfo->GetOriginAttributes().CreateSuffix(suffix);
+
+  const char* anonFlag = mConnInfo->GetAnonymous() ? "~A:" : "~.:";
+  const char* fallbackFlag = mConnInfo->GetFallbackConnection() ? "~F:" : "~.:";
+  int32_t port = mConnInfo->OriginPort();
+
+  nsCString newKey;
   for (uint32_t i = 0; i < mAddresses.Length(); ++i) {
     if ((mAddresses[i].raw.family == AF_INET && mAddresses[i].inet.ip == 0) ||
         (mAddresses[i].raw.family == AF_INET6 &&
@@ -1045,31 +1053,24 @@ bool ConnectionEntry::MaybeProcessCoalescingKeys(nsIDNSAddrRecord* dnsRecord,
            mConnInfo->Origin()));
       continue;
     }
-    nsCString* newKey = mCoalescingKeys.AppendElement(nsCString());
-    newKey->SetLength(kIPv6CStrBufSize + 26);
-    mAddresses[i].ToStringBuffer(newKey->BeginWriting(), kIPv6CStrBufSize);
-    newKey->SetLength(strlen(newKey->BeginReading()));
-    if (mConnInfo->GetAnonymous()) {
-      newKey->AppendLiteral("~A:");
-    } else {
-      newKey->AppendLiteral("~.:");
-    }
-    if (mConnInfo->GetFallbackConnection()) {
-      newKey->AppendLiteral("~F:");
-    } else {
-      newKey->AppendLiteral("~.:");
-    }
-    newKey->AppendInt(mConnInfo->OriginPort());
-    newKey->AppendLiteral("/[");
-    nsAutoCString suffix;
-    mConnInfo->GetOriginAttributes().CreateSuffix(suffix);
-    newKey->Append(suffix);
-    newKey->AppendLiteral("]viaDNS");
+    newKey.Truncate();
+    newKey.SetCapacity(kIPv6CStrBufSize + suffix.Length() + 21);
+    newKey.SetLength(kIPv6CStrBufSize);
+    mAddresses[i].ToStringBuffer(newKey.BeginWriting(), kIPv6CStrBufSize);
+    newKey.SetLength(strlen(newKey.BeginReading()));
+    newKey.Append(anonFlag);
+    newKey.Append(fallbackFlag);
+    newKey.AppendInt(port);
+    newKey.AppendLiteral("/[");
+    newKey.Append(suffix);
+    newKey.AppendLiteral("]viaDNS");
+    HashNumber hash = HashString(newKey);
     LOG(
         ("ConnectionEntry::MaybeProcessCoalescingKeys "
          "Established New Coalescing Key # %d for host "
-         "%s [%s]",
-         i, mConnInfo->Origin(), newKey->get()));
+         "%s [%s] hash:%" PRIu32,
+         i, mConnInfo->Origin(), newKey.get(), hash));
+    mCoalescingKeys.AppendElement(hash);
   }
   return true;
 }
@@ -1165,14 +1166,13 @@ ConnectionEntry::GetServerCertHashes() {
   return mServerCertHashes;
 }
 
-const nsCString& ConnectionEntry::OriginFrameHashKey() {
+const HashNumber& ConnectionEntry::OriginFrameHashKey() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-  if (mOriginFrameHashKey.IsEmpty()) {
-    nsHttpConnectionInfo::BuildOriginFrameHashKey(
-        mOriginFrameHashKey, mConnInfo, mConnInfo->GetOrigin(),
-        mConnInfo->OriginPort());
+  if (mOriginFrameHashKey.isNothing()) {
+    mOriginFrameHashKey.emplace(nsHttpConnectionInfo::BuildOriginFrameHashKey(
+        mConnInfo, mConnInfo->GetOrigin(), mConnInfo->OriginPort()));
   }
-  return mOriginFrameHashKey;
+  return mOriginFrameHashKey.ref();
 }
 
 }  // namespace net

@@ -44,7 +44,7 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
 
 @implementation MOZMenuOpeningCoordinator {
   // non-nil between asynchronouslyOpenMenu:atScreenPosition:forView: and the
-  // time at at which it is unqueued in _runMenu.
+  // time at which it is unqueued in _runMenu.
   MOZMenuOpeningInfo* mPendingOpening;  // strong
 
   // An incrementing counter

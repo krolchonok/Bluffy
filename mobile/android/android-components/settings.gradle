@@ -40,7 +40,6 @@ if (gradle.ext.mozconfig.substs.MOZ_APPSERVICES_IN_TREE) {
 }
 
 apply from: file('../shared-settings.gradle')
-apply from: file('../autopublish-settings.gradle')
 
 buildCache {
     local {

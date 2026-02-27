@@ -89,12 +89,17 @@ class OnboardingFragment : Fragment() {
     private val pagesToDisplay by lazy {
         with(requireContext()) {
             pagesToDisplay(
-                showDefaultBrowserPage = isNotDefaultBrowser(this) && !isDefaultBrowserPromptSupported(),
+                showDefaultBrowserPage = displayDefaultBrowserPage(this),
                 showNotificationPage = canShowNotificationPage(),
                 showAddWidgetPage = canShowAddSearchWidgetPrompt(AppWidgetManager.getInstance(activity)),
             ).toMutableList()
         }
     }
+
+    private fun displayDefaultBrowserPage(context: Context): Boolean = with(context) {
+        isNotDefaultBrowser(this) && (!isDefaultBrowserPromptSupported() || settings().useOnboardingRedesign)
+    }
+
     private val telemetryRecorder by lazy {
         OnboardingTelemetryRecorder(
             onboardingReason = if (requireComponents.settings.enablePersistentOnboarding) {

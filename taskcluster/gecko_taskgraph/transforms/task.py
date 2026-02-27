@@ -9,6 +9,7 @@ complexities of worker implementations, scopes, and treeherder annotations.
 """
 
 import datetime
+import functools
 import hashlib
 import os
 import re
@@ -19,7 +20,6 @@ from urllib.parse import quote
 
 import msgspec
 import taskgraph
-from mozbuild.util import memoize
 from mozilla_taskgraph.util.signed_artifacts import get_signed_artifacts
 from taskcluster.utils import fromNow
 from taskgraph import MAX_DEPENDENCIES
@@ -54,7 +54,7 @@ RUN_TASK_GIT = Path(taskgraph.__file__).parent / "run-task" / "run-task"
 SCCACHE_GCS_PROJECT = "sccache-3"
 
 
-@memoize
+@functools.cache
 def _run_task_suffix(repo_type):
     """String to append to cache names under control of run-task."""
     if repo_type == "hg":
@@ -383,7 +383,7 @@ def get_treeherder_link(config) -> str:
     return f"{TREEHERDER_ROOT_URL}/#/jobs?repo={th_project}&revision={branch_rev}&selectedTaskRun=<self>"
 
 
-@memoize
+@functools.cache
 def get_default_priority(graph_config, project):
     return evaluate_keyed_by(
         graph_config["task-priority"], "Graph Config", {"project": project}

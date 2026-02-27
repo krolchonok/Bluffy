@@ -45,7 +45,8 @@
 }
 
 .smartbar > .urlbar-input-container {
-  overflow: visible;
+  overflow: auto;
+  scrollbar-width: none;
   /**
    * The search mode switcher won’t be used for the Smartbar. Instead, it is
    * part of the CTA action panel.
@@ -111,6 +112,8 @@
 .smartbar moz-multiline-editor {
   --multiline-editor-border: none;
   --multiline-editor-focus-outline: none;
+  --multiline-editor-max-height: 8lh;
+  --multiline-editor-scrollbar-width: thin;
   padding: var(--space-xsmall);
 }
 

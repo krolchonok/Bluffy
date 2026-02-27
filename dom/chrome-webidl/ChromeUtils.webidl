@@ -1288,6 +1288,7 @@ dictionary LibcConstants {
   long O_CREAT;
   long O_NONBLOCK;
   long O_WRONLY;
+  long O_CLOEXEC;
 
   long POLLIN;
   long POLLOUT;
@@ -1299,6 +1300,7 @@ dictionary LibcConstants {
 
 #ifdef XP_LINUX
   long PR_CAPBSET_READ;
+  long O_PATH;
 #endif
 };
 #endif

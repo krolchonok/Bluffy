@@ -1053,6 +1053,21 @@ features:
         type: Boolean
         default: false
 
+  downloads-custom-location:
+    description: Feature to enable the custom download location for users on Firefox on Android.
+    variables:
+      enabled:
+        description: If true, custom download location is enabled.
+        type: Boolean
+        default: false
+    defaults:
+      - channel: developer
+        value:
+          enabled: false
+      - channel: nightly
+        value:
+          enabled: true
+
 types:
   objects:
     GleanServerKnobsConfiguration:

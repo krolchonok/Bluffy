@@ -5,7 +5,7 @@
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ContextId: "moz-src:///browser/modules/ContextId.sys.mjs",
-  SectionsLayoutManager: "resource://newtab/lib/SectionsLayoutManager.sys.mjs",
+  SectionsLayoutManager: "resource://newtab/lib/SectionsLayoutFeed.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   ObliviousHTTP: "resource://gre/modules/ObliviousHTTP.sys.mjs",
@@ -1813,19 +1813,16 @@ export class DiscoveryStreamFeed {
           if (useClientLayout || sections.some(s => !s.layout)) {
             sections.sort((a, b) => a.receivedRank - b.receivedRank);
 
+            const rsConfigs =
+              this.store.getState().SectionsLayout?.configs || {};
+
             sections.forEach((section, index) => {
               if (useClientLayout || !section.layout) {
-                // is there a config for the selected index,
+                // is there a config that exists in remote settings for the selected index,
                 // otherwise we rotate through default layouts
-                if (this.sectionLayoutConfig[index]) {
-                  const sectionLayoutName = this.sectionLayoutConfig[index];
-                  section.layout =
-                    lazy.SectionsLayoutManager.SECTION_CONFIGS[
-                      sectionLayoutName
-                    ] ||
-                    lazy.SectionsLayoutManager.SECTION_CONFIGS[
-                      "7-double-row-2-ad"
-                    ];
+                const sectionLayoutName = this.sectionLayoutConfig[index] || "";
+                if (sectionLayoutName && rsConfigs[sectionLayoutName]) {
+                  section.layout = rsConfigs[sectionLayoutName];
                 } else {
                   section.layout =
                     lazy.SectionsLayoutManager.DEFAULT_SECTION_LAYOUT[

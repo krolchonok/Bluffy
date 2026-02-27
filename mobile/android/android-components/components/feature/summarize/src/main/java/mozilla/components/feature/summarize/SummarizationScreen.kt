@@ -19,23 +19,27 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.theme.AcornTheme
-import mozilla.components.feature.summarize.ui.DownloadConsent
 import mozilla.components.feature.summarize.ui.DownloadError
-import mozilla.components.feature.summarize.ui.DownloadProgress
 import mozilla.components.feature.summarize.ui.InfoError
 import mozilla.components.feature.summarize.ui.OffDeviceSummarizationConsent
 import mozilla.components.feature.summarize.ui.OnDeviceSummarizationConsent
-import mozilla.components.lib.state.helpers.StoreProvider.Companion.composableStore
+import mozilla.components.feature.summarize.ui.SummarizingContent
+import mozilla.components.feature.summarize.ui.gradient.summaryLoadingGradient
+import mozilla.components.ui.richtext.RichText
 
 /**
  * The corner ration of the handle shape
@@ -48,13 +52,10 @@ private const val DRAG_HANDLE_CORNER_RATIO = 50
 @Composable
 fun SummarizationUi(
     productName: String,
+    store: SummarizationStore,
 ) {
-    val store by composableStore(SummarizationState.initial) { state ->
-        SummarizationStore(
-            initialState = state,
-            reducer = ::summarizationReducer,
-            middleware = listOf(SummarizationMiddleware()),
-        )
+    LaunchedEffect(Unit) {
+        store.dispatch(ViewAppeared)
     }
 
     CompositionLocalProvider(LocalProductName provides ProductName(productName)) {
@@ -76,7 +77,15 @@ private fun SummarizationScreen(
 ) {
     val state by store.stateFlow.collectAsStateWithLifecycle()
 
-    SummarizationScreenScaffold(modifier = modifier) {
+    SummarizationScreenScaffold(
+        modifier = modifier
+            .thenConditional(Modifier.summaryLoadingGradient()) {
+                state is SummarizationState.Summarizing
+            }
+            .thenConditional(Modifier.background(MaterialTheme.colorScheme.surface)) {
+                state !is SummarizationState.Summarizing
+            },
+    ) {
         when (val state = state) {
             is SummarizationState.Inert -> Unit
             is SummarizationState.ShakeConsentRequired,
@@ -94,16 +103,8 @@ private fun SummarizationScreen(
                     },
                 )
             }
-            is SummarizationState.DownloadConsentRequired -> {
-                DownloadConsent(
-                    dispatchAction = {
-                        store.dispatch(it)
-                    },
-                )
-            }
-            is SummarizationState.Downloading -> DownloadProgress(
-                downloadState = state,
-            )
+            is SummarizationState.Summarizing -> SummarizingContent()
+            is SummarizationState.Summarized -> RichText(state.text)
             is SummarizationState.Error -> {
                 if (state.error is SummarizationError.DownloadFailed) {
                     DownloadError()
@@ -124,8 +125,10 @@ private fun SummarizationScreenScaffold(
 ) {
     Surface(
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        color = MaterialTheme.colorScheme.surface,
-        modifier = modifier
+        color = Color.Transparent,
+        modifier = Modifier
+            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            .then(modifier)
             .widthIn(max = AcornTheme.layout.size.containerMaxWidth)
             .fillMaxWidth(),
     ) {
@@ -163,12 +166,10 @@ private fun DragHandle(
 
 private class SummarizationStatePreviewProvider : PreviewParameterProvider<SummarizationState> {
     override val values: Sequence<SummarizationState> = sequenceOf(
-        SummarizationState.Summarizing,
+        SummarizationState.Summarizing(),
         SummarizationState.Error(SummarizationError.ContentTooLong),
         SummarizationState.ShakeConsentRequired,
         SummarizationState.ShakeConsentWithDownloadRequired,
-        SummarizationState.DownloadConsentRequired,
-        SummarizationState.Downloading(12.13f, 9.04f),
         SummarizationState.Error(SummarizationError.NetworkError),
     )
 }
@@ -182,7 +183,7 @@ private fun SummarizationScreenPreview(
         store = SummarizationStore(
             initialState = state,
             reducer = ::summarizationReducer,
-            middleware = listOf(SummarizationMiddleware()),
+            middleware = listOf(),
         ),
     )
 }

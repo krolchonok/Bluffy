@@ -616,7 +616,7 @@ export class MemoriesManager {
   static async getRelevantMemories(
     message,
     topK = 5,
-    similarityThreshold = 0.3
+    similarityThreshold = 0.22
   ) {
     const memories = await MemoriesManager.getAllMemories();
 

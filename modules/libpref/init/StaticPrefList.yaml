@@ -4359,6 +4359,12 @@
   value: false
   mirror: always
 
+# Whether Scoped Custom Element Registries are enabled
+- name: dom.scoped-custom-element-registries.enabled
+  type: bool
+  value: false
+  mirror: always
+
 # A pref that is used to slow down database initialization for testing purposes.
 - name: dom.simpledb.databaseInitialization.pauseOnIOThreadMs
   type: RelaxedAtomicUint32
@@ -6208,6 +6214,16 @@
 #else
   value: true
 #endif
+  mirror: always
+
+# Prior to bug 2013389 and bug 2017797, calling structuredClone within a
+# content script would clone most objects within the content script's realm,
+# however a subset of DOM objects would be cloned into the underlying content
+# window's realm. When enabled, this pref preserves this legacy behaviour for
+# compatibility with existing content scripts.
+- name: extensions.webextensions.legacyStructuredCloneBehavior
+  type: bool
+  value: true
   mirror: always
 
 # This pref governs whether we run webextensions in a separate process (true)
@@ -11323,7 +11339,7 @@
 # fragmentation consistently even if the actual pref value changes.
 - name: layout.abspos.fragmentainer-aware-positioning.enabled
   type: bool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 #---------------------------------------------------------------------------
@@ -11403,6 +11419,16 @@
 - name: mathml.adjust_default_lspace_rspace_for_positive_scriptlevel.disabled
   type: RelaxedAtomicBool
   value: true
+  mirror: always
+  rust: true
+
+# Whether to use lspace/rspace values for the spacing around an embellished
+# operator inside MathML elements that use the same layout algorithm as the mrow
+# element, or that generate an anonymous <mrow> box (mrow, math, mstyle, msqrt,
+# mphantom, ...).
+- name: mathml.lspace_rspace_for_child_spacing_during_mrow_layout.enabled
+  type: RelaxedAtomicBool
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
   rust: true
 

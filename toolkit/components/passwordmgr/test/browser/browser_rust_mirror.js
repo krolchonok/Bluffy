@@ -502,7 +502,7 @@ add_task(async function test_migration_time_under_threshold() {
 
   const duration = Date.now() - start;
   Assert.less(duration, 2000, "Migration should complete under 2s");
-  Assert.equal(rustStorage.countLogins("", "", ""), numberOfLogins);
+  Assert.equal(await rustStorage.countLoginsAsync("", "", ""), numberOfLogins);
 
   LoginTestUtils.clearData();
   await rustStorage.removeAllLoginsAsync();

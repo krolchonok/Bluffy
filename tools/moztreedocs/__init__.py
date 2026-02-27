@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, # You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import functools
 import os
 from pathlib import Path, PurePath
 
@@ -10,7 +11,6 @@ import sphinx.ext.apidoc
 import yaml
 from mozbuild.base import MozbuildObject
 from mozbuild.frontend.reader import BuildReader
-from mozbuild.util import memoize
 from mozpack.copier import FileCopier
 from mozpack.files import FileFinder
 from mozpack.manifests import InstallManifest
@@ -23,7 +23,7 @@ MAIN_DOC_PATH = Path(build.topsrcdir) / "docs"
 logger = sphinx.util.logging.getLogger(__name__)
 
 
-@memoize
+@functools.cache
 def read_build_config(docdir):
     """Read the active build config and return the relevant doc paths.
 

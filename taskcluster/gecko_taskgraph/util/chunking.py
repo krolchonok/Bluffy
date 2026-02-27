@@ -5,6 +5,7 @@
 
 """Utility functions to handle test chunking."""
 
+import functools
 import logging
 import os
 import re
@@ -13,7 +14,6 @@ from abc import ABCMeta, abstractmethod
 
 from manifestparser import TestManifest
 from manifestparser.filters import chunk_by_runtime, tags
-from mozbuild.util import memoize
 from mozinfo.platforminfo import PlatformInfo
 from moztest.resolve import TEST_SUITES, TestManifestLoader, TestResolver
 from requests.exceptions import RetryError
@@ -146,13 +146,13 @@ def guess_mozinfo_from_task(task, repo="", app_version="", test_tags=[]):
     return info
 
 
-@memoize
+@functools.cache
 def _load_manifest_runtimes_data():
     index_route = "gecko.v2.mozilla-central.latest.source.test-info-manifest-timings"
     return get_artifact_from_index(index_route, "public/manifests-runtimes.json")
 
 
-@memoize
+@functools.cache
 def get_runtimes(platform, suite_name):
     if not suite_name or not platform:
         raise TypeError("suite_name and platform cannot be empty.")
@@ -361,7 +361,7 @@ class BaseManifestLoader(metaclass=ABCMeta):
 class DefaultLoader(BaseManifestLoader):
     """Load manifests using metadata from the TestResolver."""
 
-    @memoize
+    @functools.cache
     def get_tests(self, suite):
         suite_definition = TEST_SUITES[suite]
         return list(
@@ -373,7 +373,7 @@ class DefaultLoader(BaseManifestLoader):
             )
         )
 
-    @memoize
+    @functools.cache
     def get_manifests(self, suite, frozen_mozinfo):
         mozinfo = dict(frozen_mozinfo)
 
@@ -466,7 +466,7 @@ class BugbugLoader(DefaultLoader):
         super().__init__(*args, **kwargs)
         self.timedout = False
 
-    @memoize
+    @functools.cache
     def get_manifests(self, suite, mozinfo):
         manifests = super().get_manifests(suite, mozinfo)
 

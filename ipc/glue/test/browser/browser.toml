@@ -62,3 +62,8 @@ skip-if = [
 ] # from tools/profiler/tests/browser/browser.toml, timing out on profiler tests?
 
 ["browser_utility_start_clean_shutdown.js"]
+
+["browser_zombies.js"]
+run-if = [
+  "os == 'linux'",
+]

@@ -13,6 +13,7 @@
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/FromParser.h"
 #include "mozilla/dom/HTMLElementBinding.h"
+#include "mozilla/dom/LifecycleCallbackArgs.h"
 #include "nsContentUtils.h"
 #include "nsGenericHTMLElement.h"
 #include "nsILayoutHistoryState.h"

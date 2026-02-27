@@ -413,6 +413,7 @@ puppeteer-build:
             - 'remote/test/puppeteer/package.json'
             - 'remote/test/puppeteer/package-lock.json'
             - 'remote/test/puppeteer/test/package.json'
+            - 'remote/test/puppeteer/test/TestExpectations.json'
         toolchain-artifact: public/build/puppeteer-build.tar.zst
     fetches:
         toolchain:

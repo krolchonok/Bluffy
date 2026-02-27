@@ -245,8 +245,8 @@ import org.mozilla.fenix.settings.deletebrowsingdata.DefaultDeleteBrowsingDataCo
 import org.mozilla.fenix.settings.downloads.DownloadLocationManager
 import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
 import org.mozilla.fenix.snackbar.SnackbarBinding
-import org.mozilla.fenix.tabstray.Page
 import org.mozilla.fenix.tabstray.ext.toDisplayTitle
+import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.telemetry.ACTION_SECURITY_INDICATOR_CLICKED
 import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
 import org.mozilla.fenix.theme.FirefoxTheme

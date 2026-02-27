@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import itertools
+import json
 import logging
 import os
 import pprint
@@ -257,6 +258,16 @@ def config_status(config, execute=True):
 
     partial_config = PartialConfigEnvironment(config["TOPOBJDIR"])
     partial_config.write_vars(sanitized_config)
+
+    mach_env = {
+        "topobjdir": sanitized_config["topobjdir"],
+        "topsrcdir": sanitized_config["topsrcdir"],
+        "defines": dict(sanitized_config["defines"]),
+        "substs": dict(sanitized_config["substs"]),
+    }
+    # Write config.status.json for fast Gradle configuration.
+    with FileAvoidWrite("config.status.json") as fh:
+        fh.write(json.dumps(mach_env, indent=2, sort_keys=True))
 
     # Write out a file so the build backend knows to re-run configure when
     # relevant Python changes. Use FileAvoidWrite to only write if the

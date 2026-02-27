@@ -9,7 +9,7 @@ import { DiscoveryStreamFeed } from "lib/DiscoveryStreamFeed.sys.mjs";
 import { reducers } from "common/Reducers.sys.mjs";
 
 import { PersistentCache } from "lib/PersistentCache.sys.mjs";
-import { SectionsLayoutManager } from "lib/SectionsLayoutManager.sys.mjs";
+import { SectionsLayoutManager } from "lib/SectionsLayoutFeed.sys.mjs";
 
 const CONFIG_PREF_NAME = "discoverystream.config";
 const ENDPOINTS_PREF_NAME = "discoverystream.endpoints";
@@ -3050,6 +3050,15 @@ describe("DiscoveryStreamFeed", () => {
         setPref("discoverystream.sections.enabled", true);
         setPref("discoverystream.sections.layout", "");
         globals.set("SectionsLayoutManager", SectionsLayoutManager);
+        feed.store.dispatch({
+          type: at.SECTIONS_LAYOUT_UPDATE,
+          data: {
+            configs: {
+              "daily-briefing": { name: "daily-briefing" },
+              "7-double-row-2-ad": { name: "7-double-row-2-ad" },
+            },
+          },
+        });
         const fakeCache = {};
         sandbox.stub(feed.cache, "get").returns(Promise.resolve(fakeCache));
         sandbox.stub(feed, "rotate").callsFake(val => val);
@@ -3162,15 +3171,15 @@ describe("DiscoveryStreamFeed", () => {
           "Second section should use default layout (config only has one entry)"
         );
       });
-      it("should fallback to 7-double-row-2-ad when sectionLayoutConfig layout name does not exist", async () => {
+      it("should fallback to default layout by index when sectionLayoutConfig layout name does not exist", async () => {
         setPref("discoverystream.sections.layout", "non-existent-layout");
         setPref("discoverystream.sections.clientLayout.enabled", true);
         const feedData = await feed.getComponentFeed("url");
 
         assert.equal(
           feedData.data.sections[0].layout.name,
-          "7-double-row-2-ad",
-          "First section should fallback to 7-double-row-2-ad"
+          "6-small-medium-1-ad",
+          "First section should fallback to first default layout"
         );
       });
       it("should apply multiple layouts from sectionLayoutConfig", async () => {

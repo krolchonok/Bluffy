@@ -9,6 +9,7 @@ import android.provider.DocumentsContract
 import androidx.core.net.toUri
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.nimbus.FxNimbus
 import java.io.FileNotFoundException
 
 /**
@@ -35,9 +36,10 @@ class DownloadLocationManager(private val context: Context) {
         val defaultFallbackPath = Environment.getExternalStoragePublicDirectory(
             Environment.DIRECTORY_DOWNLOADS,
         ).path
+
         val configuredLocation = context.settings().downloadsDefaultLocation
 
-        if (configuredLocation.isEmpty()) {
+        if (!FxNimbus.features.downloadsCustomLocation.value().enabled || configuredLocation.isEmpty()) {
             return defaultFallbackPath
         }
 

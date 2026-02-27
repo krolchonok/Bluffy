@@ -6405,6 +6405,10 @@ bool nsHttpChannel::ParseDictionary(nsICacheEntry* aEntry,
     nsCString hash;
     // Available now for use
     RefPtr<DictionaryCache> dicts(DictionaryCache::GetInstance());
+    if (!dicts) {
+      // Shutdown has occurred, cannot add dictionary
+      return false;
+    }
     LOG_DICTIONARIES(
         ("Adding DictionaryCache entry for %s: key %s, matchval %s, id=%s, "
          "match-dest[0]=%s, type=%s",

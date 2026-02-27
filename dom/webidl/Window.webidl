@@ -83,7 +83,6 @@ interface nsIPrintSettings;
                     DeviceMotionEventAcceleration,
                     DeviceMotionEventRotationRate,
                     DOMError,
-                    EncodedVideoChunk,
                     EnterPictureInPictureEvent,
                     External,
                     FederatedCredential,
@@ -97,24 +96,14 @@ interface nsIPrintSettings;
                     KeyboardLayoutMap,
                     LinearAccelerationSensor,
                     MediaSettingsRange,
-                    MIDIAccess,
-                    MIDIConnectionEvent,
-                    MIDIInput,
-                    MIDIInputMap,
-                    MIDIMessageEvent,
-                    MIDIOutput,
-                    MIDIOutputMap,
-                    MIDIPort,
                     NetworkInformation,
                     offscreenBuffering,
                     onbeforeinstallprompt,
                     oncancel,
                     onmousewheel,
-                    onorientationchange,
                     onsearch,
                     onselectionchange,
                     openDatabase,
-                    orientation,
                     OrientationSensor,
                     OverconstrainedError,
                     PasswordCredential,
@@ -139,9 +128,6 @@ interface nsIPrintSettings;
                     PresentationRequest,
                     RelativeOrientationSensor,
                     RemotePlayback,
-                    Report,
-                    ReportBody,
-                    ReportingObserver,
                     RTCError,
                     RTCErrorEvent,
                     RTCIceTransport,
@@ -174,12 +160,6 @@ interface nsIPrintSettings;
                     USBIsochronousOutTransferPacket,
                     USBIsochronousOutTransferResult,
                     USBOutTransferResult,
-                    UserActivation,
-                    VideoColorSpace,
-                    VideoDecoder,
-                    VideoEncoder,
-                    VideoFrame,
-                    WakeLock,
                     WakeLockSentinel,
                     webkitCancelAnimationFrame,
                     webkitMediaStream,
@@ -732,7 +712,7 @@ Window includes OnErrorEventHandlerForWindow;
 #if defined(MOZ_WIDGET_ANDROID)
 // https://compat.spec.whatwg.org/#windoworientation-interface
 partial interface Window {
-  [NeedsCallerType]
+  [UseCounter, NeedsCallerType]
   readonly attribute short orientation;
            attribute EventHandler onorientationchange;
 };

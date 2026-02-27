@@ -100,6 +100,7 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ShadowRoot, DocumentFragment)
   NS_DECL_ISUPPORTS_INHERITED
 
+  // Part of https://dom.spec.whatwg.org/#concept-attach-a-shadow-root step 5
   ShadowRoot(Element* aElement, ShadowRootMode aMode,
              Element::DelegatesFocus aDelegatesFocus,
              SlotAssignmentMode aSlotAssignment, IsClonable aClonable,

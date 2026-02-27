@@ -14,7 +14,6 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import mozilla.components.support.test.mock
 import mozilla.components.support.utils.FakeDateTimeProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -322,7 +321,7 @@ class DefaultMetricsStorageTest {
         val activity = mockk<Activity>()
         val slot = slot<Long>()
         every { storage.updateUsageState(capture(slot)) } returns Unit
-        every { activity.componentName } returns mock()
+        every { activity.componentName } returns mockk()
 
         val usageRecorder = DefaultMetricsStorage.UsageRecorder(storage)
         val startTime = System.currentTimeMillis()

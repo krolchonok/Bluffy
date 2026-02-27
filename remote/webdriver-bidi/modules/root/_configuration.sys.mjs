@@ -17,6 +17,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://remote/content/webdriver-bidi/modules/root/browsingContext.sys.mjs",
   setLocaleOverrideForBrowsingContext:
     "chrome://remote/content/webdriver-bidi/modules/root/emulation.sys.mjs",
+  setNetworkConditionsForBrowsingContext:
+    "chrome://remote/content/webdriver-bidi/modules/root/emulation.sys.mjs",
   setScreenOrientationOverrideForBrowsingContext:
     "chrome://remote/content/webdriver-bidi/modules/root/emulation.sys.mjs",
   setScreenSettingsOverrideForBrowsingContext:
@@ -35,6 +37,7 @@ ChromeUtils.defineLazyGetter(lazy, "logger", () =>
 // except from `viewport-override` which is handled separately.
 const EMULATIONS_TO_APPLY = [
   "locale-override",
+  "network-conditions",
   "screen-orientation-override",
   "screen-settings-override",
   "timezone-override",
@@ -221,6 +224,17 @@ class _ConfigurationModule extends RootBiDiModule {
       lazy.setLocaleOverrideForBrowsingContext({
         context: browsingContext,
         value: localeOverride,
+      });
+    }
+
+    const networkConditions = this.#findCorrectOverrideValue(
+      configurationMap["network-conditions"],
+      "object"
+    );
+    if (networkConditions !== null) {
+      lazy.setNetworkConditionsForBrowsingContext({
+        context: browsingContext,
+        value: networkConditions,
       });
     }
 

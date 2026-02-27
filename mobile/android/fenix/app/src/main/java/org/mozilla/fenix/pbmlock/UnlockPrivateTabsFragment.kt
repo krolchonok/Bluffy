@@ -32,7 +32,7 @@ import org.mozilla.fenix.ext.registerForActivityResult
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.home.HomeFragmentDirections
 import org.mozilla.fenix.settings.biometric.DefaultBiometricUtils
-import org.mozilla.fenix.tabstray.Page
+import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**

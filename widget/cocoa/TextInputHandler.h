@@ -1255,14 +1255,14 @@ class IMEInputHandler : public TextInputHandlerBase {
                                       NSString* aString, const NSRange& aRange,
                                       PreventSetSelection aPreventSetSelection);
 
-  // The focused IME handler.  Please note that the handler might lost the
+  // The focused IME handler.  Please note that the handler might lose the
   // actual focus by deactivating the application.  If we are active, this
   // must have the actual focused handle.
-  // We cannot access to the NSInputManager during we aren't active, so, the
-  // focused handler can have an IME transaction even if we are deactive.
+  // We cannot access the NSInputManager while we aren't active, so the
+  // focused handler can have an IME transaction even if we are deactivated.
   static IMEInputHandler* sFocusedIMEHandler;
 
-  static bool sCachedIsForRTLLangage;
+  static bool sCachedIsForRTLLanguage;
 };
 
 /**

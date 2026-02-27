@@ -892,7 +892,7 @@ bool shell::dumpEntrainedVariables = false;
 bool shell::OOM_printAllocationCount = false;
 #endif
 
-MOZ_RUNINIT UniqueChars shell::processWideModuleLoadPath;
+constinit UniqueChars shell::processWideModuleLoadPath;
 
 static bool SetTimeoutValue(JSContext* cx, double t);
 

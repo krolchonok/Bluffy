@@ -175,18 +175,12 @@ set_config("MOZ_FOLD_LIBS", fold_libs)
 option("--disable-gecko-profiler", help="Disable the Gecko profiler")
 
 
-@depends("--disable-gecko-profiler", target)
-def gecko_profiler(enable_gecko_profiler, target):
+@depends("--disable-gecko-profiler")
+def gecko_profiler(enable_gecko_profiler):
     if not enable_gecko_profiler:
+        log.warning("--disable-gecko-profiler is deprecated see https://bugzilla.mozilla.org/show_bug.cgi?id=1635350")
         return False
-
-    if target.os == "Android":
-        return target.cpu in ("aarch64", "arm", "x86", "x86_64")
-    elif target.kernel == "Linux":
-        return target.cpu in ("aarch64", "arm", "x86", "x86_64", "mips64")
-    elif target.kernel == "FreeBSD":
-        return target.cpu in ("aarch64", "x86_64")
-    return target.kernel in ("Darwin", "WINNT")
+    return True
 
 
 @depends(gecko_profiler)

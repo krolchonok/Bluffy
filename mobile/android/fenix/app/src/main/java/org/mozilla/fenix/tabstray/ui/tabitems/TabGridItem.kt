@@ -62,6 +62,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.SwipeToDismissBox2
 import org.mozilla.fenix.compose.SwipeToDismissState2
 import org.mozilla.fenix.compose.TabThumbnail
+import org.mozilla.fenix.compose.thumbnailImageData
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.ext.toDisplayTitle
 import org.mozilla.fenix.tabstray.ui.sharedTabTransition
@@ -341,13 +342,13 @@ private fun Thumbnail(
     size: Int,
 ) {
     TabThumbnail(
-        tab = tab,
+        tabThumbnailImageData = tab.thumbnailImageData(),
         thumbnailSizePx = size,
         modifier = Modifier
             .semantics(mergeDescendants = true) {
                 testTag = TabsTrayTestTag.TAB_ITEM_THUMBNAIL
             }
-            .sharedTabTransition(tab = tab)
+            .sharedTabTransition(tabId = tab.id)
             .fillMaxSize(),
         shape = ThumbnailShape,
     )

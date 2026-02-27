@@ -49,6 +49,7 @@ path:tools/terser/package-lock.json
 path:remote/test/puppeteer/package.json
 path:remote/test/puppeteer/package-lock.json
 path:remote/test/puppeteer/test/package.json
+path:remote/test/puppeteer/test/TestExpectations.json
 
 # for new-style try pushes
 path:try_task_config.json

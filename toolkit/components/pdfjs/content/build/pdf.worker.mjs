@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.146
- * pdfjsBuild = 4ecbd0cbe
+ * pdfjsVersion = 5.5.156
+ * pdfjsBuild = 2bab2a87a
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -12635,7 +12635,6 @@ class LZWStream extends DecodeStream {
     }
     this.bitsCached = bitsCached -= n;
     this.cachedData = cachedData;
-    this.lastCode = null;
     return cachedData >>> bitsCached & (1 << n) - 1;
   }
   readBlock() {
@@ -62375,7 +62374,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "5.5.146";
+    const workerVersion = "5.5.156";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }

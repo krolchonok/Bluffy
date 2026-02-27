@@ -14,11 +14,31 @@ import mozilla.components.concept.llm.LocalLlmProvider
 import mozilla.components.concept.llm.Prompt
 import kotlin.time.Duration.Companion.seconds
 
-internal data class FakeCloudProvider(
-    override val state: MutableStateFlow<CloudLlmProvider.State>,
-) : CloudLlmProvider
+/**
+ * A fake implementation of [CloudLlmProvider] for use in tests and Compose previews.
+ *
+ * @property state The mutable state flow representing the current provider state.
+ * Defaults to [CloudLlmProvider.State.Available].
+ * @property llm The [Llm] instance to transition to when [prepare] is called.
+ */
+data class FakeCloudProvider(
+    override val state: MutableStateFlow<CloudLlmProvider.State> = MutableStateFlow(CloudLlmProvider.State.Available),
+    val llm: Llm,
+) : CloudLlmProvider {
+    override suspend fun prepare() {
+        state.value = CloudLlmProvider.State.Ready(llm)
+    }
+}
 
-internal data class FakeLlm(
+/**
+ * A fake implementation of [Llm] for use in tests and Compose previews.
+ *
+ * Emits each item in [responses] sequentially, with a 2-second delay between
+ * each emission to simulate real LLM streaming latency.
+ *
+ * @property responses The ordered list of [Llm.Response] values to emit when [prompt] is called.
+ */
+data class FakeLlm(
     val responses: List<Llm.Response> = listOf(),
 ) : Llm {
     override suspend fun prompt(prompt: Prompt): Flow<Llm.Response> = flow {
@@ -31,9 +51,9 @@ internal data class FakeLlm(
     companion object {
         val successful get() = FakeLlm(
             listOf(
-                Llm.Response.Success.ReplyPart("# This is the article"),
-                Llm.Response.Success.ReplyPart("This is some content..."),
-                Llm.Response.Success.ReplyPart("This is some *bold* content."),
+                Llm.Response.Success.ReplyPart("# This is the article\n"),
+                Llm.Response.Success.ReplyPart("This is some content...\n"),
+                Llm.Response.Success.ReplyPart("This is some *bold* content.\n"),
                 Llm.Response.Success.ReplyFinished,
             ),
         )

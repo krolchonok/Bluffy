@@ -26,7 +26,7 @@ class VerificationServiceFailed(reason: String) : Exception("Verification Servic
  *
  * @param reason A human-readable explanation of the failure.
  */
-class ChatServiceFailed(reason: String) : Exception("Verification Service Failed: $reason")
+class ChatServiceFailed(reason: String) : Exception("Chat Service Failed: $reason")
 
 /**
  * Configuration for connecting to MLPA services.
@@ -66,6 +66,15 @@ value class AuthorizationToken(val value: String)
 value class UserId(val value: String)
 
 /**
+ * Represents the name of a package in MLPA requests.
+ *
+ * @property value The raw package name.
+ */
+@JvmInline
+@Serializable
+value class PackageName(val value: String)
+
+/**
  * Aggregated MLPA service interface combining:
  * - [AuthenticationService] for token verification.
  * - [ChatService] for chat/completion requests.
@@ -89,11 +98,15 @@ fun interface AuthenticationService {
      *
      * @property userId The identifier of the user requesting verification.
      * @property integrityToken The integrity token obtained from the client.
+     * @property packageName The package name for the app requesting verification.
      */
     @Serializable
     data class Request(
         @SerialName("user_id") val userId: UserId,
-        @Serializable(with = IntegrityTokenSerializer::class) val integrityToken: IntegrityToken,
+        @SerialName("integrity_token")
+        @Serializable(with = IntegrityTokenSerializer::class)
+        val integrityToken: IntegrityToken,
+        @SerialName("package_name") val packageName: PackageName,
     )
 
     /**

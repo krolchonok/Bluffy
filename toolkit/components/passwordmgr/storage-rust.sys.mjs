@@ -746,6 +746,12 @@ export class LoginManagerRustStorage {
     return logins.length;
   }
 
+  async countLoginsAsync(origin, formActionOrigin, httpRealm) {
+    let result = this.countLogins(origin, formActionOrigin, httpRealm);
+    // Emulate being async:
+    return Promise.resolve(result);
+  }
+
   addPotentiallyVulnerablePassword(_login) {
     throw Components.Exception(
       "addPotentiallyVulnerablePassword",

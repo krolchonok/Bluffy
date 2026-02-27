@@ -62,7 +62,8 @@ class DateInputType : public DateTimeInputTypeBase {
 
   nsresult GetBadInputMessage(nsAString& aMessage) override;
 
-  StringToNumberResult ConvertStringToNumber(const nsAString&) const override;
+  StringToNumberResult ConvertStringToNumber(const nsAString&,
+                                             Localized) const override;
   bool ConvertNumberToString(Decimal, Localized,
                              nsAString& aResultString) const override;
 
@@ -80,7 +81,8 @@ class TimeInputType : public DateTimeInputTypeBase {
 
   nsresult GetBadInputMessage(nsAString& aMessage) override;
 
-  StringToNumberResult ConvertStringToNumber(const nsAString&) const override;
+  StringToNumberResult ConvertStringToNumber(const nsAString&,
+                                             Localized) const override;
   bool ConvertNumberToString(Decimal, Localized, nsAString&) const override;
   bool IsRangeOverflow() const override;
   bool IsRangeUnderflow() const override;
@@ -105,7 +107,8 @@ class WeekInputType : public DateTimeInputTypeBase {
   }
 
   nsresult GetBadInputMessage(nsAString& aMessage) override;
-  StringToNumberResult ConvertStringToNumber(const nsAString&) const override;
+  StringToNumberResult ConvertStringToNumber(const nsAString&,
+                                             Localized) const override;
   bool ConvertNumberToString(Decimal, Localized, nsAString&) const override;
 
  private:
@@ -121,7 +124,8 @@ class MonthInputType : public DateTimeInputTypeBase {
   }
 
   nsresult GetBadInputMessage(nsAString& aMessage) override;
-  StringToNumberResult ConvertStringToNumber(const nsAString&) const override;
+  StringToNumberResult ConvertStringToNumber(const nsAString&,
+                                             Localized) const override;
   bool ConvertNumberToString(Decimal, Localized, nsAString&) const override;
 
  private:
@@ -137,7 +141,8 @@ class DateTimeLocalInputType : public DateTimeInputTypeBase {
   }
 
   nsresult GetBadInputMessage(nsAString& aMessage) override;
-  StringToNumberResult ConvertStringToNumber(const nsAString&) const override;
+  StringToNumberResult ConvertStringToNumber(const nsAString&,
+                                             Localized) const override;
   bool ConvertNumberToString(Decimal, Localized, nsAString&) const override;
 
  private:

@@ -198,37 +198,8 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_search_optimization_feature).apply {
+        requirePreference<Preference>(R.string.pref_key_search_optimization).apply {
             isVisible = Config.channel.isDebug
-            isChecked = context.settings().isSearchOptimizationEnabled
-            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
-                (newValue as? Boolean)?.let { newOption ->
-                    context.settings().isSearchOptimizationEnabled = newOption
-                    requirePreference<SwitchPreference>(R.string.pref_key_search_optimization_stocks).apply {
-                        isEnabled = newOption
-                        summary = when (newOption) {
-                            true -> null
-                            false -> getString(R.string.preferences_debug_settings_search_optimization_stock_summary)
-                        }
-                        if (!newOption && isChecked) {
-                            isChecked = false
-                            context.settings().shouldShowSearchOptimizationStockCard = false
-                        }
-                    }
-                }
-                true
-            }
-        }
-
-        requirePreference<SwitchPreference>(R.string.pref_key_search_optimization_stocks).apply {
-            isVisible = Config.channel.isDebug
-            isEnabled = context.settings().isSearchOptimizationEnabled
-            isChecked = context.settings().shouldShowSearchOptimizationStockCard
-            summary = when (context.settings().isSearchOptimizationEnabled) {
-                true -> null
-                false -> getString(R.string.preferences_debug_settings_search_optimization_stock_summary)
-            }
-            onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
         requirePreference<SwitchPreference>(R.string.pref_key_use_minimal_bottom_toolbar_while_entering_text).apply {
@@ -486,12 +457,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_email_masks).apply {
-            isVisible = Config.channel.isDebug
-            isChecked = context.settings().isEmailMaskFeatureEnabled
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
         requirePreference<SwitchPreference>(R.string.pref_key_enable_persistent_onboarding).apply {
             isChecked = context.settings().enablePersistentOnboarding
             onPreferenceChangeListener = SharedPreferenceUpdater()
@@ -522,6 +487,9 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         val directions = when (preference.key) {
             resources.getString(R.string.pref_key_remote_settings_server) -> {
                 SecretSettingsFragmentDirections.actionSecretSettingsFragmentToRemoteSettingsServerFragment()
+            }
+            resources.getString(R.string.pref_key_search_optimization) -> {
+                SecretSettingsFragmentDirections.actionSecretSettingsFragmentToSearchOptimizationFragment()
             }
             else -> return super.onPreferenceTreeClick(preference)
         }

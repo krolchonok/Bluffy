@@ -182,7 +182,6 @@ def set_treeherder_machine_platform(config, tasks):
         "macosx1500-64/opt": "osx-1500/opt",
         "macosx1500-64-shippable/opt": "osx-1500-shippable/opt",
         "win64-asan/opt": "windows11-64-24h2/asan",
-        "win64-aarch64/opt": "windows11-aarch64/opt",
     }
     for task in tasks:
         # For most desktop platforms, the above table is not used for "regular"
@@ -233,6 +232,7 @@ def handle_keyed_by(config, tasks):
         "docker-image",
         "max-run-time",
         "chunks",
+        "default-chunks",
         "suite",
         "run-on-projects",
         "os-groups",

@@ -20,7 +20,7 @@ import sentry_sdk
 import yaml
 from mach.decorators import Command, CommandArgument, SubCommand
 from mach.registrar import Registrar
-from mozbuild.util import cpu_count, memoize
+from mozbuild.util import cpu_count
 from mozfile import load_source
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -361,7 +361,7 @@ def toggle_no_autodoc():
     moztreedocs._SphinxManager.NO_AUTODOC = True
 
 
-@memoize
+@functools.cache
 def _read_project_properties():
     path = os.path.normpath(manager().conf_py_path)
     conf = load_source("doc_conf", path)

@@ -6,6 +6,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   IPPEnrollAndEntitleManager:
@@ -282,7 +283,10 @@ export class IPProtectionPanel {
   }
 
   #startProxy() {
-    lazy.IPPProxyManager.start();
+    const win = this.#window.get();
+    const inPrivateBrowsing =
+      !!win && lazy.PrivateBrowsingUtils.isWindowPrivate(win);
+    lazy.IPPProxyManager.start(true, inPrivateBrowsing);
   }
 
   #stopProxy() {
@@ -798,7 +802,15 @@ export class IPProtectionPanel {
         threshold = secondWarning;
       }
 
+      const lastRecordedThreshold = Services.prefs.getIntPref(
+        BANDWIDTH_THRESHOLD_PREF,
+        threshold
+      );
       Services.prefs.setIntPref(BANDWIDTH_THRESHOLD_PREF, threshold);
+
+      if (lastRecordedThreshold !== threshold) {
+        this.#measureBandwidthThreshold(threshold, lastRecordedThreshold);
+      }
 
       // Reset dismissed warnings when usage is reset
       if (threshold === 0) {
@@ -827,5 +839,15 @@ export class IPProtectionPanel {
         this.setState({ bandwidthWarning: false });
       }
     }
+  }
+
+  #measureBandwidthThreshold(threshold, lastRecordedThreshold) {
+    if (!threshold || threshold == lastRecordedThreshold) {
+      return;
+    }
+
+    Glean.ipprotection.bandwidthUsedThreshold.record({
+      percentage: threshold,
+    });
   }
 }

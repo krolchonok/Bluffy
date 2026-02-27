@@ -84,7 +84,7 @@ struct ProfileGenerationAdditionalInformation {
   friend IPC::ParamTraits<mozilla::ProfileGenerationAdditionalInformation>;
 
  private:
-  JSString* CreateJSStringFromSourceData(
+  JSString* MaybeCreateJSStringFromSourceData(
       JSContext* aCx, const ProfilerJSSourceData& aSourceData) const;
 
   SharedLibraryInfo mSharedLibraries;

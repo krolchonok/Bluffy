@@ -42,8 +42,9 @@ import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.theme.AcornTheme
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.BottomSheetHandle
-import org.mozilla.fenix.tabstray.TabGroupAction
-import org.mozilla.fenix.tabstray.TabsTrayStore
+import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
+import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
@@ -55,7 +56,7 @@ private val formFieldShape = RoundedCornerShape(16.dp)
  * Prompt to edit a tab group.
  *
  * @param tabsTrayStore [TabsTrayStore] used to listen for changes to
- * [org.mozilla.fenix.tabstray.TabsTrayState].
+ * [TabsTrayState].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

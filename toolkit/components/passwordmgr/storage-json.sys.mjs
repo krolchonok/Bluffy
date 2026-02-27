@@ -904,6 +904,12 @@ export class LoginManagerStorage_json {
     return foundLogins.length;
   }
 
+  async countLoginsAsync(origin, formActionOrigin, httpRealm) {
+    let result = this.countLogins(origin, formActionOrigin, httpRealm);
+    // Emulate being async:
+    return Promise.resolve(result);
+  }
+
   addPotentiallyVulnerablePassword(login) {
     this._store.ensureDataReady();
     // this breached password is already stored

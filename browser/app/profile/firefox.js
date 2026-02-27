@@ -829,6 +829,9 @@ pref("browser.urlbar.suggest.sports", true);
 // urlbar searches.
 pref("browser.urlbar.lastUrlbarSearchSeconds", 0);
 
+// Feature gate pref for Nova UI in the urlbar.
+pref("browser.urlbar.nova.featureGate", false);
+
 pref("browser.altClickSave", false);
 
 // Number of milliseconds to wait for the http headers (and thus
@@ -1089,11 +1092,7 @@ pref("browser.tabs.groups.hoverPreview.enabled", true);
 
 pref("browser.tabs.groups.smart.enabled", true);
 
-#ifdef NIGHTLY_BUILD
-pref("browser.tabs.notes.enabled", true);
-#else
 pref("browser.tabs.notes.enabled", false);
-#endif
 
 // KMEANS_WITH_ANCHOR or NEAREST_NEIGHBOR or LOGISTIC_REGRESSION
 pref("browser.tabs.groups.smart.suggestOtherTabsMethod", "LOGISTIC_REGRESSION");
@@ -2280,6 +2279,7 @@ pref("browser.smartwindow.endpoint", "https://mlpa-prod-prod-mozilla.global.ssl.
 pref("browser.smartwindow.memories", true);
 pref("browser.smartwindow.firstrun.autoAdvanceMS", 3000);
 pref("browser.smartwindow.firstrun.hasCompleted", false);
+pref("browser.smartwindow.showThemesNotice", true);
 pref("browser.smartwindow.firstrun.modelChoice", "");
 pref("browser.smartwindow.model", "");
 pref("browser.smartwindow.preferences.endpoint", "");

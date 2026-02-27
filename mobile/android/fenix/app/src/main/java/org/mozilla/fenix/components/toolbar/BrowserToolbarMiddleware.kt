@@ -128,8 +128,8 @@ import org.mozilla.fenix.ext.navigateSafe
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.settings.quicksettings.protections.cookiebanners.getCookieBannerUIMode
-import org.mozilla.fenix.tabstray.Page
 import org.mozilla.fenix.tabstray.ext.isActiveDownload
+import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.lastSavedFolderCache
 import mozilla.components.browser.toolbar.R as toolbarR

@@ -371,6 +371,7 @@ nsresult nsHttpHandler::Init() {
   if (!IsNeckoChild()) {
     if (XRE_IsParentProcess()) {
       mDictionaryCache = DictionaryCache::GetInstance();
+      // mDictionaryCache can be null if shutdown has occurred
 
       std::bitset<3> usageOfHTTPSRRPrefs;
       usageOfHTTPSRRPrefs[0] = StaticPrefs::network_dns_upgrade_with_https_rr();
@@ -678,7 +679,7 @@ nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
   // Add the "Accept-Encoding" header and possibly Dictionary headers
   if (aSecure) {
     // The dictionary info may require us to check the cache.
-    if (StaticPrefs::network_http_dictionaries_enable()) {
+    if (StaticPrefs::network_http_dictionaries_enable() && mDictionaryCache) {
       // Note: this is async; the lambda can happen later
       // aCallback will now be owned by GetDictionaryFor
       guard.release();

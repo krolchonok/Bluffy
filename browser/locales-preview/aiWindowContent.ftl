@@ -4,17 +4,18 @@
 
 smartwindow-messages-document-title = Smart window chat messages
 
-## TO BE UPDATED: https://mozilla-hub.atlassian.net/browse/GENAI-3450
 ## Error messages in the chat content
 
 smartwindow-assistant-error-generic-header = Something went wrong. Please try again.
-smartwindow-assistant-error-budget-header = You’ve hit the maximum number of interactions allowed in a single day. Your access will reset at midnight ET.
-smartwindow-assistant-error-budget-body = You can still search and navigate in Smart Window but chat functionality will be limited.
-smartwindow-assistant-error-long-message-header = This chat has reached the maximum length. Clear the chat or start a new conversation to continue.
-smartwindow-assistant-error-connection-header = Connection was lost or unsuccessful. Check your connection and try again.
+smartwindow-assistant-error-budget-header = You’ve reached today’s chat limit.
+
+## TODO: ET timezone should be replaced before rolling to other locales: https://bugzilla.mozilla.org/show_bug.cgi?id=2017944
+
+smartwindow-assistant-error-budget-body = You can still browse in this window. Chat will be available again after midnight ET.
+smartwindow-assistant-error-many-requests-header = Please wait a moment and try again. Too many messages were sent in a short time.
+smartwindow-assistant-error-max-length-header = It’s time to start a new chat. This one’s reached its length limit.
 smartwindow-retry-btn = Try Again
-smartwindow-switch-btn = Switch to Classic Window
-smartwindow-clear-btn = Clear chat
+smartwindow-clear-btn = New chat
 
 ## Assistant Message footer
 

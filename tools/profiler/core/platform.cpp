@@ -489,7 +489,7 @@ Json::String ToCompactString(const Json::Value& aJsonValue) {
 
 MOZ_RUNINIT /* static */ mozilla::baseprofiler::detail::BaseProfilerMutex
     ProfilingLog::gMutex;
-MOZ_RUNINIT /* static */ mozilla::UniquePtr<Json::Value> ProfilingLog::gLog;
+constinit /* static */ mozilla::UniquePtr<Json::Value> ProfilingLog::gLog;
 
 /* static */ void ProfilingLog::Init() {
   mozilla::baseprofiler::detail::BaseProfilerAutoLock lock{gMutex};
@@ -3009,6 +3009,11 @@ void DoNativeBacktraceDirect(const void* stackTop, NativeStack& aNativeStack,
 #  else
   aNativeStack.mCount = 0;
 #  endif
+}
+#else
+void DoNativeBacktraceDirect(const void* stackTop, NativeStack& aNativeStack,
+                             StackWalkControl* aStackWalkControlIfSupported) {
+  aNativeStack.mCount = 0;
 }
 #endif
 
@@ -5551,7 +5556,7 @@ void SamplerThread::SpyOnUnregisteredThreads() {
 #elif defined(GP_OS_linux) || defined(GP_OS_android) || defined(GP_OS_freebsd)
 #  include "platform-linux-android.cpp"
 #else
-#  error "bad platform"
+#  include "platform-noop.cpp"
 #endif
 
 // END SamplerThread
@@ -7562,7 +7567,11 @@ struct CPUAwakeMarker {
     return MakeStringSpan("Awake");
   }
   static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   int64_t aCPUTimeNs, int64_t aCPUId
+                                   int64_t aCPUTimeNs
+#if !defined(GP_PLAT_unknown) && !defined(GP_PLAT_arm64_darwin)
+                                   ,
+                                   int64_t aCPUId
+#endif
 #ifdef GP_OS_darwin
                                    ,
                                    uint32_t aQoS
@@ -7582,7 +7591,7 @@ struct CPUAwakeMarker {
       return;
     }
 
-#ifndef GP_PLAT_arm64_darwin
+#if !defined(GP_PLAT_unknown) && !defined(GP_PLAT_arm64_darwin)
     aWriter.IntProperty("CPU Id", aCPUId);
 #endif
 #ifdef GP_OS_windows
@@ -7625,7 +7634,7 @@ struct CPUAwakeMarker {
     using MS = MarkerSchema;
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
     schema.AddKeyFormat("CPU Time", MS::Format::Duration);
-#ifndef GP_PLAT_arm64_darwin
+#if !defined(GP_PLAT_unknown) && !defined(GP_PLAT_arm64_darwin)
     schema.AddKeyFormat("CPU Id", MS::Format::Integer);
     schema.SetTableLabel("Awake - CPU Id = {marker.data.CPU Id}");
 #endif
@@ -7657,16 +7666,19 @@ void profiler_mark_thread_asleep() {
             .GetNewCpuTimeInNs();
       },
       0);
-  PROFILER_MARKER("Awake", OTHER, MarkerTiming::IntervalEnd(), CPUAwakeMarker,
-                  cpuTimeNs, 0 /* cpuId */
+  PROFILER_MARKER(
+      "Awake", OTHER, MarkerTiming::IntervalEnd(), CPUAwakeMarker, cpuTimeNs
+#if !defined(GP_PLAT_unknown) && !defined(GP_PLAT_arm64_darwin)
+      ,
+      0 /* cpuId */
+#endif
 #if defined(GP_OS_darwin)
-                  ,
-                  0 /* qos_class */
+      ,
+      0 /* qos_class */
 #endif
 #if defined(GP_OS_windows)
-                  ,
-                  0 /* priority */, 0 /* thread priority */,
-                  0 /* current priority */
+      ,
+      0 /* priority */, 0 /* thread priority */, 0 /* current priority */
 #endif
   );
 }
@@ -7755,11 +7767,12 @@ void profiler_mark_thread_awake() {
     return;
   }
 
+#if !defined(GP_PLAT_unknown) && !defined(GP_PLAT_arm64_darwin)
   int64_t cpuId = 0;
-#if defined(GP_OS_windows)
+#  if defined(GP_OS_windows)
   cpuId = GetCurrentProcessorNumber();
-#elif defined(GP_OS_darwin)
-#  ifdef GP_PLAT_amd64_darwin
+#  elif defined(GP_OS_darwin)
+#    ifdef GP_PLAT_amd64_darwin
   unsigned int eax, ebx, ecx, edx;
   __cpuid_count(1, 0, eax, ebx, ecx, edx);
   // Check if we have an APIC.
@@ -7767,9 +7780,10 @@ void profiler_mark_thread_awake() {
     // APIC ID is bits 24-31 of EBX
     cpuId = ebx >> 24;
   }
-#  endif
-#else
+#    endif
+#  else
   cpuId = sched_getcpu();
+#  endif
 #endif
 
 #if defined(GP_OS_windows)
@@ -7800,7 +7814,11 @@ void profiler_mark_thread_awake() {
   }
 #endif
   PROFILER_MARKER("Awake", OTHER, MarkerTiming::IntervalStart(), CPUAwakeMarker,
-                  0 /* CPU time */, cpuId
+                  0 /* CPU time */
+#if !defined(GP_PLAT_unknown) && !defined(GP_PLAT_arm64_darwin)
+                  ,
+                  cpuId
+#endif
 #if defined(GP_OS_darwin)
                   ,
                   qos_class_self()

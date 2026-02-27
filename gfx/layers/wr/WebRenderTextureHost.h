@@ -84,8 +84,6 @@ class WebRenderTextureHost final : public TextureHost {
 
   wr::ExternalImageId GetExternalImageKey();
 
-  int32_t GetRGBStride();
-
   bool NeedsDeferredDeletion() const override;
 
   uint32_t NumSubTextures() override;

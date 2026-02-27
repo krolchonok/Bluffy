@@ -45,6 +45,10 @@ if CONFIG["MOZ_GECKO_PROFILER"]:
         SOURCES += [
             "core/shared-libraries-win32.cc",
         ]
+    else:
+        SOURCES += [
+            "core/shared-libraries-noop.cc",
+        ]
 
     LOCAL_INCLUDES += [
         "/mozglue/baseprofiler/core/",

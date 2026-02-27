@@ -727,17 +727,7 @@ workers:
             implementation: docker-worker
             os: linux
             worker-type: 't-linux-docker-kvm'
-        t-linux-talos:
-            provisioner: releng-hardware
-            implementation: generic-worker
-            os: linux
-            worker-type: 'gecko-{alias}'
-        t-linux-netperf-1804:
-            provisioner: releng-hardware
-            implementation: generic-worker
-            os: linux
-            worker-type: 'gecko-{alias}'
-        t-linux-talos-1804:
+        t-linux-(talos|netperf)(-1804|-2404)?:
             provisioner: releng-hardware
             implementation: generic-worker
             os: linux

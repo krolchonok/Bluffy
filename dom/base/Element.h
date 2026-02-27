@@ -1605,6 +1605,7 @@ class Element : public FragmentOrElement {
   // Shadow DOM v1
   enum class ShadowRootDeclarative : bool { No, Yes };
 
+  // https://dom.spec.whatwg.org/#dom-element-attachshadow
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   already_AddRefed<ShadowRoot> AttachShadow(const ShadowRootInit&,
                                             ErrorResult&);
@@ -1614,6 +1615,7 @@ class Element : public FragmentOrElement {
   enum class ShadowRootClonable : bool { No, Yes };
   enum class ShadowRootSerializable : bool { No, Yes };
 
+  // https://dom.spec.whatwg.org/#concept-attach-a-shadow-root
   already_AddRefed<ShadowRoot> AttachShadowWithoutNameChecks(
       const ShadowRootInit&, bool aNotify = true);
 

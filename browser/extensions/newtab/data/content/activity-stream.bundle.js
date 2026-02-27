@@ -215,6 +215,7 @@ for (const type of [
   "RICH_ICON_MISSING",
   "SAVE_SESSION_PERF_DATA",
   "SCREENSHOT_UPDATED",
+  "SECTIONS_LAYOUT_UPDATE",
   "SECTION_DEREGISTER",
   "SECTION_DISABLE",
   "SECTION_ENABLE",
@@ -6384,6 +6385,9 @@ const INITIAL_STATE = {
     categories: [],
     uploadedWallpaper: "",
   },
+  SectionsLayout: {
+    configs: {},
+  },
   Weather: {
     initialized: false,
     lastUpdated: null,
@@ -7228,6 +7232,15 @@ function Wallpapers(prevState = INITIAL_STATE.Wallpapers, action) {
   }
 }
 
+function SectionsLayout(prevState = INITIAL_STATE.SectionsLayout, action) {
+  switch (action.type) {
+    case actionTypes.SECTIONS_LAYOUT_UPDATE:
+      return { ...prevState, configs: action.data.configs };
+    default:
+      return prevState;
+  }
+}
+
 function Notifications(prevState = INITIAL_STATE.Notifications, action) {
   switch (action.type) {
     case actionTypes.SHOW_TOAST_MESSAGE:
@@ -7419,6 +7432,7 @@ const reducers = {
   TimerWidget,
   ListsWidget,
   Wallpapers,
+  SectionsLayout,
   Weather,
   ExternalComponents,
 };

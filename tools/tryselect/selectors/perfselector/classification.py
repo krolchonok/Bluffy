@@ -151,7 +151,7 @@ def raptor_test_finder(task_cmd, task_label, test):
     return modified_task_label
 
 
-@functools.lru_cache(maxsize=10)
+@functools.cache
 def get_talos_json():
     with pathlib.Path(build.topsrcdir, "testing", "talos", "talos.json").open() as f:
         talos_json = json.load(f)

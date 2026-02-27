@@ -18869,24 +18869,6 @@
       "last_modified": 1666727872042
     },
     {
-      "schema": 1666727333802,
-      "derHash": "XEUjNNnJyaLqQsx3pxZeF5XunYTrcMt4S0fqnZKlgtk=",
-      "subject": "CN=Soluti CA - DV,O=SOLUTI - SOLUCOES EM NEGOCIOS INTELIGENTES S/A,C=BR",
-      "subjectDN": "MF8xCzAJBgNVBAYTAkJSMTcwNQYDVQQKEy5TT0xVVEkgLSBTT0xVQ09FUyBFTSBORUdPQ0lPUyBJTlRFTElHRU5URVMgUy9BMRcwFQYDVQQDEw5Tb2x1dGkgQ0EgLSBEVg==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "8265936e7b87a7845ad3792c1bfbde5b8469f44276f048e773d7d306888e920a",
-        "size": 1756,
-        "filename": "kAzMeuwjUBWfPL5YEYfQG9qK_ABDxl0BMvPtzwEPN7E=.pem",
-        "location": "security-state-staging/intermediates/8d6429a5-772d-4666-be02-ba8282f7be70.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "kAzMeuwjUBWfPL5YEYfQG9qK/ABDxl0BMvPtzwEPN7E=",
-      "crlite_enrolled": false,
-      "id": "513590d9-2a18-481c-b691-bf785c25086b",
-      "last_modified": 1666727872015
-    },
-    {
       "schema": 1666727379438,
       "derHash": "vLwYxGO2HzoDOxDHSXTtiiwyivzWejONmHFQajUVQZ8=",
       "subject": "CN=e-Szigno Class3 SSL CA 2017,O=Microsec Ltd.,L=Budapest,C=HU",
@@ -19101,24 +19083,6 @@
       "crlite_enrolled": false,
       "id": "9bfb32bb-d95f-4440-a86b-01e4010249cf",
       "last_modified": 1666727871648
-    },
-    {
-      "schema": 1666727391920,
-      "derHash": "Efukp+5XnHDh1X+fm2qMIJ4SGcTx04Rvg//OdOnl4s4=",
-      "subject": "CN=Soluti CA - EV,O=SOLUTI - SOLUCOES EM NEGOCIOS INTELIGENTES S/A,C=BR",
-      "subjectDN": "MF8xCzAJBgNVBAYTAkJSMTcwNQYDVQQKEy5TT0xVVEkgLSBTT0xVQ09FUyBFTSBORUdPQ0lPUyBJTlRFTElHRU5URVMgUy9BMRcwFQYDVQQDEw5Tb2x1dGkgQ0EgLSBFVg==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "b45919819e02ad79724a514eaf858e77f666b1352e04efbd7b970ef878509a6a",
-        "size": 1776,
-        "filename": "Z6aApIGWlcMWZHFtBmP1FgZhyLKarTalSo0g5-EeG0U=.pem",
-        "location": "security-state-staging/intermediates/b2a82526-2d56-4d6f-82ed-ec715bf0fbe2.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "Z6aApIGWlcMWZHFtBmP1FgZhyLKarTalSo0g5+EeG0U=",
-      "crlite_enrolled": false,
-      "id": "2c989aad-c7f6-46c5-b0e4-6b645ccbe43f",
-      "last_modified": 1666727871621
     },
     {
       "schema": 1666727333970,
@@ -19839,24 +19803,6 @@
       "crlite_enrolled": false,
       "id": "4a6655ab-9a9a-43db-bb34-1602419c8ed9",
       "last_modified": 1666727870728
-    },
-    {
-      "schema": 1666727440773,
-      "derHash": "q3SxQRrSPiIn+4iiqTBKGkWlxIQLNjXxA2pG6DdCeaw=",
-      "subject": "CN=Soluti CA - OV,O=SOLUTI - SOLUCOES EM NEGOCIOS INTELIGENTES S/A,C=BR",
-      "subjectDN": "MF8xCzAJBgNVBAYTAkJSMTcwNQYDVQQKEy5TT0xVVEkgLSBTT0xVQ09FUyBFTSBORUdPQ0lPUyBJTlRFTElHRU5URVMgUy9BMRcwFQYDVQQDEw5Tb2x1dGkgQ0EgLSBPVg==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "1289ff9c033377f8edc9f2ded9318205d7263d8c7040b70ff2db68630eaac699",
-        "size": 1776,
-        "filename": "rCbpz2JPbnICZtM69Lt2eclqdTss0Mj0Z4ejXMF1nD4=.pem",
-        "location": "security-state-staging/intermediates/1bbff038-8596-4d1c-aea4-d0a5730155a8.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "rCbpz2JPbnICZtM69Lt2eclqdTss0Mj0Z4ejXMF1nD4=",
-      "crlite_enrolled": false,
-      "id": "bd39f78d-03b0-4fc6-9992-3728009c0be9",
-      "last_modified": 1666727870647
     },
     {
       "schema": 1666727420998,
@@ -25923,24 +25869,6 @@
       "crlite_enrolled": false,
       "id": "261d2a7a-7e13-4ffd-bf3e-4dbe09c11bc8",
       "last_modified": 1663786626447
-    },
-    {
-      "schema": 1663786372899,
-      "derHash": "a+fQTiD/wo8ZjKiPwMNkR4T9FWkDvweBMPuWTAJY26A=",
-      "subject": "CN=United Parcel Service\\, Inc. RSA OV CA,O=United Parcel Service\\, Inc.,L=Atlanta,ST=GA,C=US",
-      "subjectDN": "MIGCMQswCQYDVQQGEwJVUzELMAkGA1UECBMCR0ExEDAOBgNVBAcTB0F0bGFudGExJDAiBgNVBAoTG1VuaXRlZCBQYXJjZWwgU2VydmljZSwgSW5jLjEuMCwGA1UEAxMlVW5pdGVkIFBhcmNlbCBTZXJ2aWNlLCBJbmMuIFJTQSBPViBDQQ==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "5f2f917f15eb321eb42931857ac7ab983a47c6ee7bd3ae860d471c9af6b89cb5",
-        "size": 2142,
-        "filename": "SwXmbcFTOEV-82sxJhAl0R-uGVTqV9eWCnYAM12xQYs=.pem",
-        "location": "security-state-staging/intermediates/4ae82de2-f623-4295-9237-d34d5d6630b1.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "SwXmbcFTOEV+82sxJhAl0R+uGVTqV9eWCnYAM12xQYs=",
-      "crlite_enrolled": false,
-      "id": "b2a58c9b-ce5d-4635-94ac-0b3d767ad225",
-      "last_modified": 1663786626419
     },
     {
       "schema": 1663786379170,
@@ -32747,5 +32675,5 @@
       "last_modified": 1559865884636
     }
   ],
-  "timestamp": 1771772222966
+  "timestamp": 1772035022350
 }

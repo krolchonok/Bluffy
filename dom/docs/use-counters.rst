@@ -132,9 +132,13 @@ The Data
 Use Counters are, as of Firefox 121, collected using Glean as
 ``counter`` metrics on the "use-counters" ping.
 They are in a variety of metrics categories of ``use.counter.X``
-which you can browse on
+
+There's a public `dashboard <https://mozilla.github.io/use-counters/>`_ to view
+the aggregated data which should update daily.
+
+If you're a Mozilla employee, you can also browse the data directly on
 `the Glean Dictionary <https://dictionary.telemetry.mozilla.org/apps/firefox_desktop?page=1&search=use.counter>`_.
-The dictionary also contains information about how to view the data.
+The dictionary also contains extra information about how to view the data.
 
 Interpreting the data
 ---------------------

@@ -331,21 +331,35 @@ def _try_task_config(full_task_graph, parameters, graph_config):
     matched_tasks = []
     missing = set()
     for pattern in pattern_tasks:
+        prefix = pattern.replace("*", "")
         found = [
-            t
-            for t in full_task_graph.graph.nodes
-            if t.split(pattern.replace("*", ""))[-1].isnumeric()
+            t for t in full_task_graph.graph.nodes if t.split(prefix)[-1].isnumeric()
         ]
+        if not found:
+            # When dynamic chunking produces 1 chunk, the label has no
+            # numeric suffix (e.g. "test-...-xpcshell" instead of
+            # "test-...-xpcshell-1"). Match the unchunked name too.
+            base = prefix.rstrip("-")
+            if base in full_task_graph.graph.nodes:
+                found = [base]
         if found:
             matched_tasks.extend(found)
         else:
             missing.add(pattern)
 
         if "MOZHARNESS_TEST_PATHS" in parameters["try_task_config"].get("env", {}):
-            matched_tasks = [x for x in matched_tasks if x.endswith("-1")]
+            matched_tasks = [
+                x
+                for x in matched_tasks
+                if x.endswith("-1") or not x.rsplit("-", 1)[-1].isnumeric()
+            ]
 
         if "MOZHARNESS_TEST_TAG" in parameters["try_task_config"].get("env", {}):
-            matched_tasks = [x for x in matched_tasks if x.endswith("-1")]
+            matched_tasks = [
+                x
+                for x in matched_tasks
+                if x.endswith("-1") or not x.rsplit("-", 1)[-1].isnumeric()
+            ]
 
     selected_tasks = set(tasks) | set(matched_tasks)
     missing.update(selected_tasks - set(full_task_graph.tasks))
@@ -1132,13 +1146,14 @@ def target_tasks_customv8_update(full_task_graph, parameters, graph_config):
 
 @register_target_task("file_update")
 def target_tasks_file_update(full_task_graph, parameters, graph_config):
-    """Select the set of tasks required to perform nightly in-tree file updates"""
+    """Select the set of tasks required to perform periodic in-tree file updates"""
+    return ["repo-update-periodic-file-update"]
 
-    def filter(task):
-        # For now any task in the repo-update kind is ok
-        return task.kind in ["repo-update"]
 
-    return [l for l, t in full_task_graph.tasks.items() if filter(t)]
+@register_target_task("pinning_update")
+def target_tasks_pinning_update(full_task_graph, parameters, graph_config):
+    """Select the set of tasks required to perform periodic HSTS/HPKP pinning updates"""
+    return ["repo-update-pinning-update"]
 
 
 @register_target_task("l10n_bump")

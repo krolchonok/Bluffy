@@ -163,7 +163,6 @@ const kLastIndex = Number.MAX_SAFE_INTEGER - 1;
 import { PrivateBrowsingUtils } from "resource://gre/modules/PrivateBrowsingUtils.sys.mjs";
 
 import { TabMetrics } from "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs";
-import { TelemetryTimestamps } from "resource://gre/modules/TelemetryTimestamps.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { GlobalState } from "resource:///modules/sessionstore/GlobalState.sys.mjs";
@@ -1307,7 +1306,6 @@ var SessionStoreInternal = {
       throw new Error("SessionStore.init() must only be called once!");
     }
 
-    TelemetryTimestamps.add("sessionRestoreInitialized");
     Glean.sessionRestore.startupTimeline.sessionRestoreInitialized.set(
       Services.telemetry.msSinceProcessStart()
     );
@@ -2150,7 +2148,6 @@ var SessionStoreInternal = {
           );
           this._deferredAllWindowsRestored.resolve();
         } else {
-          TelemetryTimestamps.add("sessionRestoreRestoring");
           Glean.sessionRestore.startupTimeline.sessionRestoreRestoring.set(
             Services.telemetry.msSinceProcessStart()
           );
@@ -6657,6 +6654,10 @@ var SessionStoreInternal = {
 
     if (tab.hasAttribute("customizemode")) {
       window.gCustomizeMode.setTab(tab);
+    }
+
+    if (tabData.canonicalUrl) {
+      tab.canonicalUrl = tabData.canonicalUrl;
     }
 
     // Update tab label and icon to show something

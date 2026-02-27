@@ -1340,7 +1340,8 @@ class PromptFeature private constructor(
      * Helper function to handle showing an email mask prompt if the conditions are met
      * or to fallback to handling the dialog request.
      */
-    private fun handleEmailMaskOrLoginPrompt(
+    @VisibleForTesting
+    internal fun handleEmailMaskOrLoginPrompt(
         promptRequest: SelectLoginPrompt,
         session: SessionState,
         loginsByHint: Map<LoginHint, List<Login>>,

@@ -4,6 +4,7 @@
 
 import logging
 import os
+from functools import cache
 from io import StringIO
 
 from mozboot.util import MINIMUM_RUST_VERSION
@@ -13,7 +14,7 @@ from test_toolchain_helpers import CompilerResult, FakeCompiler, PrependFlags
 
 from common import BaseConfigureTest
 from mozbuild.configure.util import Version
-from mozbuild.util import ReadOnlyNamespace, memoize
+from mozbuild.util import ReadOnlyNamespace
 
 DEFAULT_C99 = {"__STDC_VERSION__": "199901L"}
 
@@ -59,7 +60,7 @@ SUPPORTS_CXX20 = {
 }
 
 
-@memoize
+@cache
 def GCC_BASE(version):
     version = Version(version)
     return FakeCompiler({
@@ -70,12 +71,12 @@ def GCC_BASE(version):
     })
 
 
-@memoize
+@cache
 def GCC(version):
     return GCC_BASE(version) + SUPPORTS_GNU99
 
 
-@memoize
+@cache
 def GXX(version):
     return GCC_BASE(version) + DEFAULT_CXX_97 + SUPPORTS_GNUXX11
 
@@ -140,7 +141,7 @@ GCC_PLATFORM_X86_WIN = FakeCompiler(GCC_PLATFORM_X86, GCC_PLATFORM_WIN)
 GCC_PLATFORM_X86_64_WIN = FakeCompiler(GCC_PLATFORM_X86_64, GCC_PLATFORM_WIN)
 
 
-@memoize
+@cache
 def CLANG_BASE(version):
     version = Version(version)
     return FakeCompiler({
@@ -151,12 +152,12 @@ def CLANG_BASE(version):
     })
 
 
-@memoize
+@cache
 def CLANG(version):
     return GCC_BASE("4.2.1") + CLANG_BASE(version) + SUPPORTS_GNU99
 
 
-@memoize
+@cache
 def CLANGXX(version):
     return (
         GCC_BASE("4.2.1")
@@ -232,7 +233,7 @@ CLANG_PLATFORM_X86_WIN = CLANG_PLATFORM(GCC_PLATFORM_X86_WIN)
 CLANG_PLATFORM_X86_64_WIN = CLANG_PLATFORM(GCC_PLATFORM_X86_64_WIN)
 
 
-@memoize
+@cache
 def VS(version):
     version = Version(version)
     return FakeCompiler({
@@ -1594,7 +1595,7 @@ class OpenBSDToolchainTest(BaseToolchainTest):
         )
 
 
-@memoize
+@cache
 def gen_invoke_cargo(version, rustup_wrapper=False):
     def invoke_cargo(stdin, args):
         args = tuple(args)
@@ -1607,7 +1608,7 @@ def gen_invoke_cargo(version, rustup_wrapper=False):
     return invoke_cargo
 
 
-@memoize
+@cache
 def gen_invoke_rustc(version, rustup_wrapper=False):
     def invoke_rustc(stdin, args):
         args = tuple(args)
@@ -1953,16 +1954,11 @@ class RustTest(BaseConfigureTest):
 
         # Trick the sandbox into not running the target compiler check
         dep = sandbox._depends[sandbox["c_compiler"]]
-        getattr(sandbox, "__value_for_depends")[(dep,)] = CompilerResult(
-            type=compiler_type
-        )
+        sandbox._dependency_overrides[dep] = CompilerResult(type=compiler_type)
         # Same for the arm_target checks.
         dep = sandbox._depends[sandbox["arm_target"]]
-        getattr(sandbox, "__value_for_depends")[(dep,)] = (
-            arm_target
-            or ReadOnlyNamespace(
-                arm_arch=7, thumb2=False, fpu="vfpv2", float_abi="softfp"
-            )
+        sandbox._dependency_overrides[dep] = arm_target or ReadOnlyNamespace(
+            arm_arch=7, thumb2=False, fpu="vfpv2", float_abi="softfp"
         )
         return sandbox._value_for(sandbox["rust_target_triple"])
 

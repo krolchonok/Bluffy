@@ -404,13 +404,6 @@
     "comment": "shell always emulates a focused page"
   },
   {
-    "testIdPattern": "[emulation.spec] Emulation Page.emulateNetworkConditions should support offline",
-    "platforms": ["darwin", "linux", "win32"],
-    "parameters": ["firefox"],
-    "expectations": ["FAIL"],
-    "comment": "Not supported by WebDriver BiDi"
-  },
-  {
     "testIdPattern": "[evaluation.spec] Evaluation specs Page.evaluate should replace symbols with undefined",
     "platforms": ["darwin", "linux", "win32"],
     "parameters": ["cdp"],
@@ -1553,18 +1546,11 @@
     "comment": "Unknown command emulation.setScriptingEnabled"
   },
   {
-    "testIdPattern": "[page.spec] Page Page.setOfflineMode should emulate navigator.onLine",
-    "platforms": ["darwin", "linux", "win32"],
-    "parameters": ["firefox", "webDriverBiDi"],
-    "expectations": ["FAIL"],
-    "comment": "Not supported by WebDriver BiDi"
-  },
-  {
     "testIdPattern": "[page.spec] Page Page.setOfflineMode should work",
     "platforms": ["darwin", "linux", "win32"],
     "parameters": ["firefox", "webDriverBiDi"],
-    "expectations": ["FAIL"],
-    "comment": "Not supported by WebDriver BiDi"
+    "expectations": ["TIMEOUT"],
+    "comment": "See Bug 2019202 and https://github.com/puppeteer/puppeteer/issues/14722"
   },
   {
     "testIdPattern": "[page.spec] Page Page.setUserAgent should work with additional userAgentMetdata",

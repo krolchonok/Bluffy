@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-02-23T13:41:12.179641+00:00'
+updated_at: '2026-02-25T16:05:39.702430+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -4733,10 +4733,10 @@ modules:
       - netwerk/url-classifier/**/*
     excludes: []
     owners:
-      - *dimi
+      - *timhuang
       - *groovecoder
     peers:
-      - *timhuang
+      - *dimi
       - *gcp
     meta:
       url: https://github.com/mozilla-services/shavar https://wiki.mozilla.org/Phishing_Protection
@@ -4748,5 +4748,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 072f670b7e807c24a12e6c2133d55112e6c34384
-  export: 5adf35005a2942b6477b69874fe896005eb10e95
+  config: 30ac5a5411089a98728d01851cc4fb4c719fc651
+  export: 32e804849bbadfa85170b4a192020f3ed67f5852

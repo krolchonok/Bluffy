@@ -129,7 +129,7 @@ class ConnectionEntry : public SupportsWeakPtr {
   // to build the hash key for hosts in the same ip pool.
   //
 
-  nsTArray<nsCString> mCoalescingKeys;
+  nsTArray<HashNumber> mCoalescingKeys;
 
   // This is a list of addresses matching the coalescing keys.
   // This is necessary to check if the origin's DNS entries
@@ -221,7 +221,7 @@ class ConnectionEntry : public SupportsWeakPtr {
 
   const nsTArray<RefPtr<nsIWebTransportHash>>& GetServerCertHashes();
 
-  const nsCString& OriginFrameHashKey();
+  const HashNumber& OriginFrameHashKey();
 
  private:
   void InsertIntoIdleConnections_internal(nsHttpConnection* conn);
@@ -249,7 +249,7 @@ class ConnectionEntry : public SupportsWeakPtr {
   PendingTransactionQueue mPendingQ;
   ~ConnectionEntry();
 
-  nsCString mOriginFrameHashKey;
+  Maybe<HashNumber> mOriginFrameHashKey;
 
   bool mRetriedDifferentIPFamilyForHttp3 = false;
 };

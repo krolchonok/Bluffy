@@ -52,7 +52,7 @@ import org.mozilla.fenix.library.historymetadata.interactor.HistoryMetadataGroup
 import org.mozilla.fenix.library.historymetadata.view.HistoryMetadataGroupView
 import org.mozilla.fenix.pbmlock.registerForVerification
 import org.mozilla.fenix.pbmlock.verifyUser
-import org.mozilla.fenix.tabstray.Page
+import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.utils.allowUndo
 
 /**

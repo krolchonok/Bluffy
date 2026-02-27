@@ -298,13 +298,13 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
 
   // Manage h2/3 connection coalescing
   // The hashtable contains arrays of weak pointers to HttpConnectionBases
-  nsClassHashtable<nsCStringHashKey, nsTArray<nsWeakPtr>> mCoalescingHash;
+  nsClassHashtable<nsUint32HashKey, nsTArray<nsWeakPtr>> mCoalescingHash;
 
   HttpConnectionBase* FindCoalescableConnection(ConnectionEntry* ent,
                                                 bool justKidding, bool aNoHttp2,
                                                 bool aNoHttp3);
   HttpConnectionBase* FindCoalescableConnectionByHashKey(ConnectionEntry* ent,
-                                                         const nsCString& key,
+                                                         HashNumber key,
                                                          bool justKidding,
                                                          bool aNoHttp2,
                                                          bool aNoHttp3);

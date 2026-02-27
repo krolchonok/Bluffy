@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">Не оставлять следов на этом устройстве</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s удаляет ваши куки, историю и данные сайтов, когда вы закрываете все свои приватные вкладки. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -217,7 +210,7 @@
     Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
     %1$s is the name of the extension (for example: ClearURLs).
   -->
-  <string name="browser_menu_extension_plus_icon_content_description_2">Добавить %1$s</string>
+  <string name="browser_menu_extension_plus_icon_content_description_2">Добавить «%1$s»</string>
   <!-- Browser menu button that opens AMO in a tab -->
   <string name="browser_menu_discover_more_extensions">Откройте для себя больше расширений</string>
   <!-- Browser menu description that is shown when one or more extensions are disabled due to extension errors -->
@@ -927,8 +920,6 @@
   <string name="preferences_search_browsing_history">Поиск по истории просмотра сети</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Поиск закладок</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Отображать ярлыки</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Поиск облачных вкладок</string>
   <!-- Preference for account settings -->
@@ -975,7 +966,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">У вас нет прав на использование этой папки. Попробуйте выбрать другую.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">У вас нет прав на использование этой папки. Попробуйте выбрать другую.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Управление скачиванием с помощью другого приложения</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -3564,7 +3555,7 @@
     The dialog will be presented when the user requests deletion of a language.
     %1$s is the name of the language, for example, "Spanish" and %2$s is the size in kilobytes or megabytes of the language file.
   -->
-  <string name="delete_language_file_dialog_title">Удалить %1$s (%2$s)?</string>
+  <string name="delete_language_file_dialog_title">Удалить: %1$s (%2$s)?</string>
   <!-- Additional information for the dialog used by the translations feature to confirm deleting a language. %1$s is the name of the app (for example "Firefox"). -->
   <string name="delete_language_file_dialog_message">Если вы удалите этот язык, %1$s будет частично скачивать языки в ваш кеш по мере перевода.</string>
   <!--
@@ -4072,8 +4063,6 @@
   <string name="content_description_settings_search_navigate_back">Перейти назад</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">Нет недавних поисковых запросов</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">Произошла ошибка</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Очистить всё</string>
   <!-- Section header for recent search results -->

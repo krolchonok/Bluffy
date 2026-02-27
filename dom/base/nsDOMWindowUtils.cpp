@@ -222,7 +222,7 @@ already_AddRefed<nsIRunnable> NativeInputRunnable::Create(
 
 }  // unnamed namespace
 
-MOZ_RUNINIT LinkedList<OldWindowSize> OldWindowSize::sList;
+constinit LinkedList<OldWindowSize> OldWindowSize::sList;
 
 NS_INTERFACE_MAP_BEGIN(nsDOMWindowUtils)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIDOMWindowUtils)

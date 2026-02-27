@@ -3215,6 +3215,8 @@ class nsContentUtils {
   static void TryToUpgradeElement(Element* aElement);
 
   /**
+   * https://dom.spec.whatwg.org/#concept-create-element
+   *
    * Creates a new XUL or XHTML element applying any appropriate custom element
    * definition.
    *
@@ -3227,6 +3229,9 @@ class nsContentUtils {
       mozilla::dom::FromParser aFromParser, nsAtom* aIsAtom,
       mozilla::dom::CustomElementDefinition* aDefinition);
 
+  /*
+   * https://html.spec.whatwg.org/#look-up-a-custom-element-registry
+   */
   static mozilla::dom::CustomElementRegistry* GetCustomElementRegistry(
       Document*);
 

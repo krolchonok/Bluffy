@@ -43,8 +43,9 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.trace
-import mozilla.components.browser.state.state.TabSessionState
 import org.mozilla.fenix.compose.TabThumbnail
+import org.mozilla.fenix.compose.TabThumbnailImageData
+import org.mozilla.fenix.compose.thumbnailImageData
 import org.mozilla.fenix.tabstray.TabsTrayTraceTag.TRACE_NAME_ANIMATION_TAB_MANAGER_TO_THUMBNAIL
 import org.mozilla.fenix.tabstray.TabsTrayTraceTag.TRACE_NAME_ANIMATION_THUMBNAIL_TO_TAB_MANAGER
 import kotlin.math.min
@@ -161,7 +162,7 @@ internal fun TabManagerTransitionLayout(
                     is TabManagerAnimationState.TabManagerToThumbnail -> {
                         trace(TRACE_NAME_ANIMATION_TAB_MANAGER_TO_THUMBNAIL) {
                             TabManagerSharedElementThumbnail(
-                                transitionTab = targetState.tab,
+                                tabThumbnailImageData = targetState.tab.thumbnailImageData(),
                                 transitionPaddingValues = tabManagerAnimationHelper.transitionPaddingValues,
                             )
                         }
@@ -186,13 +187,13 @@ internal fun TabManagerTransitionLayout(
 /**
  * The fullscreen tab thumbnail UI used for the shared element transition.
  *
- * @param transitionTab The [TabSessionState] of the tab being animated.
+ * @param tabThumbnailImageData The [TabThumbnailImageData] of the tab being animated.
  * @param transitionPaddingValues The [PaddingValues] to block the animated content and account for
  * any app chrome, such as the Toolbar.
  */
 @Composable
 private fun TabManagerSharedElementThumbnail(
-    transitionTab: TabSessionState,
+    tabThumbnailImageData: TabThumbnailImageData,
     transitionPaddingValues: PaddingValues,
 ) {
     BoxWithConstraints(
@@ -206,11 +207,11 @@ private fun TabManagerSharedElementThumbnail(
         val thumbnailSize = min(thumbnailWidth, thumbnailHeight)
 
         TabThumbnail(
-            tab = transitionTab,
+            tabThumbnailImageData = tabThumbnailImageData,
             thumbnailSizePx = thumbnailSize,
             modifier = Modifier
                 .sharedTabTransition(
-                    tab = transitionTab,
+                    tabId = tabThumbnailImageData.tabId,
                     boundsTransform = TabManagerToThumbnailTransform,
                 )
                 .fillMaxSize(),
@@ -225,14 +226,14 @@ private fun TabManagerSharedElementThumbnail(
  */
 @Composable
 internal fun Modifier.sharedTabTransition(
-    tab: TabSessionState,
+    tabId: String,
     boundsTransform: BoundsTransform = ThumbnailToTabManagerTransform,
 ) = composed {
     with(LocalTabManagerAnimationScope.current ?: return@composed Modifier) {
         this@sharedTabTransition.then(
             Modifier.sharedElement(
                 boundsTransform = boundsTransform,
-                sharedContentState = rememberSharedContentState(key = tab.id),
+                sharedContentState = rememberSharedContentState(key = tabId),
                 animatedVisibilityScope = this@with,
             ),
         )

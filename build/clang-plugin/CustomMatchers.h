@@ -99,12 +99,45 @@ AST_MATCHER(DeclaratorDecl, isNotSpiderMonkey) {
 /// This matcher will match any declaration with an initializer that's
 /// considered as constant by the compiler.
 AST_MATCHER(VarDecl, hasConstantInitializer) {
-  if(Node.hasInit())
-    return Node.getInit()->isConstantInitializer(
-                  Finder->getASTContext(),
-                  Node.getType()->isReferenceType());
-  else
+  if (Node.hasInit()) {
+    if (const auto *CE = dyn_cast<CXXConstructExpr>(Node.getInit())) {
+      if (const auto *CD = CE->getConstructor();
+          CD && CD->isDefined() && CD->isDefaultConstructor()) {
+        const CXXRecordDecl *CR = CD->getParent();
+        if (CR->hasTrivialDefaultConstructor())
+          return true;
+        if (CR->hasConstexprDefaultConstructor())
+          return true;
+
+        // This sorts our several situations like virtual bases etc.
+        if (CR->defaultedDefaultConstructorIsConstexpr()) {
+          // Only accept constructor with empty body and constant initializer
+          // for each member initialization.
+          if (const auto *CS = dyn_cast<CompoundStmt>(CD->getBody()); CS && CS->body_empty()) {
+            bool AllCustomInitializerCorrect = true;
+            for (const CXXCtorInitializer *CI : CD->inits()) {
+              bool ForRef = CI->isAnyMemberInitializer()
+                          ? CI->getAnyMember()->getType()->isReferenceType()
+                          : false;
+              if (!CI->getInit()->isConstantInitializer(Finder->getASTContext(), ForRef)) {
+                AllCustomInitializerCorrect = false;
+                break;
+              }
+            }
+            if (AllCustomInitializerCorrect)
+              return true;
+          }
+        }
+      }
+    }
+
+    bool ForRef = Node.getType()->isReferenceType();
+    return Node.getInit()->isConstantInitializer(Finder->getASTContext(), ForRef);
+  } else if (Node.hasConstantInitialization()) {
+    return true;
+  } else {
     return Node.getType().isTrivialType(Finder->getASTContext());
+  }
 }
 
 /// This matcher will match temporary expressions.

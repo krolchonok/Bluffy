@@ -80,8 +80,8 @@ static EnumeratedArray<FloatID, RelaxedAtomicUint32, size_t(FloatID::End)>
 constexpr int32_t kNoInt = INT32_MIN;
 static EnumeratedArray<IntID, RelaxedAtomicInt32, size_t(IntID::End)> sIntStore;
 StaticRWLock sFontStoreLock;
-MOZ_RUNINIT static EnumeratedArray<FontID, widget::LookAndFeelFont,
-                                   size_t(FontID::End)>
+constinit static EnumeratedArray<FontID, widget::LookAndFeelFont,
+                                 size_t(FontID::End)>
     sFontStore MOZ_GUARDED_BY(sFontStoreLock);
 
 // To make one of these prefs toggleable from a reftest add a user

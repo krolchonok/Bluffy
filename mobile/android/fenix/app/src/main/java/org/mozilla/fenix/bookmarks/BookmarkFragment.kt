@@ -49,7 +49,7 @@ import org.mozilla.fenix.search.FenixSearchMiddleware
 import org.mozilla.fenix.search.SearchFragmentState
 import org.mozilla.fenix.search.SearchFragmentStore
 import org.mozilla.fenix.search.createInitialSearchFragmentState
-import org.mozilla.fenix.tabstray.Page
+import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.lastSavedFolderCache
 

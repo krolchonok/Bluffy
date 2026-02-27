@@ -11,10 +11,10 @@ import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
-import org.mozilla.fenix.tabstray.Page
-import org.mozilla.fenix.tabstray.TabSearchAction
-import org.mozilla.fenix.tabstray.TabsTrayAction
-import org.mozilla.fenix.tabstray.TabsTrayState
+import org.mozilla.fenix.tabstray.redux.action.TabSearchAction
+import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
+import org.mozilla.fenix.tabstray.redux.state.Page
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 
 /**
  * [Middleware] that reacts to [TabSearchAction.SearchQueryChanged].

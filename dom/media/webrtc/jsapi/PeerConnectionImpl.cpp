@@ -3078,6 +3078,15 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
           }
         }
 
+        if (aSdpType == dom::RTCSdpType::Answer) {
+          dom::RTCIceRole role = mJsepSession->IsIceControlling()
+                                     ? dom::RTCIceRole::Controlling
+                                     : dom::RTCIceRole::Controlled;
+          for (const auto& dtlsTransport : GetActiveTransports()) {
+            dtlsTransport->IceTransport()->SetRole(role);
+          }
+        }
+
         // Make sure to wait until after we've calculated track changes before
         // doing this.
         for (size_t i = 0; i < mTransceivers.Length();) {

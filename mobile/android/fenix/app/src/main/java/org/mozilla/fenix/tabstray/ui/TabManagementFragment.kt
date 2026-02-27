@@ -79,10 +79,6 @@ import org.mozilla.fenix.settings.biometric.ext.isAuthenticatorAvailable
 import org.mozilla.fenix.settings.biometric.ext.isHardwareAvailable
 import org.mozilla.fenix.share.ShareFragment
 import org.mozilla.fenix.tabstray.InactiveTabsBinding
-import org.mozilla.fenix.tabstray.Page
-import org.mozilla.fenix.tabstray.TabsTrayAction
-import org.mozilla.fenix.tabstray.TabsTrayState
-import org.mozilla.fenix.tabstray.TabsTrayStore
 import org.mozilla.fenix.tabstray.TabsTrayTelemetryMiddleware
 import org.mozilla.fenix.tabstray.binding.SecureTabManagerBinding
 import org.mozilla.fenix.tabstray.browser.TabSorter
@@ -92,8 +88,12 @@ import org.mozilla.fenix.tabstray.controller.TabManagerController
 import org.mozilla.fenix.tabstray.controller.TabManagerInteractor
 import org.mozilla.fenix.tabstray.ext.isNormalTab
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
+import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.middleware.TabSearchMiddleware
 import org.mozilla.fenix.tabstray.redux.middleware.TabSearchNavigationMiddleware
+import org.mozilla.fenix.tabstray.redux.state.Page
+import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
+import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsIntegration
 import org.mozilla.fenix.tabstray.ui.animation.defaultPredictivePopTransitionSpec
 import org.mozilla.fenix.tabstray.ui.animation.defaultTransitionSpec

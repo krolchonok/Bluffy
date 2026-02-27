@@ -344,7 +344,8 @@ class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
   // Helper method which positions child frames as an <mrow> on given baseline
   // y = aBaseline starting from x = aOffsetX, calling FinishReflowChild()
   // on the frames.
-  void PositionRowChildFrames(nscoord aOffsetX, nscoord aBaseline);
+  void PositionRowChildFrames(nscoord aOffsetX, nscoord aBaseline,
+                              bool aAddOperatorSpacing = true);
 
   // A variant on FinishAndStoreOverflow() that uses the union of child
   // overflows, the frame bounds, and mBoundingMetrics to set and store the

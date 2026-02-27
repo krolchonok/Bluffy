@@ -83,7 +83,6 @@ import mozilla.components.lib.publicsuffixlist.PublicSuffixList
 import mozilla.components.lib.state.Middleware
 import mozilla.components.support.ktx.util.URLStringUtils
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
-import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.ClipboardHandler
 import org.junit.Assert.assertEquals
@@ -155,7 +154,7 @@ import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.ext.directionsEq
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.settings.ShortcutType
-import org.mozilla.fenix.tabstray.Page
+import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.ui.AccessPoint
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.annotation.Config
@@ -3303,25 +3302,25 @@ class BrowserToolbarMiddlewareTest {
     private fun fakeSearchState() = SearchState(
         region = RegionState("US", "US"),
         regionSearchEngines = listOf(
-            SearchEngine("engine-a", "Engine A", mock(), type = SearchEngine.Type.BUNDLED),
-            SearchEngine("engine-b", "Engine B", mock(), type = SearchEngine.Type.BUNDLED),
+            SearchEngine("engine-a", "Engine A", mockk(), type = SearchEngine.Type.BUNDLED),
+            SearchEngine("engine-b", "Engine B", mockk(), type = SearchEngine.Type.BUNDLED),
         ),
         customSearchEngines = listOf(
-            SearchEngine("engine-c", "Engine C", mock(), type = SearchEngine.Type.CUSTOM),
+            SearchEngine("engine-c", "Engine C", mockk(), type = SearchEngine.Type.CUSTOM),
         ),
         applicationSearchEngines = listOf(
-            SearchEngine(TABS_SEARCH_ENGINE_ID, "Tabs", mock(), type = SearchEngine.Type.APPLICATION),
-            SearchEngine(BOOKMARKS_SEARCH_ENGINE_ID, "Bookmarks", mock(), type = SearchEngine.Type.APPLICATION),
-            SearchEngine(HISTORY_SEARCH_ENGINE_ID, "History", mock(), type = SearchEngine.Type.APPLICATION),
+            SearchEngine(TABS_SEARCH_ENGINE_ID, "Tabs", mockk(), type = SearchEngine.Type.APPLICATION),
+            SearchEngine(BOOKMARKS_SEARCH_ENGINE_ID, "Bookmarks", mockk(), type = SearchEngine.Type.APPLICATION),
+            SearchEngine(HISTORY_SEARCH_ENGINE_ID, "History", mockk(), type = SearchEngine.Type.APPLICATION),
         ),
         additionalSearchEngines = listOf(
-            SearchEngine("engine-e", "Engine E", mock(), type = SearchEngine.Type.BUNDLED_ADDITIONAL),
+            SearchEngine("engine-e", "Engine E", mockk(), type = SearchEngine.Type.BUNDLED_ADDITIONAL),
         ),
         additionalAvailableSearchEngines = listOf(
-            SearchEngine("engine-f", "Engine F", mock(), type = SearchEngine.Type.BUNDLED_ADDITIONAL),
+            SearchEngine("engine-f", "Engine F", mockk(), type = SearchEngine.Type.BUNDLED_ADDITIONAL),
         ),
         hiddenSearchEngines = listOf(
-            SearchEngine("engine-g", "Engine G", mock(), type = SearchEngine.Type.BUNDLED),
+            SearchEngine("engine-g", "Engine G", mockk(), type = SearchEngine.Type.BUNDLED),
         ),
         regionDefaultSearchEngineId = null,
         userSelectedSearchEngineId = null,

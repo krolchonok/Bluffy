@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.146
- * pdfjsBuild = 4ecbd0cbe
+ * pdfjsVersion = 5.5.156
+ * pdfjsBuild = 2bab2a87a
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -7119,21 +7119,27 @@ class AnnotationStorage {
   }
 }
 class PrintAnnotationStorage extends AnnotationStorage {
-  #serializable;
+  #serializable = SerializableEmpty;
   constructor(parent) {
     super();
+    const {
+      serializable
+    } = parent;
+    if (serializable === SerializableEmpty) {
+      return;
+    }
     const {
       map,
       hash,
       transfer
-    } = parent.serializable;
+    } = serializable;
     const clone = structuredClone(map, transfer ? {
       transfer
     } : null);
     this.#serializable = {
       map: clone,
       hash,
-      transfer
+      transfer: []
     };
   }
   get print() {
@@ -13400,7 +13406,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "5.5.146",
+    apiVersion: "5.5.156",
     data,
     password,
     disableAutoFetch,
@@ -13991,7 +13997,7 @@ class PDFPageProxy {
       cacheKey,
       annotationStorage: map,
       modifiedIds
-    }, transfer);
+    }, undefined, transfer);
     const reader = readableStream.getReader();
     const intentState = this._intentStates.get(cacheKey);
     intentState.streamReader = reader;
@@ -15027,8 +15033,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "5.5.146";
-const build = "4ecbd0cbe";
+const version = "5.5.156";
+const build = "2bab2a87a";
 
 ;// ./src/display/editor/color_picker.js
 

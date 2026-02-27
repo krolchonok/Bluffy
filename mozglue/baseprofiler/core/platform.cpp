@@ -2274,7 +2274,7 @@ void SamplerThread::Run() {
 #elif defined(GP_OS_linux) || defined(GP_OS_android) || defined(GP_OS_freebsd)
 #  include "platform-linux-android.cpp"
 #else
-#  error "bad platform"
+#  include "platform-noop.cpp"
 #endif
 
 namespace mozilla {

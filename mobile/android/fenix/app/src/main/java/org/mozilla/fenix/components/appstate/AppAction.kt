@@ -165,6 +165,13 @@ sealed class AppAction : Action {
     data object OpenInFirefoxFinished : AppAction()
 
     /**
+     * Updates whether Firefox is the default browser.
+     *
+     * @property isDefault The updated boolean to [AppState.isDefaultBrowser]
+     */
+    data class UpdateDefaultBrowserStatus(val isDefault: Boolean) : AppAction()
+
+    /**
      * [Action]s related to interactions with the Messaging Framework.
      */
     sealed class MessagingAction : AppAction() {

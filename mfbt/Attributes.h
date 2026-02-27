@@ -9,6 +9,10 @@
 #ifndef mozilla_Attributes_h
 #define mozilla_Attributes_h
 
+#ifdef __cplusplus
+#  include <version>
+#endif
+
 /*
  * MOZ_ALWAYS_INLINE is a macro which expands to tell the compiler that the
  * method decorated with it must be inlined, even if the compiler thinks
@@ -908,6 +912,16 @@
 #    endif
 
 /*
+ * Should be constinit per C++20 standard, but we sometimes link with an older
+ * libstdc++
+ */
+#    if defined(__GLIBCXX__) && (__GLIBCXX__ <= 20230707)
+#      define MOZ_GLIBCXX_CONSTINIT MOZ_RUNINIT
+#    else
+#      define MOZ_GLIBCXX_CONSTINIT constinit
+#    endif
+
+/*
  * It turns out that clang doesn't like void func() __attribute__ {} without a
  * warning, so use pragmas to disable the warning.
  */
@@ -928,6 +942,7 @@
 #    define MOZ_STATIC_CLASS                                /* nothing */
 #    define MOZ_RUNINIT                                     /* nothing */
 #    define MOZ_GLOBINIT                                    /* nothing */
+#    define MOZ_GLIBCXX_CONSTINIT                           /* nothing */
 #    define MOZ_STATIC_LOCAL_CLASS                          /* nothing */
 #    define MOZ_STACK_CLASS                                 /* nothing */
 #    define MOZ_NONHEAP_CLASS                               /* nothing */
