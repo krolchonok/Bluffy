@@ -601,11 +601,13 @@ async function doResultCheckTest({ env, tests }) {
     };
   }
 
+  await QuickSuggestTestUtils.forceSync();
+
   // Test
   for (let {
     description,
     prefs = [],
-    nimbus = {},
+    nimbus,
     histories,
     context,
     conditionalPayloadProperties,
@@ -618,9 +620,10 @@ async function doResultCheckTest({ env, tests }) {
       UrlbarPrefs.set(name, value);
     }
 
-    let cleanUpNimbus = await UrlbarTestUtils.initNimbusFeature(nimbus);
-
-    await QuickSuggestTestUtils.forceSync();
+    let cleanUpNimbus;
+    if (nimbus) {
+      cleanUpNimbus = await UrlbarTestUtils.initNimbusFeature(nimbus);
+    }
 
     if (histories) {
       await PlacesTestUtils.addVisits(histories);
@@ -635,7 +638,9 @@ async function doResultCheckTest({ env, tests }) {
     for (let [name] of prefs) {
       UrlbarPrefs.clear(name);
     }
-    cleanUpNimbus();
+
+    cleanUpNimbus?.();
+
     if (histories) {
       await PlacesUtils.history.clear();
     }
@@ -649,7 +654,6 @@ async function doResultCheckTest({ env, tests }) {
   if (env?.merinoSuggestions) {
     await MerinoTestUtils.server.stop();
   }
-  await QuickSuggestTestUtils.forceSync();
 }
 
 /**
@@ -712,7 +716,6 @@ async function doShowLessFrequentlyTest({
   for (let [name, value] of env?.prefs ?? []) {
     UrlbarPrefs.set(name, value);
   }
-  await QuickSuggestTestUtils.forceSync();
 
   await QuickSuggestTestUtils.setRemoteSettingsRecords(
     env?.remoteSettingRecords ?? []
@@ -720,6 +723,8 @@ async function doShowLessFrequentlyTest({
 
   UrlbarPrefs.set(showLessFrequentlyCountPref, 0);
   UrlbarPrefs.set(minKeywordLengthPref, 0);
+
+  await QuickSuggestTestUtils.forceSync();
 
   // Sanity check
   let featureInstance = QuickSuggest.getFeature(feature);
@@ -761,8 +766,6 @@ async function doShowLessFrequentlyTest({
 
   UrlbarPrefs.clear(showLessFrequentlyCountPref);
   UrlbarPrefs.clear(minKeywordLengthPref);
-  await QuickSuggestTestUtils.forceSync();
-
   await QuickSuggestTestUtils.setConfig(QuickSuggestTestUtils.DEFAULT_CONFIG);
 }
 
@@ -805,11 +808,12 @@ async function doDismissTest({ env, tests }) {
   for (let [name, value] of env?.prefs ?? []) {
     UrlbarPrefs.set(name, value);
   }
-  await QuickSuggestTestUtils.forceSync();
 
   await QuickSuggestTestUtils.setRemoteSettingsRecords(
     env?.remoteSettingRecords ?? []
   );
+
+  await QuickSuggestTestUtils.forceSync();
 
   // Test
   for (let {
@@ -858,7 +862,6 @@ async function doDismissTest({ env, tests }) {
   for (let [name] of env?.prefs ?? []) {
     UrlbarPrefs.clear(name);
   }
-  await QuickSuggestTestUtils.forceSync();
 }
 
 /**
@@ -892,11 +895,10 @@ async function doRustBackendTest({ env, tests }) {
   for (let [name, value] of env?.prefs ?? []) {
     UrlbarPrefs.set(name, value);
   }
-  await QuickSuggestTestUtils.forceSync();
-
   await QuickSuggestTestUtils.setRemoteSettingsRecords(
     env?.remoteSettingRecords ?? []
   );
+  await QuickSuggestTestUtils.forceSync();
 
   // Test
   for (let { prefs, input, expected } of tests) {

@@ -2436,7 +2436,8 @@ fn process_buffer_map(
         mode,
         offset,
         size,
-    } = msg else {
+    } = msg
+    else {
         unreachable!();
     };
     let mode = match mode {
@@ -2448,7 +2449,8 @@ fn process_buffer_map(
                 "either GPUMapMode.READ or GPUMapMode.WRITE"
             );
 
-            error_buf.init(ErrMsg {
+            error_buf.init(
+                ErrMsg {
                     message: message.into(),
                     r#type: ErrorType::Validation,
                 },

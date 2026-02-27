@@ -569,7 +569,9 @@ class SettingsSearchTest : TestSetup() {
         }
         navigationToolbar(composeTestRule) {
             verifyClipboardSuggestionsAreDisplayed(shouldBeDisplayed = true)
-        }.goBackToHomeScreen {
+        }
+        searchScreen(composeTestRule) {
+        }.dismissSearchBar {
         }.openThreeDotMenu {
         }.clickSettingsButton {
         }.openSearchSubMenu {

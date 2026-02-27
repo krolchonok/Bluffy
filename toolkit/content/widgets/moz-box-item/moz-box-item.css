@@ -24,21 +24,20 @@
 }
 
 .text-content.has-support-page {
-  display: flex;
-
-  &.has-description {
+  .label-wrapper {
+    grid-area: label;
+    display: flex;
+    gap: var(--space-xsmall);
+    align-items: center;
     flex-wrap: wrap;
   }
 
-  .label-wrapper {
-    width: 100%;
-    display: flex;
-    gap: var(--space-small);
-    align-items: center;
+  .description-wrapper {
+    grid-area: description;
+  }
 
-    .support-page {
-      margin-inline-start: var(--space-xsmall);
-    }
+  &:not(.has-description) .description-wrapper {
+    display: none;
   }
 
   .description,
@@ -49,6 +48,10 @@
 
 .description + .support-page {
   font-size: var(--font-size-small);
+}
+
+.text-content:not(.has-description) slot[name="description"] {
+  display: none;
 }
 
 .box-container {
