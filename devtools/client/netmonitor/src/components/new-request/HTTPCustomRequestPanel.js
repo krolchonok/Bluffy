@@ -41,32 +41,6 @@ const CUSTOM_POSTDATA_PLACEHOLDER = L10N.getStr(
 const CUSTOM_QUERY = L10N.getStr("netmonitor.custom.urlParameters");
 const CUSTOM_SEND = L10N.getStr("netmonitor.custom.send");
 const CUSTOM_CLEAR = L10N.getStr("netmonitor.custom.clear");
-
-const FIREFOX_DEFAULT_HEADERS = [
-  "Accept-Charset",
-  "Accept-Encoding",
-  "Access-Control-Request-Headers",
-  "Access-Control-Request-Method",
-  "Connection",
-  "Content-Length",
-  "Cookie",
-  "Cookie2",
-  "Date",
-  "DNT",
-  "Expect",
-  "Feature-Policy",
-  "Host",
-  "Keep-Alive",
-  "Origin",
-  "Proxy-",
-  "Sec-",
-  "Referer",
-  "TE",
-  "Trailer",
-  "Transfer-Encoding",
-  "Upgrade",
-  "Via",
-];
 // This does not include the CONNECT method as it is restricted and special.
 // See https://bugzilla.mozilla.org/show_bug.cgi?id=1769572#c2 for details
 const HTTP_METHODS = [
@@ -145,24 +119,13 @@ class HTTPCustomRequestPanel extends Component {
       request.postBody = request.requestPostData.postData.text;
     }
 
-    const headers = request.headers
-      .map(({ name, value }) => {
-        return {
-          name,
-          value,
-          checked: true,
-          disabled: FIREFOX_DEFAULT_HEADERS.some(i => name.startsWith(i)),
-        };
-      })
-      .sort((a, b) => {
-        if (a.disabled && !b.disabled) {
-          return -1;
-        }
-        if (!a.disabled && b.disabled) {
-          return 1;
-        }
-        return 0;
-      });
+    const headers = request.headers.map(({ name, value }) => {
+      return {
+        name,
+        value,
+        checked: true,
+      };
+    });
 
     if (request.requestPostDataAvailable && !request.postBody) {
       const requestData = await connector.requestData(

@@ -2801,6 +2801,7 @@ pref("signon.firefoxRelay.feature", "available");
 pref("signon.management.page.breach-alerts.enabled", true);
 pref("signon.management.page.vulnerable-passwords.enabled", true);
 pref("signon.management.page.sort", "name");
+pref("signon.rememberSignons", false);
 
 pref("signon.management.page.os-auth.locked.enabled", false);
 pref("extensions.formautofill.creditCards.os-auth.locked.enabled", false);
