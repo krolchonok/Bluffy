@@ -132,6 +132,7 @@ class HomeDeepLinkIntentProcessor(
                     return
                 }
 
+                @Suppress("DEPRECATION")
                 activity.openToBrowserAndLoad(
                     url,
                     newTab = true,

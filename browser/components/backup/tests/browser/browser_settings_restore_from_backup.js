@@ -229,14 +229,20 @@ add_task(async function test_restore_from_backup() {
     restoreFromBackup.confirmButtonEl.click();
 
     await restorePromise.then(e => {
-      let mockEvent = {
-        backupFile: mockBackupFile.path,
-        backupPassword: "h-*@Vfge3_hGxdpwqr@w",
-      };
-      Assert.deepEqual(
-        e.detail,
-        mockEvent,
-        "Event should contain the file and password"
+      Assert.equal(
+        e.detail.backupFile,
+        mockBackupFile.path,
+        "Event should contain the file path"
+      );
+      Assert.equal(
+        e.detail.backupPassword,
+        "h-*@Vfge3_hGxdpwqr@w",
+        "Event should contain the password"
+      );
+      Assert.equal(
+        e.detail.restoreType,
+        "add",
+        "restoreType should default to 'add'"
       );
     });
 
@@ -532,7 +538,7 @@ add_task(async function test_restore_backup_file_info_display() {
 
     Assert.equal(
       fileInfoSpan.getAttribute("data-l10n-id"),
-      "backup-file-creation-date-and-device",
+      "backup-file-creation-metadata",
       "Should have the correct l10n id"
     );
 
@@ -587,27 +593,11 @@ add_task(async function test_support_links_non_embedded() {
       "aboutWelcomeEmbedded should be falsy"
     );
 
-    // Test the 'no backup file' link
-    let noBackupFileLink = restoreFromBackup.shadowRoot.querySelector(
-      "#restore-from-backup-no-backup-file-link"
+    // Test the main support link
+    let supportLink = restoreFromBackup.shadowRoot.querySelector(
+      "#restore-from-backup-support-link"
     );
-    assertNonEmbeddedSupportLink(noBackupFileLink, "'No backup file' link");
-
-    // Test the description link
-    restoreFromBackup.backupServiceState = {
-      ...restoreFromBackup.backupServiceState,
-      backupFileInfo: {
-        date: new Date(),
-        deviceName: "test-device",
-        isEncrypted: false,
-      },
-    };
-    await restoreFromBackup.updateComplete;
-
-    let descriptionLink = restoreFromBackup.shadowRoot.querySelector(
-      "#restore-from-backup-learn-more-link"
-    );
-    assertNonEmbeddedSupportLink(descriptionLink, "Description link");
+    assertNonEmbeddedSupportLink(supportLink, "Main support link");
 
     // Test the incorrect password link
     restoreFromBackup.backupServiceState = {
@@ -625,6 +615,53 @@ add_task(async function test_support_links_non_embedded() {
       "#backup-incorrect-password-support-link"
     );
     assertNonEmbeddedSupportLink(passwordErrorLink, "Password error link");
+  });
+});
+
+add_task(async function test_selectableProfilesAllowed_toggles_restore_ui() {
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
+    let { restoreFromBackup } = await initializedBackupWidgets(browser);
+    let bs = BackupService.get();
+    let sandbox = sinon.createSandbox();
+
+    sandbox.stub(SelectableProfileService, "isEnabled").get(() => false);
+    bs.onUpdateProfilesEnabledState();
+
+    await BrowserTestUtils.waitForCondition(
+      () =>
+        restoreFromBackup.shadowRoot.querySelector(
+          "moz-message-bar[type='info']"
+        ),
+      "Waiting for info message bar to appear when profiles are disabled"
+    );
+
+    Assert.ok(
+      !restoreFromBackup.shadowRoot.querySelector(
+        "#restore-from-backup-type-group"
+      ),
+      "Radio group should not be shown when profiles are disabled"
+    );
+
+    sandbox.restore();
+    sandbox.stub(SelectableProfileService, "isEnabled").get(() => true);
+    bs.onUpdateProfilesEnabledState();
+
+    await BrowserTestUtils.waitForCondition(
+      () =>
+        restoreFromBackup.shadowRoot.querySelector(
+          "#restore-from-backup-type-group"
+        ),
+      "Waiting for radio group to appear when profiles are enabled"
+    );
+
+    Assert.ok(
+      !restoreFromBackup.shadowRoot.querySelector(
+        "moz-message-bar[type='info']"
+      ),
+      "Info message bar should not be shown when profiles are enabled"
+    );
+
+    sandbox.restore();
   });
 });
 

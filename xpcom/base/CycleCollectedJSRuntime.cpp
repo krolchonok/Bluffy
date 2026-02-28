@@ -951,7 +951,7 @@ void CycleCollectedJSRuntime::DescribeGCThing(
     return;
   }
 
-  char name[72];
+  char name[512];
   uint64_t compartmentAddress = 0;
   if (aThing.is<JSObject>()) {
     JSObject* obj = &aThing.as<JSObject>();
@@ -973,6 +973,8 @@ void CycleCollectedJSRuntime::DescribeGCThing(
       } else {
         SprintfLiteral(name, "JS Object (Function)");
       }
+    } else if (const char* filename = js::MaybeGetModuleFilename(obj)) {
+      SprintfLiteral(name, "JS Object (%s - %s)", clasp->name, filename);
     } else {
       SprintfLiteral(name, "JS Object (%s)", clasp->name);
     }

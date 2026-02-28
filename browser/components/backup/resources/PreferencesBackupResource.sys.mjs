@@ -37,6 +37,16 @@ export class PreferencesBackupResource extends BackupResource {
     return false;
   }
 
+  static get dataCollectionPrefs() {
+    return [
+      "browser.discovery.enabled",
+      "app.shield.optoutstudies.enabled",
+      "datareporting.healthreport.uploadEnabled",
+      "datareporting.usage.uploadEnabled",
+      "browser.crashReports.unsubmittedCheck.autoSubmit2",
+    ];
+  }
+
   /**
    * Adds prefs to the override map that are currently set but should not be
    * included in the backup.  Override them with null values to prevent
@@ -255,13 +265,7 @@ export class PreferencesBackupResource extends BackupResource {
 
       // Before adding prefs to the db, let's make sure we choose the most restrictive settings
       // for data collection in the group.
-      const dataCollectionPrefs = [
-        "browser.discovery.enabled",
-        "app.shield.optoutstudies.enabled",
-        "datareporting.healthreport.uploadEnabled",
-        "datareporting.usage.uploadEnabled",
-        "browser.crashReports.unsubmittedCheck.autoSubmit2",
-      ];
+      const dataCollectionPrefs = PreferencesBackupResource.dataCollectionPrefs;
 
       const prefsFilePath = PathUtils.join(recoveryPath, "prefs.js");
       const prefsBuffer = await IOUtils.read(prefsFilePath);

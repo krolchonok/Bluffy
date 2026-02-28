@@ -108,6 +108,11 @@ class FirefoxWebDriver(WebDriver):
             prefs["widget.gtk.overlay-scrollbars.enabled"] = False
             prefs["widget.windows.overlay-scrollbars.enabled"] = False
 
+        if test_config.get("enable_speechrecognition"):
+            prefs["media.webspeech.recognition.enable"] = True
+        elif test_config.get("disable_speechrecognition"):
+            prefs["media.webspeech.recognition.enable"] = False
+
         if test_config.get("enable_webkit_fill_available"):
             prefs["layout.css.webkit-fill-available.enabled"] = True
         elif test_config.get("disable_webkit_fill_available"):

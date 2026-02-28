@@ -633,7 +633,7 @@ GPUPipelineLayout includes GPUObjectBase;
 
 dictionary GPUPipelineLayoutDescriptor
          : GPUObjectDescriptorBase {
-    required sequence<GPUBindGroupLayout> bindGroupLayouts;
+    required sequence<GPUBindGroupLayout?> bindGroupLayouts;
 };
 
 [Func="mozilla::webgpu::Instance::PrefEnabled",
@@ -845,8 +845,8 @@ enum GPUBlendOperation {
 dictionary GPUDepthStencilState {
     required GPUTextureFormat format;
 
-    boolean depthWriteEnabled = false;
-    GPUCompareFunction depthCompare = "always";
+    boolean depthWriteEnabled;
+    GPUCompareFunction depthCompare;
 
     GPUStencilFaceState stencilFront = {};
     GPUStencilFaceState stencilBack = {};

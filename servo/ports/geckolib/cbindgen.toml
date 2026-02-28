@@ -99,6 +99,8 @@ include = [
   "ScopedName",
   "AnimationName",
   "AnimationTimeline",
+  "AnimationRangeEnd",
+  "AnimationRangeStart",
   "AnimationIterationCount",
   "AnimationDirection",
   "AnimationFillMode",
@@ -1134,6 +1136,13 @@ renaming_overrides_prefixing = true
 "GenericViewTimelineInset" = """
  public:
   inline StyleGenericViewTimelineInset();
+"""
+
+"GenericAnimationRangeValue" = """
+ public:
+  StyleGenericAnimationRangeValue()
+      : name(StyleTimelineRangeName::None),
+        lp(StyleOptional<LengthPercent>::None()) {}
 """
 
 "Time" = """

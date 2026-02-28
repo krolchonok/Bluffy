@@ -223,12 +223,15 @@ export class BackupUIParent extends JSWindowActorParent {
       const window = this.browsingContext.topChromeWindow;
       this.#bs.filePickerForRestore(window);
     } else if (message.name == "RestoreFromBackupFile") {
-      let { backupFile, backupPassword } = message.data;
+      let { backupFile, backupPassword, restoreType } = message.data;
       try {
         await this.#bs.recoverFromBackupArchive(
           backupFile,
           backupPassword,
-          true /* shouldLaunchOrQuit */
+          true /* shouldLaunchOrQuit */,
+          undefined,
+          undefined,
+          restoreType === "replace" /* replaceCurrentProfile */
         );
       } catch (e) {
         lazy.logConsole.error(`Failed to restore file: ${backupFile}`, e);

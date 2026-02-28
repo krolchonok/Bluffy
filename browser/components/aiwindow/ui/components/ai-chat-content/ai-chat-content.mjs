@@ -189,6 +189,8 @@ export class AIChatContent extends MozLitElement {
     // If the conversation ID has changed, reset the conversation state
     if (convIdChanged || isReloadingSameConvo) {
       this.conversationState = [];
+      this.followUpSuggestions = [];
+      this.requestUpdate();
     }
   }
 

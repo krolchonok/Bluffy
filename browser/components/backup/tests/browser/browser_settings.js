@@ -277,6 +277,7 @@ add_task(async function test_restore_from_backup() {
         date: new Date(),
         isEncrypted: true,
       },
+      selectableProfilesAllowed: false,
     };
     await restoreFromBackup.updateComplete;
 
@@ -311,14 +312,20 @@ add_task(async function test_restore_from_backup() {
     restoreFromBackup.confirmButtonEl.click();
 
     await restorePromise.then(e => {
-      let mockEvent = {
-        backupFile: mockBackupFile.path,
-        backupPassword: "h-*@Vfge3_hGxdpwqr@w",
-      };
-      Assert.deepEqual(
-        e.detail,
-        mockEvent,
-        "Event should contain the file and password"
+      Assert.equal(
+        e.detail.backupFile,
+        mockBackupFile.path,
+        "Event should contain the file path"
+      );
+      Assert.equal(
+        e.detail.backupPassword,
+        "h-*@Vfge3_hGxdpwqr@w",
+        "Event should contain the password"
+      );
+      Assert.equal(
+        e.detail.restoreType,
+        "add",
+        "restoreType should default to 'add'"
       );
     });
 

@@ -854,7 +854,7 @@ class MozbuildObject(ProcessExecutionMixin):
         if keep_going:
             args.append("-k")
 
-        if isinstance(target, list):
+        if isinstance(target, (tuple, list)):
             args.extend(target)
         elif target:
             args.append(target)

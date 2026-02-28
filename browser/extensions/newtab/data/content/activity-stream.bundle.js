@@ -4305,6 +4305,7 @@ function AdBannerContextMenu({
 
 
 const PREF_PROMO_CARD_DISMISSED = "discoverystream.promoCard.visible";
+const DEFAULT_PROMO_URL = "https://addons.mozilla.org/firefox/collections/4757633/b4d5649fb087446aa05add5f0258c3/";
 
 /**
  * The PromoCard component displays a promotional message.
@@ -4313,6 +4314,9 @@ const PREF_PROMO_CARD_DISMISSED = "discoverystream.promoCard.visible";
 
 const PromoCard = () => {
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  const trainhopConfigPromoCardUrl = prefs.trainhopConfig?.promoCard?.url;
+  const promoUrl = typeof trainhopConfigPromoCardUrl === "string" && trainhopConfigPromoCardUrl ? trainhopConfigPromoCardUrl : DEFAULT_PROMO_URL;
   const onCtaClick = (0,external_React_namespaceObject.useCallback)(() => {
     dispatch(actionCreators.AlsoToMain({
       type: actionTypes.PROMO_CARD_CLICK
@@ -4353,17 +4357,17 @@ const PromoCard = () => {
     alt: ""
   })), /*#__PURE__*/external_React_default().createElement("span", {
     className: "promo-card-title",
-    "data-l10n-id": "newtab-promo-card-title"
+    "data-l10n-id": "newtab-promo-card-title-addons"
   }), /*#__PURE__*/external_React_default().createElement("span", {
     className: "promo-card-body",
-    "data-l10n-id": "newtab-promo-card-body"
+    "data-l10n-id": "newtab-promo-card-body-addons"
   }), /*#__PURE__*/external_React_default().createElement("span", {
     className: "promo-card-cta-wrapper"
   }, /*#__PURE__*/external_React_default().createElement("a", {
-    href: "https://support.mozilla.org/kb/sponsor-privacy",
-    "data-l10n-id": "newtab-promo-card-cta",
+    href: promoUrl,
     target: "_blank",
     rel: "noreferrer",
+    "data-l10n-id": "newtab-promo-card-cta-addons",
     onClick: onCtaClick
   }))));
 };
@@ -4424,7 +4428,8 @@ const AdBanner = ({
       height: undefined
     };
   };
-  const promoCardEnabled = spoc.format === "billboard" && prefs[PREF_PROMOCARD_ENABLED] && prefs[PREF_PROMOCARD_VISIBLE];
+  const nimbusPromoCardTrainhopEnabled = prefs.trainhopConfig?.promoCard?.enabled;
+  const promoCardEnabled = spoc.format === "billboard" && (nimbusPromoCardTrainhopEnabled || prefs[PREF_PROMOCARD_ENABLED]) && prefs[PREF_PROMOCARD_VISIBLE];
   const sectionsEnabled = prefs[AdBanner_PREF_SECTIONS_ENABLED];
   const ohttpEnabled = prefs[AdBanner_PREF_OHTTP_UNIFIED_ADS];
   const showAdReporting = prefs[PREF_REPORT_ADS_ENABLED];
@@ -13384,7 +13389,8 @@ function WidgetsFeatureHighlight({
 
 const CONTAINER_ACTION_TYPES = {
   HIDE_ALL: "hide_all",
-  CHANGE_SIZE_ALL: "change_size_all"
+  CHANGE_SIZE_ALL: "change_size_all",
+  FEEDBACK: "feedback"
 };
 const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
 const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
@@ -13393,6 +13399,8 @@ const PREF_WIDGETS_SYSTEM_TIMER_ENABLED = "widgets.system.focusTimer.enabled";
 const PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED = "widgets.system.weatherForecast.enabled";
 const PREF_WIDGETS_MAXIMIZED = "widgets.maximized";
 const PREF_WIDGETS_SYSTEM_MAXIMIZED = "widgets.system.maximized";
+const PREF_WIDGETS_FEEDBACK_ENABLED = "widgets.feedback.enabled";
+const WIDGETS_FEEDBACK_URL = "https://connect.mozilla.org/t5/discussions/feedback-welcome-for-new-tab-widgets-now-available-via-firefox/td-p/108354";
 
 // resets timer to default values (exported for testing)
 // In practice, this logic runs inside a useEffect when
@@ -13438,6 +13446,8 @@ function Widgets() {
   const nimbusTimerTrainhopEnabled = prefs.trainhopConfig?.widgets?.timerEnabled;
   const nimbusWeatherForecastTrainhopEnabled = prefs.trainhopConfig?.widgets?.weatherForecastEnabled;
   const nimbusMaximizedTrainhopEnabled = prefs.trainhopConfig?.widgets?.maximized;
+  const feedbackEnabled = prefs.trainhopConfig?.widgets?.feedbackEnabled || prefs[PREF_WIDGETS_FEEDBACK_ENABLED];
+  const feedbackUrl = prefs.trainhopConfig?.widgets?.feedbackUrl ?? WIDGETS_FEEDBACK_URL;
   const listsEnabled = (nimbusListsTrainhopEnabled || nimbusListsEnabled || prefs[PREF_WIDGETS_SYSTEM_LISTS_ENABLED]) && prefs[PREF_WIDGETS_LISTS_ENABLED];
   const timerEnabled = (nimbusTimerTrainhopEnabled || nimbusTimerEnabled || prefs[PREF_WIDGETS_SYSTEM_TIMER_ENABLED]) && prefs[PREF_WIDGETS_TIMER_ENABLED];
 
@@ -13572,6 +13582,24 @@ function Widgets() {
       toggleMaximize();
     }
   }
+  function handleFeedbackClick(e) {
+    e.preventDefault();
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.OPEN_LINK,
+        data: {
+          url: feedbackUrl
+        }
+      }));
+      dispatch(actionCreators.OnlyToMain({
+        type: actionTypes.WIDGETS_CONTAINER_ACTION,
+        data: {
+          action_type: CONTAINER_ACTION_TYPES.FEEDBACK,
+          widget_size: widgetSize
+        }
+      }));
+    });
+  }
   function handleUserInteraction(widgetName) {
     const prefName = `widgets.${widgetName}.interaction`;
     const hasInteracted = prefs[prefName];
@@ -13632,7 +13660,12 @@ function Widgets() {
     handleUserInteraction: handleUserInteraction,
     isMaximized: isMaximized,
     widgetsMayBeMaximized: widgetsMayBeMaximized
-  }))));
+  })), feedbackEnabled && /*#__PURE__*/external_React_default().createElement("a", {
+    className: "widgets-feedback-link",
+    href: feedbackUrl,
+    "data-l10n-id": "newtab-widget-section-feedback",
+    onClick: handleFeedbackClick
+  })));
 }
 
 ;// CONCATENATED MODULE: ./content-src/components/DiscoveryStreamBase/DiscoveryStreamBase.jsx

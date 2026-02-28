@@ -1326,7 +1326,7 @@ CoderResult CodeCodeBlock(Coder<MODE_DECODE>& coder,
   uint32_t allocationLength;
   CodeSource codeSource(codeBytes, codeBytesLength, linkData, nullptr);
   (*item)->segment =
-      CodeSegment::allocate(codeSource, nullptr, /* allowLastDitchGC */ true,
+      CodeSegment::allocate(codeSource, nullptr, /* allowLastDitchGC = */ true,
                             &codeStart, &allocationLength);
   if (!(*item)->segment) {
     return Err(OutOfMemory());

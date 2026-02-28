@@ -1164,6 +1164,13 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.feedback.enabled",
+    {
+      title: "Enables the feedback link in the widgets container",
+      value: false,
+    },
+  ],
+  [
     "improvesearch.noDefaultSearchTile",
     {
       title: "Remove tiles that are the same as the default search",
@@ -1464,6 +1471,14 @@ export const PREFS_CONFIG = new Map([
       title:
         "Set to the activation window variant if in activation window mode, otherwise the empty string.",
       value: "",
+    },
+  ],
+  [
+    "selfLoading.enabled",
+    {
+      title:
+        "Communicates to AboutNewTabChild whether or not it should load the classic scripts or do nothing.",
+      value: false,
     },
   ],
 ]);

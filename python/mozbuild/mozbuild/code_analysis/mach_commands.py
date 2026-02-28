@@ -18,7 +18,6 @@ import xml.etree.ElementTree as ET
 from types import SimpleNamespace
 
 import mozpack.path as mozpath
-import yaml
 from mach.decorators import Command, CommandArgument, SubCommand
 from mach.main import Mach
 from mozversioncontrol import get_repository_object
@@ -296,16 +295,16 @@ def static_analysis(command_context):
 )
 def check(
     command_context,
-    source=None,
-    jobs=2,
-    strip=1,
-    verbose=False,
-    checks="-*",
-    fix=False,
-    header_filter="",
-    output=None,
-    format="text",
-    outgoing=False,
+    source,
+    jobs,
+    strip,
+    verbose,
+    checks,
+    fix,
+    header_filter,
+    output,
+    format,
+    outgoing,
 ):
     from mozbuild.controller.building import (
         StaticAnalysisFooter,
@@ -356,7 +355,7 @@ def check(
 
     if not total or not source:
         command_context.log(
-            logging.INFO,
+            logging.WARNING,
             "static-analysis",
             {},
             "There are no files eligible for analysis. Please note that 'header' files "
@@ -391,6 +390,7 @@ def check(
                 sources=source[i : (i + batch_size)],
                 jobs=jobs,
                 fix=fix,
+                verbose=verbose,
             )
             rc = command_context.run_process(
                 args=args,
@@ -529,6 +529,7 @@ def _get_clang_tidy_command(
     sources,
     jobs,
     fix,
+    verbose=True,
 ):
     if checks == "-*":
         checks = ",".join(get_clang_tidy_config(command_context).checks)
@@ -556,10 +557,13 @@ def _get_clang_tidy_command(
     # the checkers to our code.
     cfg = get_clang_tidy_config(command_context).checks_config
     if cfg:
-        common_args += ["-config=%s" % yaml.dump(cfg)]
+        common_args += [f"-config={json.dumps(cfg)}"]
 
     if fix:
         common_args += ["-fix"]
+
+    if not verbose:
+        common_args += ["-quiet"]
 
     return (
         [
@@ -1396,28 +1400,20 @@ def _build_export(command_context, jobs, verbose=False):
         command_context.log(logging.INFO, "build_output", {"line": line}, "{line}")
 
     # First install what we can through install manifests.
-    rc = command_context._run_make(
-        directory=command_context.topobjdir,
-        target="pre-export",
-        line_handler=None,
-        silent=not verbose,
-    )
-    if rc != 0:
-        return rc
-
     # Then build the rest of the build dependencies by running the full
     # export target, because we can't do anything better.
-    for target in ("export", "pre-compile"):
+    for target in ("pre-export", "export", "pre-compile"):
         rc = command_context._run_make(
             directory=command_context.topobjdir,
             target=target,
             line_handler=None,
+            print_directory=verbose,
+            log=verbose,
             silent=not verbose,
             num_jobs=jobs,
         )
         if rc != 0:
             return rc
-
     return 0
 
 

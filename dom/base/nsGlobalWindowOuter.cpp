@@ -1343,11 +1343,21 @@ nsGlobalWindowOuter::nsGlobalWindowOuter(uint64_t aWindowID)
 #ifdef DEBUG
   mSerial = nsContentUtils::InnerOrOuterWindowCreated();
 
-  MOZ_LOG(gDocShellAndDOMWindowLeakLogging, LogLevel::Info,
-          ("++DOMWINDOW == %d (%p) [pid = %d] [serial = %d] [outer = %p]\n",
-           nsContentUtils::GetCurrentInnerOrOuterWindowCount(),
-           static_cast<void*>(ToCanonicalSupports(this)), getpid(), mSerial,
-           nullptr));
+  if (MOZ_LOG_TEST(gDocShellAndDOMWindowLeakLogging, LogLevel::Info)) {
+    MOZ_LOG(gDocShellAndDOMWindowLeakLogging, LogLevel::Info,
+            ("++DOMWINDOW == %d (%p) [pid = %d] [serial = %d] [outer = %p]\n",
+             nsContentUtils::GetCurrentInnerOrOuterWindowCount(),
+             static_cast<void*>(ToCanonicalSupports(this)), getpid(), mSerial,
+             nullptr));
+
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (obs) {
+      nsString data;
+      data.AppendPrintf("serial=%d address=0x%" PRIxPTR " type=outer", mSerial,
+                        reinterpret_cast<uintptr_t>(ToCanonicalSupports(this)));
+      obs->NotifyObservers(nullptr, "debug-domwindow-created", data.get());
+    }
+  }
 #endif
 
   MOZ_LOG(gDOMLeakPRLogOuter, LogLevel::Debug,
@@ -1414,6 +1424,23 @@ nsGlobalWindowOuter::~nsGlobalWindowOuter() {
          nsContentUtils::GetCurrentInnerOrOuterWindowCount(),
          static_cast<void*>(ToCanonicalSupports(this)), getpid(), mSerial,
          nullptr, url.get()));
+
+    uint32_t serial = mSerial;
+    NS_DispatchToMainThread(
+        NS_NewRunnableFunction(
+            "TestDOMWindowDestroyed",
+            [serial, url = std::move(url)] {
+              nsCOMPtr<nsIObserverService> obs =
+                  mozilla::services::GetObserverService();
+              if (obs) {
+                nsString data;
+                data.AppendPrintf("serial=%d type=outer url=%s", serial,
+                                  url.get());
+                obs->NotifyObservers(nullptr, "debug-domwindow-destroyed",
+                                     data.get());
+              }
+            }),
+        NS_DISPATCH_FALLIBLE);
   }
 #endif
 

@@ -205,6 +205,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             navController = navHost.navController,
             onLinkClicked = { url, shouldOpenInBrowser ->
                 if (shouldOpenInBrowser) {
+                    @Suppress("DEPRECATION")
                     openToBrowserAndLoad(
                         searchTermOrURL = url,
                         newTab = true,
@@ -1246,6 +1247,11 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
      * was opened from history.
      * @param additionalHeaders The extra headers to use when loading the URL.
      */
+    @Deprecated(
+        message = "Use NavController.openToBrowser() and " +
+            "components.useCases.fenixBrowserUseCases.loadUrlOrSearch() instead",
+        level = DeprecationLevel.WARNING,
+    )
     fun openToBrowserAndLoad(
         searchTermOrURL: String,
         newTab: Boolean,

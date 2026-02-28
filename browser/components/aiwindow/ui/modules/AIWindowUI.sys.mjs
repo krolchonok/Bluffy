@@ -155,6 +155,16 @@ export const AIWindowUI = {
     box.hidden = true;
     splitter.hidden = true;
     this._setAskButtonStyle(win, false);
+
+    // Dispatch event to notify tab state manager that sidebar was toggled
+    win.dispatchEvent(
+      new win.CustomEvent("ai-window:sidebar-toggle", {
+        detail: {
+          tab: win.gBrowser?.selectedTab,
+          isOpen: false,
+        },
+      })
+    );
   },
 
   /**
@@ -174,12 +184,32 @@ export const AIWindowUI = {
       box.hidden = true;
       splitter.hidden = true;
       this._setAskButtonStyle(win, false);
+
+      // Dispatch event to notify tab state manager that sidebar was toggled
+      win.dispatchEvent(
+        new win.CustomEvent("ai-window:sidebar-toggle", {
+          detail: {
+            tab: win.gBrowser?.selectedTab,
+            isOpen: false,
+          },
+        })
+      );
       return false;
     }
 
     this.ensureBrowserIsAppended(chromeDoc, box);
     this._showSidebarElements(box, splitter);
     this._setAskButtonStyle(win, true);
+
+    // Dispatch event to notify tab state manager that sidebar was toggled
+    win.dispatchEvent(
+      new win.CustomEvent("ai-window:sidebar-toggle", {
+        detail: {
+          tab: win.gBrowser?.selectedTab,
+          isOpen: true,
+        },
+      })
+    );
     return true;
   },
 

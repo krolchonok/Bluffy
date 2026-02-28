@@ -2032,6 +2032,9 @@ preferences-view-profiles = View all profiles
 collection-health-report-telemetry-disabled = You’re no longer allowing { -vendor-short-name } to capture technical and interaction data. All past data will be deleted within 30 days.
 collection-health-report-telemetry-disabled-link = Learn more
 
+backup-multi-profile-warning-message =
+    .message = To make sure this change is included in your backups, open each profile and choose “Backup now” in Settings.
+
 collection-usage-ping =
     .label = Send daily usage ping to { -vendor-short-name }
     .accesskey = u

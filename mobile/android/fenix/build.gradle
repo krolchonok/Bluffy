@@ -226,11 +226,6 @@ tasks.register('ktlintFormat', JavaExec) {
     jvmArgs("--add-opens", "java.base/java.lang=ALL-UNNAMED")
 }
 
-tasks.withType(Detekt.class).configureEach {
-    exclude("**/resources/**")
-    exclude("**/tmp/**")
-}
-
 tasks.register("listRepositories") {
     def reposData = project.provider {
         project.repositories.collect { repo ->

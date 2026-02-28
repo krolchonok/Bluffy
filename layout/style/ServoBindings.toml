@@ -431,6 +431,8 @@ cbindgen-types = [
     { gecko = "StyleAnimationPlayState", servo = "crate::values::computed::AnimationPlayState" },
     { gecko = "StyleAnimationComposition", servo = "crate::values::computed::AnimationComposition" },
     { gecko = "StyleAnimationDuration", servo = "crate::values::computed::AnimationDuration" },
+    { gecko = "StyleAnimationRangeEnd", servo = "crate::values::computed::AnimationRangeEnd" },
+    { gecko = "StyleAnimationRangeStart", servo = "crate::values::computed::AnimationRangeStart" },
     { gecko = "StyleTimelineName", servo = "crate::values::computed::TimelineName" },
     { gecko = "StyleScrollAxis", servo = "crate::values::computed::ScrollAxis" },
     { gecko = "StyleViewTimelineInset", servo = "crate::values::computed::ViewTimelineInset" },

@@ -14291,6 +14291,67 @@ if (IsCSSPropertyPrefEnabled("layout.css.scroll-driven-animations.enabled")) {
       "--foo,",
     ],
   };
+
+  gCSSProperties["animation-range-start"] = {
+    domProp: "animationRangeStart",
+    inherited: false,
+    type: CSS_TYPE_LONGHAND,
+    applies_to_marker: true,
+    initial_values: ["normal"],
+    other_values: [
+      "0%",
+      "10px",
+      "-20%",
+      "calc(1em + 10%)",
+      "cover",
+      "contain -123%",
+      "entry calc(1em), entry-crossing 5px",
+      "exit 1%, exit-crossing",
+      "scroll 110%",
+    ],
+    invalid_values: ["abc", "cover contain", "scroll a", "10px cover"],
+  };
+
+  gCSSProperties["animation-range-end"] = {
+    domProp: "animationRangeEnd",
+    inherited: false,
+    type: CSS_TYPE_LONGHAND,
+    applies_to_marker: true,
+    initial_values: ["normal"],
+    other_values: [
+      "100%",
+      "10px",
+      "-20%",
+      "calc(1em + 10%)",
+      "cover",
+      "contain -123%",
+      "entry calc(1em), entry-crossing 5px",
+      "exit 1%, exit-crossing",
+      "scroll 110%",
+    ],
+    invalid_values: ["abc", "cover contain", "scroll a", "10px cover"],
+  };
+
+  gCSSProperties["animation-range"] = {
+    domProp: "animationRange",
+    inherited: false,
+    type: CSS_TYPE_TRUE_SHORTHAND,
+    applies_to_marker: true,
+    subproperties: ["animation-range-start", "animation-range-end"],
+    initial_values: ["normal normal", "normal"],
+    other_values: [
+      "cover",
+      "10%",
+      "cover exit",
+      "0px 100%",
+      "0% cover",
+      "contain 10%",
+      "contain 10px exit 10%",
+      "scroll -10% exit-crossing 123%",
+      "entry 10px exit",
+    ],
+    invalid_values: ["", "10% 10% cover", "normal 10% 13%", "abc", "1s 2s"],
+  };
 }
 
 gCSSProperties["scrollbar-gutter"] = {

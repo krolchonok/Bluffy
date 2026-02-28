@@ -243,6 +243,7 @@ class AboutFragment(
     }
 
     private fun openLinkInNormalTab(url: String) {
+        @Suppress("DEPRECATION")
         (activity as HomeActivity).openToBrowserAndLoad(
             searchTermOrURL = url,
             newTab = true,

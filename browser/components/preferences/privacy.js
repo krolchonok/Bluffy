@@ -36,6 +36,8 @@ const PREF_PASSWORD_GENERATION_AVAILABLE = "signon.generation.available";
 const { BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN } = Ci.nsICookieService;
 
 const PASSWORD_MANAGER_PREF_ID = "services.passwordSavingEnabled";
+const BACKUP_ENABLED_ON_PROFILES_PREF_NAME =
+  "browser.backup.enabled_on.profiles";
 
 ChromeUtils.defineLazyGetter(this, "AlertsServiceDND", function () {
   try {
@@ -79,6 +81,8 @@ XPCOMUtils.defineLazyPreferenceGetter(
 ChromeUtils.defineESModuleGetters(this, {
   AppUpdater: "resource://gre/modules/AppUpdater.sys.mjs",
   DoHConfigController: "moz-src:///toolkit/components/doh/DoHConfig.sys.mjs",
+  PreferencesBackupResource:
+    "resource:///modules/backup/PreferencesBackupResource.sys.mjs",
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
   SelectableProfileService:
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
@@ -2938,6 +2942,8 @@ var gPrivacyPane = {
    */
   _shouldPromptForRestart: true,
 
+  _originalStateOfDataCollectionPrefs: new Map(),
+
   /**
    * Update the tracking protection UI to deal with extension control.
    */
@@ -3542,6 +3548,36 @@ var gPrivacyPane = {
         this.initOptOutStudyCheckbox();
       }
       this.initAddonRecommendationsCheckbox();
+    }
+
+    if (SelectableProfileService.currentProfile) {
+      let dataCollectionPrefs = PreferencesBackupResource.dataCollectionPrefs;
+      for (let pref of dataCollectionPrefs) {
+        this._originalStateOfDataCollectionPrefs.set(
+          pref,
+          Services.prefs.getBoolPref(pref, false)
+        );
+
+        Services.prefs.addObserver(
+          pref,
+          gPrivacyPane.updateBackupBannerVisibility
+        );
+      }
+      window.addEventListener("unload", () => {
+        for (let pref of dataCollectionPrefs) {
+          Services.prefs.removeObserver(
+            pref,
+            gPrivacyPane.updateBackupBannerVisibility
+          );
+        }
+      });
+
+      document
+        .getElementById("backup-multi-profile-warning-message-bar")
+        .addEventListener("message-bar:user-dismissed", event => {
+          event.preventDefault();
+          event.target.hidden = true;
+        });
     }
 
     let signonBundle = document.getElementById("signonBundle");
@@ -5143,6 +5179,29 @@ var gPrivacyPane = {
     telemetryContainer.hidden = checkbox.checked;
   },
 
+  updateBackupBannerVisibility() {
+    let anyPrefChanged = false;
+    for (let [
+      pref,
+      originalValue,
+    ] of gPrivacyPane._originalStateOfDataCollectionPrefs) {
+      if (Services.prefs.getBoolPref(pref, false) !== originalValue) {
+        anyPrefChanged = true;
+        break;
+      }
+    }
+
+    let profilesEnabledOn = JSON.parse(
+      Services.prefs.getStringPref(BACKUP_ENABLED_ON_PROFILES_PREF_NAME, "{}")
+    );
+    let currentId = SelectableProfileService.currentProfile.id;
+    let otherProfilesEnabled = Object.keys(profilesEnabledOn).some(
+      id => id != currentId
+    );
+    document.getElementById("backup-multi-profile-warning-message-bar").hidden =
+      !otherProfilesEnabled || !anyPrefChanged;
+  },
+
   /**
    * Initialize the opt-out-study preference checkbox into about:preferences and
    * handles events coming from the UI for it.
@@ -5208,6 +5267,12 @@ var gPrivacyPane = {
   _initProfilesInfo() {
     setEventListener(
       "dataCollectionViewProfiles",
+      "click",
+      gMainPane.manageProfiles
+    );
+
+    setEventListener(
+      "dataCollectionViewProfilesMultiProfileBackupWarning",
       "click",
       gMainPane.manageProfiles
     );

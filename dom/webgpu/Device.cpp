@@ -459,7 +459,7 @@ already_AddRefed<PipelineLayout> Device::CreatePipelineLayout(
       aDesc.mBindGroupLayouts.Length());
 
   for (const auto& layout : aDesc.mBindGroupLayouts) {
-    bindGroupLayouts.AppendElement(layout->GetId());
+    bindGroupLayouts.AppendElement(layout ? layout->GetId() : 0);
   }
 
   ffi::WGPUPipelineLayoutDescriptor desc = {};

@@ -73,6 +73,7 @@ class WallpaperSettingsFragment : Fragment() {
                             }
                         },
                         onLearnMoreClick = { url, collectionName ->
+                            @Suppress("DEPRECATION")
                             (activity as HomeActivity).openToBrowserAndLoad(
                                 searchTermOrURL = url,
                                 newTab = true,

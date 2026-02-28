@@ -72,6 +72,7 @@ class ReEngagementIntentProcessorTest {
 
         assertNotNull(Events.reEngagementNotifTapped.testGetValue())
         verify {
+            @Suppress("DEPRECATION")
             activity.openToBrowserAndLoad(
                 searchTermOrURL = ReEngagementNotificationWorker.NOTIFICATION_TARGET_URL,
                 newTab = true,

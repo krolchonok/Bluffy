@@ -3264,7 +3264,7 @@ bool XPCJSRuntime::InitializeStrings(JSContext* cx) {
 }
 
 bool XPCJSRuntime::DescribeCustomObjects(JSObject* obj, const JSClass* clasp,
-                                         char (&name)[72]) const {
+                                         char (&name)[512]) const {
   if (clasp != &XPC_WN_Proto_JSClass) {
     return false;
   }

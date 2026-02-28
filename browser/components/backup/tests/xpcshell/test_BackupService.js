@@ -28,7 +28,6 @@ const LAST_BACKUP_TIMESTAMP_PREF_NAME =
 const LAST_BACKUP_FILE_NAME_PREF_NAME =
   "browser.backup.scheduled.last-backup-file";
 const BACKUP_ARCHIVE_ENABLED_PREF_NAME = "browser.backup.archive.enabled";
-const BACKUP_RESTORE_ENABLED_PREF_NAME = "browser.backup.restore.enabled";
 
 /** @type {nsIToolkitProfile} */
 let currentProfile;
@@ -44,6 +43,7 @@ const OS_NAME = "test-os-name";
 const OS_VERSION = "test-os-version";
 const TELEMETRY_ENABLED = true;
 const LEGACY_CLIENT_ID = "legacy-client-id";
+const PROFILE_NAME = "test-profile-name";
 
 add_setup(function () {
   currentProfile = setupProfile();
@@ -910,108 +910,6 @@ add_task(
 );
 
 /**
- * Tests that the existence of selectable profiles prevent backups (see bug
- * 1990980).
- *
- * @param {boolean} aSetCreatedSelectableProfilesBeforeSchedulingBackups
- *    If true (respectively, false), set browser.profiles.created before
- *    (respectively, after) attempting to setScheduledBackups.
- */
-async function testSelectableProfilesPreventBackup(
-  aSetCreatedSelectableProfilesBeforeSchedulingBackups
-) {
-  let sandbox = sinon.createSandbox();
-  Services.fog.testResetFOG();
-  const TEST_UID = "ThisIsMyTestUID";
-  const TEST_EMAIL = "foxy@mozilla.org";
-  sandbox.stub(UIState, "get").returns({
-    status: UIState.STATUS_SIGNED_IN,
-    uid: TEST_UID,
-    email: TEST_EMAIL,
-  });
-
-  const SELECTABLE_PROFILES_CREATED_PREF = "browser.profiles.created";
-
-  Services.prefs.setBoolPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME, true);
-  Services.prefs.setBoolPref(BACKUP_RESTORE_ENABLED_PREF_NAME, true);
-
-  // Make sure created profiles pref is not set until we want it to be.
-  Services.prefs.setBoolPref(SELECTABLE_PROFILES_CREATED_PREF, false);
-
-  const setHasSelectableProfiles = () => {
-    // "Enable" selectable profiles by pref.
-    Services.prefs.setBoolPref(SELECTABLE_PROFILES_CREATED_PREF, true);
-    Assert.ok(
-      Services.prefs.getBoolPref(SELECTABLE_PROFILES_CREATED_PREF),
-      "set has selectable profiles | browser.profiles.created = true"
-    );
-  };
-
-  if (aSetCreatedSelectableProfilesBeforeSchedulingBackups) {
-    setHasSelectableProfiles();
-  }
-
-  let bs = new BackupService({});
-  bs.initBackupScheduler();
-  bs.setScheduledBackups(true);
-
-  const SCHEDULED_BACKUP_ENABLED_PREF = "browser.backup.scheduled.enabled";
-  if (!aSetCreatedSelectableProfilesBeforeSchedulingBackups) {
-    Assert.ok(
-      Services.prefs.getBoolPref(SCHEDULED_BACKUP_ENABLED_PREF, true),
-      "enabled scheduled backups | browser.backup.scheduled.enabled = true"
-    );
-    registerCleanupFunction(() => {
-      // Just in case the test fails.
-      bs.setScheduledBackups(false);
-      info("cleared scheduled backups");
-    });
-
-    setHasSelectableProfiles();
-  }
-
-  // Backups attempts should be rejected because of selectable profiles.
-  let fakeProfilePath = await IOUtils.createUniqueDirectory(
-    PathUtils.tempDir,
-    "testSelectableProfilesPreventBackup"
-  );
-  registerCleanupFunction(async () => {
-    await maybeRemovePath(fakeProfilePath);
-  });
-  let failedBackup = await bs.createBackup({
-    profilePath: fakeProfilePath,
-  });
-  Assert.equal(failedBackup, null, "Backup returned null");
-
-  // Test cleanup
-  if (!aSetCreatedSelectableProfilesBeforeSchedulingBackups) {
-    bs.uninitBackupScheduler();
-  }
-
-  Services.prefs.clearUserPref(SELECTABLE_PROFILES_CREATED_PREF);
-  // These tests assume that backups and restores have been enabled.
-  Services.prefs.setBoolPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME, true);
-  Services.prefs.setBoolPref(BACKUP_RESTORE_ENABLED_PREF_NAME, true);
-  sandbox.restore();
-}
-
-add_task(
-  async function test_managing_profiles_before_scheduling_prevents_backup() {
-    await testSelectableProfilesPreventBackup(
-      true /* aSetCreatedSelectableProfilesBeforeSchedulingBackups */
-    );
-  }
-);
-
-add_task(
-  async function test_managing_profiles_after_scheduling_prevents_backup() {
-    await testSelectableProfilesPreventBackup(
-      false /* aSetCreatedSelectableProfilesBeforeSchedulingBackups */
-    );
-  }
-);
-
-/**
  * Tests that if there's a post-recovery.json file in the profile directory
  * when checkForPostRecovery() is called, that it is processed, and the
  * postRecovery methods on the associated BackupResources are called with the
@@ -1098,6 +996,7 @@ add_task(async function test_getBackupFileInfo() {
         osVersion: OS_VERSION,
         healthTelemetryEnabled: TELEMETRY_ENABLED,
         legacyClientID: LEGACY_CLIENT_ID,
+        profileName: PROFILE_NAME,
       },
       encConfig: {},
     },
@@ -1129,6 +1028,7 @@ add_task(async function test_getBackupFileInfo() {
       osVersion: OS_VERSION,
       healthTelemetryEnabled: TELEMETRY_ENABLED,
       legacyClientID: LEGACY_CLIENT_ID,
+      profileName: PROFILE_NAME,
     },
     "State should match a subset from the archive sample."
   );
@@ -1193,6 +1093,7 @@ add_task(async function test_getBackupFileInfo_error_handling() {
           osVersion: OS_VERSION,
           healthTelemetryEnabled: TELEMETRY_ENABLED,
           legacyClientID: LEGACY_CLIENT_ID,
+          profileName: PROFILE_NAME,
         },
         encConfig: {},
       },
@@ -1217,6 +1118,7 @@ add_task(async function test_getBackupFileInfo_error_handling() {
         osVersion: OS_VERSION,
         healthTelemetryEnabled: TELEMETRY_ENABLED,
         legacyClientID: LEGACY_CLIENT_ID,
+        profileName: PROFILE_NAME,
       },
       "Initial state should be set correctly"
     );
@@ -1292,34 +1194,4 @@ add_task(async function test_changing_prefs_cleanup() {
   );
 
   Services.prefs.clearUserPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME);
-});
-
-add_task(function test_checkOsSupportsBackup_win10() {
-  const osParams = {
-    name: "Windows_NT",
-    version: "10.0",
-    build: "20000",
-  };
-  const result = BackupService.checkOsSupportsBackup(osParams);
-  Assert.ok(result);
-});
-
-add_task(function test_checkOsSupportsBackup_win11() {
-  const osParams = {
-    name: "Windows_NT",
-    version: "10.0",
-    build: "22000",
-  };
-  const result = BackupService.checkOsSupportsBackup(osParams);
-  Assert.ok(!result);
-});
-
-add_task(function test_checkOsSupportsBackup_linux() {
-  const osParams = {
-    name: "Linux",
-    version: "10.0",
-    build: "22000",
-  };
-  const result = BackupService.checkOsSupportsBackup(osParams);
-  Assert.ok(!result);
 });

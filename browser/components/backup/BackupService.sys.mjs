@@ -24,11 +24,7 @@ const BACKUP_DIR_PREF_NAME = "browser.backup.location";
 const BACKUP_ERROR_CODE_PREF_NAME = "browser.backup.errorCode";
 const SCHEDULED_BACKUPS_ENABLED_PREF_NAME = "browser.backup.scheduled.enabled";
 const BACKUP_ARCHIVE_ENABLED_PREF_NAME = "browser.backup.archive.enabled";
-const BACKUP_ARCHIVE_ENABLED_OVERRIDE_PREF_NAME =
-  "browser.backup.archive.overridePlatformCheck";
 const BACKUP_RESTORE_ENABLED_PREF_NAME = "browser.backup.restore.enabled";
-const BACKUP_RESTORE_ENABLED_OVERRIDE_PREF_NAME =
-  "browser.backup.restore.overridePlatformCheck";
 const IDLE_THRESHOLD_SECONDS_PREF_NAME =
   "browser.backup.scheduled.idle-threshold-seconds";
 const MINIMUM_TIME_BETWEEN_BACKUPS_SECONDS_PREF_NAME =
@@ -47,8 +43,8 @@ const CREATED_MANAGED_PROFILES_PREF_NAME = "browser.profiles.created";
 const RESTORED_BACKUP_METADATA_PREF_NAME =
   "browser.backup.restored-backup-metadata";
 const SANITIZE_ON_SHUTDOWN_PREF_NAME = "privacy.sanitize.sanitizeOnShutdown";
-const FORCE_ENABLE_BACKUP_PROFILES_PREF_NAME =
-  "browser.backup.profiles.force-enable";
+const BACKUP_ENABLED_ON_PROFILES_PREF_NAME =
+  "browser.backup.enabled_on.profiles";
 
 const SCHEMAS = Object.freeze({
   BACKUP_MANIFEST: 1,
@@ -681,12 +677,9 @@ export class BackupService extends EventTarget {
     // Check if disabled by Nimbus killswitch.
     const archiveKillswitchTriggered =
       lazy.NimbusFeatures.backupService.getVariable("archiveKillswitch");
-    const archiveOverrideEnabled = Services.prefs.getBoolPref(
-      BACKUP_ARCHIVE_ENABLED_OVERRIDE_PREF_NAME,
-      false
-    );
+
     // Only disable feature if archiveKillswitch is true.
-    if (archiveKillswitchTriggered && !archiveOverrideEnabled) {
+    if (archiveKillswitchTriggered) {
       return {
         enabled: false,
         reason: "Archiving a profile disabled remotely.",
@@ -711,35 +704,6 @@ export class BackupService extends EventTarget {
       };
     }
 
-    if (
-      !Services.prefs.getBoolPref(
-        FORCE_ENABLE_BACKUP_PROFILES_PREF_NAME,
-        false
-      ) &&
-      lazy.SelectableProfileService.hasCreatedSelectableProfiles()
-    ) {
-      return {
-        enabled: false,
-        reason:
-          "Archiving a profile is disabled because the user has created selectable profiles.",
-        internalReason: "selectable profiles",
-      };
-    }
-
-    if (
-      !this.#osSupportsBackup &&
-      !Services.prefs.getBoolPref(
-        BACKUP_ARCHIVE_ENABLED_OVERRIDE_PREF_NAME,
-        false
-      )
-    ) {
-      return {
-        enabled: false,
-        reason: "Backup creation not enabled on this os version yet",
-        internalReason: "os version",
-      };
-    }
-
     return { enabled: true };
   }
 
@@ -752,12 +716,8 @@ export class BackupService extends EventTarget {
     // Check if disabled by Nimbus killswitch.
     const restoreKillswitchTriggered =
       lazy.NimbusFeatures.backupService.getVariable("restoreKillswitch");
-    const restoreOverrideEnabled = Services.prefs.getBoolPref(
-      BACKUP_RESTORE_ENABLED_OVERRIDE_PREF_NAME,
-      false
-    );
 
-    if (restoreKillswitchTriggered && !restoreOverrideEnabled) {
+    if (restoreKillswitchTriggered) {
       return {
         enabled: false,
         reason: "Restore from backup disabled remotely.",
@@ -779,35 +739,6 @@ export class BackupService extends EventTarget {
         enabled: false,
         reason: "Restoring a profile disabled by user pref.",
         internalReason: "pref",
-      };
-    }
-
-    if (
-      !Services.prefs.getBoolPref(
-        FORCE_ENABLE_BACKUP_PROFILES_PREF_NAME,
-        false
-      ) &&
-      lazy.SelectableProfileService.hasCreatedSelectableProfiles()
-    ) {
-      return {
-        enabled: false,
-        reason:
-          "Restoring a profile is disabled because the user has created selectable profiles.",
-        internalReason: "selectable profiles",
-      };
-    }
-
-    if (
-      !this.#osSupportsRestore &&
-      !Services.prefs.getBoolPref(
-        BACKUP_RESTORE_ENABLED_OVERRIDE_PREF_NAME,
-        false
-      )
-    ) {
-      return {
-        enabled: false,
-        reason: "Backup restore not enabled on this os version yet",
-        internalReason: "os version",
       };
     }
 
@@ -902,6 +833,7 @@ export class BackupService extends EventTarget {
     embeddedComponentPersistentData: {},
     recoveryErrorCode: ERRORS.NONE,
     backupErrorCode: lazy.backupErrorCode,
+    selectableProfilesAllowed: lazy.SelectableProfileService.isEnabled,
   };
 
   /**
@@ -1002,6 +934,16 @@ export class BackupService extends EventTarget {
    * @type {Function?}
    */
   #statusPrefObserver = null;
+
+  /**
+   * Called when the SelectableProfileService state is updated. Stored as a
+   * member so it can be unregistered from the SelectableProfileService by
+   * uninitStatusObservers. If null, the conditions are not currently being
+   * monitored.
+   *
+   * @type {Function?}
+   */
+  #profileServiceStateObserver = null;
 
   /**
    * The path of the default parent directory for saving backups.
@@ -1329,17 +1271,6 @@ export class BackupService extends EventTarget {
     return this.#instance;
   }
 
-  static checkOsSupportsBackup(osParams) {
-    // Currently we only want to show Backup on Windows 10 devices.
-    // The first build of Windows 11 is 22000
-    return (
-      osParams.name == "Windows_NT" &&
-      osParams.version == "10.0" &&
-      osParams.build &&
-      Number(osParams.build) < 22000
-    );
-  }
-
   /**
    * Create a BackupService instance.
    *
@@ -1400,21 +1331,11 @@ export class BackupService extends EventTarget {
       }
       Glean.browserBackup.restoredProfileData.set(payload);
     });
-    const osParams = {
-      name: Services.sysinfo.getProperty("name"),
-      version: Services.sysinfo.getProperty("version"),
-      build: Services.sysinfo.getProperty("build"),
-    };
-    this.#osSupportsBackup = BackupService.checkOsSupportsBackup(osParams);
-    this.#osSupportsRestore = true;
+
     this.#lastSeenArchiveStatus = this.archiveEnabledStatus;
     this.#lastSeenRestoreStatus = this.restoreEnabledStatus;
   }
 
-  // Backup is currently limited to Windows 10. Will be populated by constructor
-  #osSupportsBackup = false;
-  // Restore is not limited, but leaving this in place if restrictions are needed.
-  #osSupportsRestore = true;
   // Remembering status allows us to notify observers when the status changes
   #lastSeenArchiveStatus = false;
   #lastSeenRestoreStatus = false;
@@ -2976,6 +2897,8 @@ export class BackupService extends EventTarget {
       // Let's pull in a profile name from the profile directory.
       let profileFolder = PathUtils.split(PathUtils.profileDir).at(-1);
       profileName = profileFolder.substring(profileFolder.indexOf(".") + 1);
+    } else if (lazy.SelectableProfileService.currentProfile) {
+      profileName = lazy.SelectableProfileService.currentProfile.name;
     } else {
       profileName = profileSvc.currentProfile.name;
     }
@@ -3050,7 +2973,7 @@ export class BackupService extends EventTarget {
    *   testing.
    * @param {boolean} [replaceCurrentProfile=false]
    *   An optional argument that determines if the backed up profile should replace
-   *  the current profile, or add a new profile.
+   *   the current profile, or add a new profile.
    * @returns {Promise<nsIToolkitProfile>}
    *   The nsIToolkitProfile that was created for the recovered profile.
    * @throws {Exception}
@@ -3709,7 +3632,9 @@ export class BackupService extends EventTarget {
           // the RPM communication so we use the hash and parse that instead.
           [
             "about:editprofile" +
-              (copiedProfile ? `#copiedProfileName=${copiedProfile.name}` : ""),
+              (copiedProfile
+                ? `#copiedProfileName=${copiedProfile.name}`
+                : "#restoredProfile"),
           ]
         );
       }
@@ -3891,6 +3816,21 @@ export class BackupService extends EventTarget {
   }
 
   /**
+   * Updates selectableProfilesAllowed in the backup service state. Should be called every time
+   * the SelectableProfileService enabled state is changed.
+   *
+   */
+  onUpdateProfilesEnabledState() {
+    lazy.logConsole.debug(
+      `The profiles enabled state was updated to ${lazy.SelectableProfileService.isEnabled}`
+    );
+
+    this.#_state.selectableProfilesAllowed =
+      lazy.SelectableProfileService.isEnabled;
+    this.stateUpdate();
+  }
+
+  /**
    * Returns the moz-icon URL of a file. To get the moz-icon URL, the
    * file path is convered to a fileURI. If there is a problem retreiving
    * the moz-icon due to an invalid file path, return null instead.
@@ -3929,12 +3869,24 @@ export class BackupService extends EventTarget {
 
       // flush the embedded component's persistent data
       this.setEmbeddedComponentPersistentData({});
+
+      if (lazy.SelectableProfileService.currentProfile) {
+        BackupService.addToEnabledListPref(
+          lazy.SelectableProfileService.currentProfile.id
+        );
+      }
     } else {
       // set user-disabled pref if backup is being disabled
       Services.prefs.setBoolPref(
         "browser.backup.scheduled.user-disabled",
         true
       );
+
+      if (lazy.SelectableProfileService.currentProfile) {
+        BackupService.removeFromEnabledListPref(
+          lazy.SelectableProfileService.currentProfile.id
+        );
+      }
     }
   }
 
@@ -4414,6 +4366,13 @@ export class BackupService extends EventTarget {
     }
     lazy.NimbusFeatures.backupService.onUpdate(this.#statusPrefObserver);
     this.#handleStatusChange();
+
+    this.#profileServiceStateObserver = () =>
+      this.onUpdateProfilesEnabledState();
+    lazy.SelectableProfileService.on(
+      "enableChanged",
+      this.#profileServiceStateObserver
+    );
   }
 
   /**
@@ -4432,6 +4391,12 @@ export class BackupService extends EventTarget {
     }
     lazy.NimbusFeatures.backupService.offUpdate(this.#statusPrefObserver);
     this.#statusPrefObserver = null;
+
+    lazy.SelectableProfileService.off(
+      "enableChanged",
+      this.#profileServiceStateObserver
+    );
+    this.#profileServiceStateObserver = null;
   }
 
   /**
@@ -4813,6 +4778,7 @@ export class BackupService extends EventTarget {
         osVersion: archiveJSON?.meta?.osVersion,
         healthTelemetryEnabled: archiveJSON?.meta?.healthTelemetryEnabled,
         legacyClientID: archiveJSON?.meta?.legacyClientID,
+        profileName: archiveJSON?.meta?.profileName,
       };
 
       // Clear any existing recovery error from state since we've successfully
@@ -5138,5 +5104,49 @@ export class BackupService extends EventTarget {
       return false;
     }
     return exists;
+  }
+
+  static addToEnabledListPref(profileID) {
+    if (!lazy.SelectableProfileService.currentProfile) {
+      lazy.logConsole.warn(
+        "The enabled pref is only to be used for selectable profiles"
+      );
+      return;
+    }
+
+    let profilesEnabledOn = JSON.parse(
+      Services.prefs.getStringPref(BACKUP_ENABLED_ON_PROFILES_PREF_NAME, "{}")
+    );
+
+    profilesEnabledOn[profileID] = true;
+
+    Services.prefs.setStringPref(
+      BACKUP_ENABLED_ON_PROFILES_PREF_NAME,
+      JSON.stringify(profilesEnabledOn)
+    );
+  }
+
+  static async removeFromEnabledListPref(profileID) {
+    if (!lazy.SelectableProfileService.currentProfile) {
+      lazy.logConsole.warn(
+        "The enabled pref is only to be used for selectable profiles"
+      );
+      return;
+    }
+
+    let profilesEnabledOn = JSON.parse(
+      Services.prefs.getStringPref(BACKUP_ENABLED_ON_PROFILES_PREF_NAME, "{}")
+    );
+    delete profilesEnabledOn[profileID];
+    Services.prefs.setStringPref(
+      BACKUP_ENABLED_ON_PROFILES_PREF_NAME,
+      JSON.stringify(profilesEnabledOn)
+    );
+
+    // Since the remove could be happening during shutdown, let's manually do a flush shared pref to ensure
+    // the db has the shared pref value before deletion
+    await lazy.SelectableProfileService.flushSharedPrefToDatabase(
+      BACKUP_ENABLED_ON_PROFILES_PREF_NAME
+    );
   }
 }

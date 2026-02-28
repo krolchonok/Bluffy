@@ -49,6 +49,7 @@ class ReEngagementIntentProcessor(
                     }
                     else -> {
                         appStore.dispatch(AppAction.BrowsingModeManagerModeChanged(mode = BrowsingMode.Private))
+                        @Suppress("DEPRECATION")
                         activity.openToBrowserAndLoad(
                             ReEngagementNotificationWorker.NOTIFICATION_TARGET_URL,
                             newTab = true,

@@ -1044,6 +1044,7 @@ void PointerEventHandler::InitCoalescedEventFromPointerEvent(
 
   aCoalescedEvent.mTimeStamp = aSourceEvent.mTimeStamp;
   aCoalescedEvent.mRefPoint = aSourceEvent.mRefPoint;
+  aCoalescedEvent.mLastRefPoint = aSourceEvent.mLastRefPoint;
   aCoalescedEvent.mModifiers = aSourceEvent.mModifiers;
 
   // WidgetMouseEventBase

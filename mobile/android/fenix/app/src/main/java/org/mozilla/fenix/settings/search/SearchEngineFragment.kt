@@ -255,6 +255,7 @@ class SearchEngineFragment : PreferenceFragmentCompat() {
      */
     @VisibleForTesting
     internal fun openLearnMoreLink() {
+        @Suppress("DEPRECATION")
         (activity as HomeActivity).openToBrowserAndLoad(
             searchTermOrURL = SupportUtils.getGenericSumoURLForTopic(
                 SupportUtils.SumoTopic.FX_SUGGEST,

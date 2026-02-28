@@ -1239,6 +1239,7 @@ class PropertyRestrictions:
                 "unicode-bidi",
                 "-moz-osx-font-smoothing",
             ]
+            + PropertyRestrictions.shorthand(data, "animation-range")
             + PropertyRestrictions.shorthand(data, "text-wrap")
             + PropertyRestrictions.shorthand(data, "white-space")
             + PropertyRestrictions.spec(data, "css-fonts")

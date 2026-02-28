@@ -2238,7 +2238,8 @@ bool StyleAnimation::operator==(const StyleAnimation& aOther) const {
          mName == aOther.mName && mDirection == aOther.mDirection &&
          mFillMode == aOther.mFillMode && mPlayState == aOther.mPlayState &&
          mIterationCount == aOther.mIterationCount &&
-         mComposition == aOther.mComposition && mTimeline == aOther.mTimeline;
+         mComposition == aOther.mComposition && mTimeline == aOther.mTimeline &&
+         mRangeStart == aOther.mRangeStart && mRangeEnd == aOther.mRangeEnd;
 }
 
 // --------------------
@@ -3320,6 +3321,8 @@ nsStyleUIReset::nsStyleUIReset()
       mAnimationIterationCountCount(1),
       mAnimationCompositionCount(1),
       mAnimationTimelineCount(1),
+      mAnimationRangeStartCount(1),
+      mAnimationRangeEndCount(1),
       mScrollTimelines(
           nsStyleAutoArray<StyleScrollTimeline>::WITH_SINGLE_INITIAL_ELEMENT),
       mScrollTimelineNameCount(1),
@@ -3362,6 +3365,8 @@ nsStyleUIReset::nsStyleUIReset(const nsStyleUIReset& aSource)
       mAnimationIterationCountCount(aSource.mAnimationIterationCountCount),
       mAnimationCompositionCount(aSource.mAnimationCompositionCount),
       mAnimationTimelineCount(aSource.mAnimationTimelineCount),
+      mAnimationRangeStartCount(aSource.mAnimationRangeStartCount),
+      mAnimationRangeEndCount(aSource.mAnimationRangeEndCount),
       mScrollTimelines(aSource.mScrollTimelines.Clone()),
       mScrollTimelineNameCount(aSource.mScrollTimelineNameCount),
       mScrollTimelineAxisCount(aSource.mScrollTimelineAxisCount),
@@ -3441,6 +3446,8 @@ nsChangeHint nsStyleUIReset::CalcDifference(
            aNewData.mAnimationIterationCountCount ||
        mAnimationCompositionCount != aNewData.mAnimationCompositionCount ||
        mAnimationTimelineCount != aNewData.mAnimationTimelineCount ||
+       mAnimationRangeStartCount != aNewData.mAnimationRangeStartCount ||
+       mAnimationRangeEndCount != aNewData.mAnimationRangeEndCount ||
        mIMEMode != aNewData.mIMEMode ||
        mWindowOpacity != aNewData.mWindowOpacity ||
        mMozWindowInputRegionMargin != aNewData.mMozWindowInputRegionMargin ||

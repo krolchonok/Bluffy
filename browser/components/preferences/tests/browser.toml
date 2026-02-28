@@ -4,8 +4,6 @@ prefs = [
   "signon.management.page.os-auth.enabled=true",
   "browser.backup.archive.enabled=false",
   "browser.backup.restore.enabled=false",
-  "browser.backup.archive.overridePlatformCheck=true",
-  "browser.backup.restore.overridePlatformCheck=true",
 ]
 support-files = [
   "head.js",
@@ -40,6 +38,8 @@ run-if = [
 ["browser_applications_selection.js"]
 
 ["browser_backup_visibility.js"]
+
+["browser_backup_warning_banner.js"]
 
 ["browser_browser_languages_subdialog.js"]
 skip-if = [

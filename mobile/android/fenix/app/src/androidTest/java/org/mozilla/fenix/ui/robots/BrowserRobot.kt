@@ -1350,7 +1350,7 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     fun clickWebCompatPageItem(itemText: String) {
-        clickPageObject(composeTestRule, itemWithTextAndIndex(itemText, 0))
+        clickPageObject(composeTestRule, itemWithText(itemText))
         waitForAppWindowToBeUpdated()
     }
 

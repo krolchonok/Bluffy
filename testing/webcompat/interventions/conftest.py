@@ -63,6 +63,12 @@ def pytest_generate_tests(metafunc):
     if "disable_moztransform" in marks:
         otherargs["disable_moztransform"] = True
 
+    if "enable_speechrecognition" in marks:
+        otherargs["enable_speechrecognition"] = True
+
+    if "disable_speechrecognition" in marks:
+        otherargs["disable_speechrecognition"] = True
+
     if "enable_webkit_fill_available" in marks:
         otherargs["enable_webkit_fill_available"] = True
 
@@ -94,10 +100,12 @@ async def test_config(request, driver):
     return {
         "actual_platform_required": params.get("actual_platform_required", False),
         "enable_moztransform": params.get("enable_moztransform", False),
+        "enable_speechrecognition": params.get("enable_speechrecognition", False),
         "enable_webkit_fill_available": params.get(
             "enable_webkit_fill_available", False
         ),
         "disable_moztransform": params.get("disable_moztransform", False),
+        "disable_speechrecognition": params.get("disable_speechrecognition", False),
         "disable_webkit_fill_available": params.get(
             "disable_webkit_fill_available", False
         ),

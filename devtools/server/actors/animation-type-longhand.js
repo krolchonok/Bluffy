@@ -214,6 +214,8 @@ exports.ANIMATION_TYPE_FOR_LONGHANDS = [
       "animation-iteration-count",
       "animation-name",
       "animation-play-state",
+      "animation-range-end",
+      "animation-range-start",
       "animation-timeline",
       "animation-timing-function",
       "block-size",

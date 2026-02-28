@@ -38,6 +38,7 @@ export default class RestoreFromBackup extends MozLitElement {
 
   static properties = {
     _fileIconURL: { type: String },
+    _restoreType: { type: String },
     aboutWelcomeEmbedded: { type: Boolean },
     backupServiceState: { type: Object },
   };
@@ -60,6 +61,7 @@ export default class RestoreFromBackup extends MozLitElement {
   constructor() {
     super();
     this._fileIconURL = "";
+    this._restoreType = "add";
     // Set the default state
     this.backupServiceState = {
       backupDirPath: "",
@@ -72,6 +74,7 @@ export default class RestoreFromBackup extends MozLitElement {
       },
       encryptionEnabled: false,
       scheduledBackupsEnabled: false,
+      selectableProfilesAllowed: false,
       lastBackupDate: null,
       lastBackupFileName: "",
       supportBaseLink: "https://support.mozilla.org/",
@@ -187,6 +190,10 @@ export default class RestoreFromBackup extends MozLitElement {
     }
   }
 
+  handleRestoreTypeChange(event) {
+    this._restoreType = event.target.value;
+  }
+
   handleChooseBackupFile() {
     this.dispatchEvent(
       new CustomEvent("BackupUI:ShowFilepicker", {
@@ -239,6 +246,7 @@ export default class RestoreFromBackup extends MozLitElement {
         detail: {
           backupFile,
           backupPassword,
+          restoreType: this._restoreType,
         },
       })
     );
@@ -338,8 +346,9 @@ export default class RestoreFromBackup extends MozLitElement {
   renderBackupFileInfo(backupFileInfo) {
     return html`<p
       id="restore-from-backup-backup-found-info"
-      data-l10n-id="backup-file-creation-date-and-device"
+      data-l10n-id="backup-file-creation-metadata"
       data-l10n-args=${JSON.stringify({
+        profileName: backupFileInfo.profileName ?? "",
         machineName: backupFileInfo.deviceName ?? "",
         date: backupFileInfo.date ? new Date(backupFileInfo.date).getTime() : 0,
       })}
@@ -358,12 +367,8 @@ export default class RestoreFromBackup extends MozLitElement {
       return this.genericFileErrorTemplate();
     }
 
-    // No backup file selected
     if (!backupFileInfo) {
-      return this.getSupportLinkAnchor({
-        id: "restore-from-backup-no-backup-file-link",
-        l10nId: "restore-from-backup-no-backup-file-link",
-      });
+      return null;
     }
 
     // Backup file found and no error
@@ -380,6 +385,13 @@ export default class RestoreFromBackup extends MozLitElement {
     }
     return html`
       <fieldset id="backup-restore-controls">
+        <a
+          id="restore-from-backup-support-link"
+          slot="support-link"
+          is="moz-support-link"
+          support-page="firefox-backup"
+          data-l10n-id="restore-from-backup-support-link1"
+        ></a>
         <fieldset id="backup-filepicker-controls">
           <label
             id="backup-filepicker-label"
@@ -398,12 +410,37 @@ export default class RestoreFromBackup extends MozLitElement {
 
           ${this.renderBackupFileStatus()}
         </fieldset>
-
         <fieldset id="password-entry-controls">
           ${this.backupServiceState?.backupFileInfo?.isEncrypted
             ? this.passwordEntryTemplate()
             : null}
         </fieldset>
+
+        ${this.backupServiceState?.selectableProfilesAllowed
+          ? html` <moz-radio-group
+              name="restore-from-backup-type"
+              id="restore-from-backup-type-group"
+              data-l10n-id="restore-from-backup-type-group-label"
+              heading-level="3"
+              @change=${this.handleRestoreTypeChange}
+            >
+              <moz-radio
+                data-l10n-id="restore-from-backup-type-add"
+                value="add"
+                checked
+              ></moz-radio>
+              <moz-radio
+                data-l10n-id="restore-from-backup-type-replace"
+                value="replace"
+              ></moz-radio>
+            </moz-radio-group>`
+          : html` <moz-message-bar type="info">
+              <span
+                slot="message"
+                data-l10n-id="restore-from-backup-profiles-disabled-message"
+              >
+              </span>
+            </moz-message-bar>`}
       </fieldset>
     `;
   }
@@ -501,10 +538,6 @@ export default class RestoreFromBackup extends MozLitElement {
           this.backupServiceState?.recoveryErrorCode
             ? this.errorTemplate()
             : null}
-          ${!this.aboutWelcomeEmbedded &&
-          this.backupServiceState?.backupFileInfo
-            ? this.descriptionTemplate()
-            : null}
           ${this.controlsTemplate()}
         </main>
 
@@ -516,7 +549,9 @@ export default class RestoreFromBackup extends MozLitElement {
             type="primary"
             data-l10n-id=${buttonL10nId}
             ?disabled=${!this.backupServiceState?.backupFileToRestore ||
-            this.backupServiceState?.recoveryInProgress}
+            this.backupServiceState?.recoveryInProgress ||
+            (this.backupServiceState?.selectableProfilesAllowed &&
+              !this._restoreType)}
           ></moz-button>
         </moz-button-group>
       </div>
@@ -527,7 +562,7 @@ export default class RestoreFromBackup extends MozLitElement {
     return html`
       <h1
         id="restore-from-backup-header"
-        class="heading-medium"
+        class="heading-large"
         data-l10n-id="restore-from-backup-header"
       ></h1>
     `;
@@ -540,29 +575,6 @@ export default class RestoreFromBackup extends MozLitElement {
         @click=${this.handleCancel}
         data-l10n-id="restore-from-backup-cancel-button"
       ></moz-button>
-    `;
-  }
-
-  descriptionTemplate() {
-    let { date } = this.backupServiceState?.backupFileInfo || {};
-    let dateTime = date && new Date(date).getTime();
-    return html`
-      <moz-message-bar
-        id="restore-from-backup-description"
-        type="info"
-        data-l10n-id="restore-from-backup-description-with-metadata"
-        data-l10n-args=${JSON.stringify({
-          date: dateTime,
-        })}
-      >
-        <a
-          id="restore-from-backup-learn-more-link"
-          slot="support-link"
-          is="moz-support-link"
-          support-page="firefox-backup"
-          data-l10n-id="restore-from-backup-support-link"
-        ></a>
-      </moz-message-bar>
     `;
   }
 

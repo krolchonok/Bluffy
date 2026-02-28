@@ -50,6 +50,7 @@ skip-if = [
 ["browser_caching_position.js"]
 
 ["browser_caching_states.js"]
+skip-if = ["true"] # Bug 2020094
 
 ["browser_caching_table.js"]
 
@@ -92,6 +93,7 @@ skip-if = [
 ["browser_treeupdate_cssoverflow.js"]
 
 ["browser_treeupdate_doc.js"]
+skip-if = ["true"] # Bug 2020094
 
 ["browser_treeupdate_gencontent.js"]
 

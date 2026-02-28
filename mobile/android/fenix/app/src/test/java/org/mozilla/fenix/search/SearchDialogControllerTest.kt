@@ -284,6 +284,7 @@ class SearchDialogControllerTest {
         ).handleUrlCommitted(searchTerm)
 
         verify(exactly = 0) {
+            @Suppress("DEPRECATION")
             activity.openToBrowserAndLoad(
                 searchTermOrURL = any(),
                 newTab = any(),

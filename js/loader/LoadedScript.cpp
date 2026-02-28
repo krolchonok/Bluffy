@@ -9,7 +9,9 @@
 #include "mozilla/AlreadyAddRefed.h"  // already_AddRefed
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/RefPtr.h"     // RefPtr, mozilla::MakeRefPtr
+#include "mozilla/Sprintf.h"    // SprintfLiteral
 #include "mozilla/UniquePtr.h"  // mozilla::UniquePtr, mozilla::MakeUnique
+#include "nsIURI.h"             // nsIURI::GetSpecOrDefault
 
 #include "mozilla/dom/ScriptLoadContext.h"  // ScriptLoadContext
 #include "jsfriendapi.h"
@@ -47,7 +49,21 @@ NS_INTERFACE_MAP_END
 // Currently there's no field that can form a cycle at this point.
 // If you're adding any field here, please make sure the field is not modified
 // by other threads.
-NS_IMPL_CYCLE_COLLECTION(LoadedScript)
+NS_IMPL_CYCLE_COLLECTION_CLASS(LoadedScript)
+NS_IMPL_CYCLE_COLLECTION_UNLINK_0(LoadedScript)
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(LoadedScript)
+  if (MOZ_UNLIKELY(cb.WantDebugInfo())) {
+    char name[512];
+    nsAutoCString spec;
+    if (tmp->mURI) {
+      spec = tmp->mURI->GetSpecOrDefault();
+    }
+    SprintfLiteral(name, "LoadedScript %s", spec.get());
+    cb.DescribeRefCountedNode(tmp->mRefCnt.get(), name);
+  } else {
+    NS_IMPL_CYCLE_COLLECTION_DESCRIBE(LoadedScript, tmp->mRefCnt.get())
+  }
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(LoadedScript)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(LoadedScript)

@@ -5673,6 +5673,17 @@ void EventStateManager::UpdateLastRefPointOfMouseEvent(
   } else {
     aMouseEvent->mLastRefPoint = lastRefPoint;
   }
+
+  if (auto coalescedEvents = aMouseEvent->mCoalescedWidgetEvents) {
+    // Fix up mLastRefPoints of coalesced events, so that each one's
+    // movementX/Y is relative to the last.
+    WidgetPointerEvent* prev = nullptr;
+    for (WidgetPointerEvent& coalesced : coalescedEvents->mEvents) {
+      coalesced.mLastRefPoint =
+          prev ? prev->mRefPoint : aMouseEvent->mLastRefPoint;
+      prev = &coalesced;
+    }
+  }
 }
 
 /* static */
