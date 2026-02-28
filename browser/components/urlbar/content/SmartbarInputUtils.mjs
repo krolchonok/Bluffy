@@ -224,7 +224,7 @@ function setupMentionsPlugin(editorElement, panelList) {
   });
 
   const handleItemSelected = e => {
-    const { id, label } = e.detail;
+    const { id, label, icon } = e.detail;
 
     const isContextButtonTrigger =
       panelList.getAttribute("data-triggered-by") === "context-mention";
@@ -237,6 +237,7 @@ function setupMentionsPlugin(editorElement, panelList) {
         type: "tab",
         url: id,
         label,
+        iconSrc: icon,
       });
     } else {
       // Add inline mention when triggered by typing “@”

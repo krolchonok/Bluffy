@@ -730,6 +730,11 @@ void BrowsingContext::CleanUpDanglingRemoteOuterWindowProxies(
 bool BrowsingContext::IsActive() const {
   const BrowsingContext* current = this;
   do {
+    if (current->GetControlsDocumentPiP()) {
+      // XXX Make Media PiP use a similar mechanism too (bug 2016174).
+      MOZ_ASSERT(current->IsTop(), "Only top can open document PiP windows");
+      return true;
+    }
     auto explicit_ = current->GetExplicitActive();
     if (explicit_ != ExplicitActiveStatus::None) {
       return explicit_ == ExplicitActiveStatus::Active;
@@ -854,6 +859,24 @@ void BrowsingContext::Embed() {
   if (auto* frame = HTMLIFrameElement::FromNode(mEmbedderElement)) {
     frame->BindToBrowsingContext(this);
   }
+}
+
+nsGlobalWindowInner* BrowsingContext::GetOpenedDocumentPiPWindow() const {
+  nsPIDOMWindowOuter* outer = GetDOMWindow();
+  if (!outer) {
+    return nullptr;
+  }
+
+  nsPIDOMWindowInner* inner = outer->GetCurrentInnerWindow();
+  if (!inner) {
+    return nullptr;
+  }
+
+  DocumentPictureInPicture* dpip = inner->GetExtantDocumentPictureInPicture();
+  if (!dpip) {
+    return nullptr;
+  }
+  return dpip->GetWindow();
 }
 
 const char* BrowsingContext::BrowsingContextCoherencyChecks(
@@ -2697,28 +2720,6 @@ void BrowsingContext::IncrementHistoryEntryCountForBrowsingContext() {
   (void)SetHistoryEntryCount(GetHistoryEntryCount() + 1);
 }
 
-// https://wicg.github.io/document-picture-in-picture/#focusing-the-opener-window
-static bool ConsumePiPWindowTransientActivation(nsPIDOMWindowOuter* outer) {
-  NS_ENSURE_TRUE(outer, false);
-
-  nsPIDOMWindowInner* inner = outer->GetCurrentInnerWindow();
-  NS_ENSURE_TRUE(inner, false);
-
-  DocumentPictureInPicture* dpip = inner->GetExtantDocumentPictureInPicture();
-  if (!dpip) {
-    return false;
-  }
-  nsGlobalWindowInner* pipWindow = dpip->GetWindow();
-  if (!pipWindow) {
-    return false;
-  }
-
-  WindowContext* wc = pipWindow->GetWindowContext();
-  NS_ENSURE_TRUE(wc, false);
-
-  return wc->ConsumeTransientUserGestureActivation();
-}
-
 std::tuple<bool, bool> BrowsingContext::CanFocusCheck(CallerType aCallerType) {
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
   if (!fm) {
@@ -2742,11 +2743,17 @@ std::tuple<bool, bool> BrowsingContext::CanFocusCheck(CallerType aCallerType) {
         PopupBlocker::openBlocked;
   }
 
+  // https://wicg.github.io/document-picture-in-picture/#focusing-the-opener-window
   // Allow the opener to get system focus if the PIP window has transient
   // activation
-  if (!canFocus && IsTopContent() &&
-      ConsumePiPWindowTransientActivation(GetDOMWindow())) {
-    canFocus = true;
+  if (!canFocus && IsTopContent()) {
+    if (nsGlobalWindowInner* pipWindow = GetOpenedDocumentPiPWindow()) {
+      if (WindowContext* wc = pipWindow->GetWindowContext()) {
+        if (wc->ConsumeTransientUserGestureActivation()) {
+          canFocus = true;
+        }
+      }
+    }
   }
 
   bool isActive = false;
@@ -3031,6 +3038,72 @@ void BrowsingContext::PresContextAffectingFieldChanged() {
   });
 }
 
+void BrowsingContext::ActivenessChanged(bool aIsActive) {
+  // This method should not be called if the activeness changed due to an
+  // ancestor BC. Rather, it's to update dependents about ExplicitActive or
+  // Document PiP.
+  MOZ_ASSERT(IsTop(),
+             "Currently, only top level activeness can change explicitly");
+  MOZ_ASSERT(IsActive() == aIsActive, "Activeness should have already changed");
+
+  Group()->UpdateToplevelsSuspendedIfNeeded();
+  if (XRE_IsParentProcess()) {
+    if (BrowserParent* bp = Canonical()->GetBrowserParent()) {
+      bp->RecomputeProcessPriority();
+#if defined(XP_WIN) && defined(ACCESSIBILITY)
+      if (a11y::Compatibility::IsDolphin()) {
+        // update active accessible documents on windows
+        if (a11y::DocAccessibleParent* tabDoc =
+                bp->GetTopLevelDocAccessible()) {
+          HWND window = tabDoc->GetEmulatedWindowHandle();
+          MOZ_ASSERT(window);
+          if (window) {
+            if (aIsActive) {
+              a11y::nsWinUtils::ShowNativeWindow(window);
+            } else {
+              a11y::nsWinUtils::HideNativeWindow(window);
+            }
+          }
+        }
+      }
+#endif
+    }
+
+    // NOTE(emilio): Ideally we'd want to reuse the ExplicitActiveStatus::None
+    // set-up, but that's non-trivial to do because in content processes we
+    // can't access the top-cross-chrome-boundary bc.
+    auto manageTopDescendant = [&](auto* aChild) {
+      if (!aChild->ManuallyManagesActiveness()) {
+        aChild->SetIsActiveInternal(aIsActive, IgnoreErrors());
+        if (BrowserParent* bp = aChild->GetBrowserParent()) {
+          bp->SetRenderLayers(aIsActive);
+        }
+      }
+      return CallState::Continue;
+    };
+    Canonical()->CallOnTopDescendants(
+        manageTopDescendant,
+        CanonicalBrowsingContext::TopDescendantKind::NonNested);
+  }
+
+  PreOrderWalk([&](BrowsingContext* aContext) {
+    if (nsCOMPtr<nsIDocShell> ds = aContext->GetDocShell()) {
+      if (auto* bc = BrowserChild::GetFrom(ds)) {
+        bc->UpdateVisibility();
+      }
+      nsDocShell::Cast(ds)->ActivenessMaybeChanged();
+    }
+  });
+
+  if (XRE_IsParentProcess()) {
+    if (nsCOMPtr<nsIObserverService> observerService =
+            mozilla::services::GetObserverService()) {
+      observerService->NotifyObservers(
+          ToSupports(this), "browsing-context-active-change", nullptr);
+    }
+  }
+}
+
 void BrowsingContext::DidSet(FieldIndex<IDX_SessionStoreEpoch>,
                              uint32_t aOldValue) {
   if (!mCurrentWindowContext) {
@@ -3057,6 +3130,57 @@ void BrowsingContext::DidSet(FieldIndex<IDX_GVInaudibleAutoplayRequestStatus>) {
              "browsing context");
 }
 
+bool BrowsingContext::CanSet(FieldIndex<IDX_ControlsDocumentPiP>, bool,
+                             ContentParent* aSource) {
+  const bool setByOwner =
+      aSource ? Canonical()->IsOwnedByProcess(aSource->ChildID())
+              : IsInProcess();
+  return IsTopContent() && setByOwner;
+}
+
+void BrowsingContext::DidSet(FieldIndex<IDX_ControlsDocumentPiP>,
+                             bool aOldValue) {
+  const bool controlsPiP = GetControlsDocumentPiP();
+  MOZ_ASSERT(IsTopContent());
+
+  if (controlsPiP == aOldValue) {
+    return;
+  }
+
+  if (XRE_IsParentProcess()) {
+    CanonicalBrowsingContext* chromeTopBC =
+        Canonical()->TopCrossChromeBoundary();
+
+    if (controlsPiP) {
+      chromeTopBC->IncrementDocumentPiPWindowCount();
+    } else {
+      chromeTopBC->DecrementDocumentPiPWindowCount();
+    }
+  } else {
+    // Document PiP keeps PresShell active
+    RefPtr<PresShell> presShell =
+        mDocShell ? mDocShell->GetPresShell() : nullptr;
+    if (presShell) {
+      presShell->ActivenessMaybeChanged();
+    }
+  }
+
+  const bool isActive = IsActive();
+  const bool wasActive = [&] {
+    if (aOldValue) {
+      return true;
+    }
+    if (GetExplicitActive() != ExplicitActiveStatus::None) {
+      return GetExplicitActive() == ExplicitActiveStatus::Active;
+    }
+    return GetParent() && GetParent()->IsActive();
+  }();
+
+  if (isActive != wasActive) {
+    ActivenessChanged(isActive);
+  }
+}
+
 bool BrowsingContext::CanSet(FieldIndex<IDX_ExplicitActive>,
                              const ExplicitActiveStatus&,
                              ContentParent* aSource) {
@@ -3069,6 +3193,9 @@ void BrowsingContext::DidSet(FieldIndex<IDX_ExplicitActive>,
 
   const bool isActive = IsActive();
   const bool wasActive = [&] {
+    if (GetControlsDocumentPiP()) {
+      return true;
+    }
     if (aOldValue != ExplicitActiveStatus::None) {
       return aOldValue == ExplicitActiveStatus::Active;
     }
@@ -3079,54 +3206,7 @@ void BrowsingContext::DidSet(FieldIndex<IDX_ExplicitActive>,
     return;
   }
 
-  Group()->UpdateToplevelsSuspendedIfNeeded();
-  if (XRE_IsParentProcess()) {
-    if (BrowserParent* bp = Canonical()->GetBrowserParent()) {
-      bp->RecomputeProcessPriority();
-#if defined(XP_WIN) && defined(ACCESSIBILITY)
-      if (a11y::Compatibility::IsDolphin()) {
-        // update active accessible documents on windows
-        if (a11y::DocAccessibleParent* tabDoc =
-                bp->GetTopLevelDocAccessible()) {
-          HWND window = tabDoc->GetEmulatedWindowHandle();
-          MOZ_ASSERT(window);
-          if (window) {
-            if (isActive) {
-              a11y::nsWinUtils::ShowNativeWindow(window);
-            } else {
-              a11y::nsWinUtils::HideNativeWindow(window);
-            }
-          }
-        }
-      }
-#endif
-    }
-
-    // NOTE(emilio): Ideally we'd want to reuse the ExplicitActiveStatus::None
-    // set-up, but that's non-trivial to do because in content processes we
-    // can't access the top-cross-chrome-boundary bc.
-    auto manageTopDescendant = [&](auto* aChild) {
-      if (!aChild->ManuallyManagesActiveness()) {
-        aChild->SetIsActiveInternal(isActive, IgnoreErrors());
-        if (BrowserParent* bp = aChild->GetBrowserParent()) {
-          bp->SetRenderLayers(isActive);
-        }
-      }
-      return CallState::Continue;
-    };
-    Canonical()->CallOnTopDescendants(
-        manageTopDescendant,
-        CanonicalBrowsingContext::TopDescendantKind::NonNested);
-  }
-
-  PreOrderWalk([&](BrowsingContext* aContext) {
-    if (nsCOMPtr<nsIDocShell> ds = aContext->GetDocShell()) {
-      if (auto* bc = BrowserChild::GetFrom(ds)) {
-        bc->UpdateVisibility();
-      }
-      nsDocShell::Cast(ds)->ActivenessMaybeChanged();
-    }
-  });
+  ActivenessChanged(isActive);
 }
 
 void BrowsingContext::DidSet(FieldIndex<IDX_InRDMPane>, bool aOldValue) {

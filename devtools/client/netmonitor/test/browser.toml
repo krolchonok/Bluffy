@@ -266,6 +266,7 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1479782
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1479782
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1479782
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1479782
 ]
 
 ["browser_net_header-docs.js"]
@@ -369,6 +370,7 @@ fail-if = [
 ["browser_net_persistent_logs.js"]
 skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 1661612
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 1661612
 ]
 
 ["browser_net_post-data-json-payloads.js"]
@@ -452,6 +454,7 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1667115
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1667115
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1667115
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1667115
 ]
 
 ["browser_net_simple-request-details.js"]

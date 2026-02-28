@@ -970,18 +970,6 @@ def target_tasks_nightly_win64_aarch64(full_task_graph, parameters, graph_config
     return [l for l, t in full_task_graph.tasks.items() if filter(t, parameters)]
 
 
-@register_target_task("nightly_asan")
-def target_tasks_nightly_asan(full_task_graph, parameters, graph_config):
-    """Select the set of tasks required for a nightly build of asan. The
-    nightly build process involves a pipeline of builds, signing,
-    and, eventually, uploading the tasks to balrog."""
-    filter = make_desktop_nightly_filter({
-        "linux64-asan-reporter-shippable",
-        "win64-asan-reporter-shippable",
-    })
-    return [l for l, t in full_task_graph.tasks.items() if filter(t, parameters)]
-
-
 @register_target_task("daily_releases")
 def target_tasks_daily_releases(full_task_graph, parameters, graph_config):
     """Select the set of tasks required to identify if we should release.
@@ -1028,7 +1016,6 @@ def target_tasks_nightly_desktop(full_task_graph, parameters, graph_config):
         )
         | set(target_tasks_nightly_macosx(full_task_graph, parameters, graph_config))
         | set(target_tasks_nightly_linux(full_task_graph, parameters, graph_config))
-        | set(target_tasks_nightly_asan(full_task_graph, parameters, graph_config))
         | set(release_tasks)
     )
 

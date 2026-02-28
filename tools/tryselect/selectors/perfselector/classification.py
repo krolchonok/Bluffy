@@ -493,6 +493,17 @@ class ClassificationProvider:
                 "description": "A group of Speedometer3 tests on various platforms and architectures, speedometer3 is "
                 "currently the best benchmark we have for a baseline on real-world web performance",
             },
+            "JetStream 3": {
+                "query": {
+                    Suites.RAPTOR.value: ["'browsertime 'jetstream3"],
+                },
+                "variant-restrictions": {Suites.RAPTOR.value: [Variants.FISSION.value]},
+                "suites": [Suites.RAPTOR.value],
+                "app-restrictions": {},
+                "tasks": [],
+                "description": "JetStream3 tests on various platforms and architectures, "
+                "JetStream3 is our best JavaScript and WebAssembly-focused benchmark",
+            },
             "Responsiveness": {
                 "query": {
                     Suites.RAPTOR.value: ["'browsertime 'responsive"],

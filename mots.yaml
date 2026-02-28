@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-02-25T16:05:39.702430+00:00'
+updated_at: '2026-02-27T10:35:59.553368+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -729,6 +729,10 @@ people:
     bmo_id: 240353
     name: Marco Bonardo
     nick: mak
+  - &manuel
+    bmo_id: 688976
+    name: Manuel Bucher
+    nick: manuel
   - &marco
     bmo_id: 420453
     name: Marco Castelluccio
@@ -1374,6 +1378,7 @@ modules:
       - *dimi
       - *emz
       - *tjr
+      - *manuel
     machine_name: core_antitracking
 
   - name: 'Core: APZ (Graphics submodule)'
@@ -4748,5 +4753,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 30ac5a5411089a98728d01851cc4fb4c719fc651
-  export: 32e804849bbadfa85170b4a192020f3ed67f5852
+  config: 03a255521a82a75b4c121a97131177254c1cb91f
+  export: d61834b341e554ce7160d6bcbf452b85817b6ada

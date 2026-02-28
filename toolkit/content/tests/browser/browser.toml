@@ -56,7 +56,9 @@ fail-if = [
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks && swgl", # Bug 1710788 # Bug 1869961
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && asan",
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && asan",
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug",
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug",
 ]
 
 ["browser_bug451286.js"]
@@ -156,7 +158,9 @@ tags = "audiochannel"
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug", # Bug 1995211
   "os == 'win' && os_version == '11.26100' && arch == 'x86' && debug", # Bug 1995211
+  "os == 'win' && os_version == '11.26200' && arch == 'x86' && debug", # Bug 1995211
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 1995211
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 1995211
 ]
 
 ["browser_findbar_hidden_reveal.js"]
@@ -212,6 +216,7 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && socketprocess_networking", # Bug 1775552
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && debug", # Bug 1775552
   "os == 'win' && os_version == '11.26100' && debug", # Bug 1775552
+  "os == 'win' && os_version == '11.26200' && debug", # Bug 1775552
 ]
 
 ["browser_richlistbox_keyboard.js"]

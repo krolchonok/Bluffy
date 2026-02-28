@@ -631,7 +631,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   void NotifyCloseWatcherRemoved();
 
   virtual mozilla::dom::DocumentPictureInPicture*
-  GetExtantDocumentPictureInPicture() = 0;
+  GetExtantDocumentPictureInPicture() const = 0;
 
  protected:
   void CreatePerformanceObjectIfNeeded();

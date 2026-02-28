@@ -11641,6 +11641,14 @@ bool PresShell::ComputeActiveness() const {
     return true;
   }
 
+  if (bc && bc->GetControlsDocumentPiP()) {
+    MOZ_ASSERT(inActiveTab,
+               "BrowsingContext should be active due to PiP window");
+    MOZ_LOG(gLog, LogLevel::Debug,
+            (" > BrowsingContext controls a PiP window"));
+    return true;
+  }
+
   Document* root = nsContentUtils::GetInProcessSubtreeRootDocument(doc);
   if (auto* browserChild = BrowserChild::GetFrom(root->GetDocShell())) {
     // We might want to activate a tab even though the browsing-context is not

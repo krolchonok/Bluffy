@@ -1751,7 +1751,7 @@ nsNSSComponent::Observe(nsISupports* aSubject, const char* aTopic,
       ClearSSLExternalAndInternalSessionCache();
     }
   } else if (!nsCRT::strcmp(aTopic, "last-pb-context-exited")) {
-    nsNSSComponent::DoClearSSLExternalAndInternalSessionCache();
+    return ClearSSLExternalAndInternalSessionCache();
   }
 
   return NS_OK;

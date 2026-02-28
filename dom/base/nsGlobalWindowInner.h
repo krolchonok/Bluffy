@@ -670,7 +670,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   already_AddRefed<mozilla::dom::CookieStore> CookieStore();
 
   mozilla::dom::DocumentPictureInPicture* GetExtantDocumentPictureInPicture()
-      override {
+      const override {
     return mDocumentPiP;
   }
 

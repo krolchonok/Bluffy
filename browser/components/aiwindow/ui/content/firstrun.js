@@ -205,7 +205,7 @@ function renderFirstRun() {
       data: {
         args: Services.prefs.getStringPref(
           EXPLAINER_PAGE_PREF,
-          "https://www.mozilla.org/"
+          "http://www.firefox.com/smart-window/?v=product"
         ),
         where: "tab",
       },

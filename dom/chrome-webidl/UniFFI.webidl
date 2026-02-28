@@ -137,4 +137,10 @@ namespace UniFFIScaffolding {
   // reference count.  If `0`, then the map entry for the JS object is removed.
   unsigned long callbackHandleRelease(unsigned long long handle);
 
+  // Free a callback interface handle
+  //
+  // This frees the underlying memory for the callback interface handle.  It should only be called
+  // when there's no chance of using the handle anymore.  In particular, only call it once the JS
+  // map entry is removed.
+  undefined callbackHandleFree(unsigned long long handle);
 };

@@ -391,16 +391,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   void SetIsActiveInternal(bool aIsActive, ErrorResult& aRv) {
     ExplicitActiveStatus newValue = aIsActive ? ExplicitActiveStatus::Active
                                               : ExplicitActiveStatus::Inactive;
-    bool changed = GetExplicitActive() != newValue;
     SetExplicitActive(newValue, aRv);
-    if (changed) {
-      nsCOMPtr<nsIObserverService> observerService =
-          mozilla::services::GetObserverService();
-      if (observerService) {
-        observerService->NotifyObservers(
-            ToSupports(this), "browsing-context-active-change", nullptr);
-      }
-    }
   }
 
   void SetTouchEventsOverride(dom::TouchEventsOverride, ErrorResult& aRv);
@@ -441,6 +432,9 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   bool ForceAppWindowActive() const { return mForceAppWindowActive; }
   void SetForceAppWindowActive(bool, ErrorResult&);
   void RecomputeAppWindowVisibility();
+
+  void IncrementDocumentPiPWindowCount();
+  void DecrementDocumentPiPWindowCount();
 
   already_AddRefed<nsISHEntry> GetMostRecentLoadingSessionHistoryEntry();
 
@@ -677,6 +671,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   // See CanonicalBrowsingContext.forceAppWindowActive.
   bool mForceAppWindowActive = false;
+
+  uint32_t mDocumentPiPWindowCount = 0;
 
   bool mIsReplaced = false;
 

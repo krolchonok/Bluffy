@@ -1756,6 +1756,33 @@ void CanonicalBrowsingContext::SetForceAppWindowActive(bool aForceActive,
   RecomputeAppWindowVisibility();
 }
 
+void CanonicalBrowsingContext::IncrementDocumentPiPWindowCount() {
+  MOZ_ASSERT(IsChrome());
+  MOZ_ASSERT(IsTop());
+
+  mDocumentPiPWindowCount++;
+
+  // An inactive window shouldn't be able to open PiP windows, but a race is
+  // possible. Either way, deal with the count consistently.
+  MOZ_ASSERT(IsActive(),
+             "App window should be active when content opens PiP windows");
+
+  if (mDocumentPiPWindowCount == 1) {
+    RecomputeAppWindowVisibility();
+  }
+}
+
+void CanonicalBrowsingContext::DecrementDocumentPiPWindowCount() {
+  MOZ_ASSERT(IsChrome() && IsTop());
+  MOZ_ASSERT(mDocumentPiPWindowCount > 0);
+
+  mDocumentPiPWindowCount--;
+
+  if (mDocumentPiPWindowCount == 0) {
+    RecomputeAppWindowVisibility();
+  }
+}
+
 void CanonicalBrowsingContext::RecomputeAppWindowVisibility() {
   MOZ_RELEASE_ASSERT(IsChrome());
   MOZ_RELEASE_ASSERT(IsTop());
@@ -1768,9 +1795,10 @@ void CanonicalBrowsingContext::RecomputeAppWindowVisibility() {
   }
 
   (void)NS_WARN_IF(!widget);
-  const bool isNowActive =
-      ForceAppWindowActive() || (widget && !widget->IsFullyOccluded() &&
-                                 widget->SizeMode() != nsSizeMode_Minimized);
+  const bool isNowActive = ForceAppWindowActive() ||
+                           mDocumentPiPWindowCount > 0 ||
+                           (widget && !widget->IsFullyOccluded() &&
+                            widget->SizeMode() != nsSizeMode_Minimized);
 
   if (isNowActive == wasAlreadyActive) {
     return;

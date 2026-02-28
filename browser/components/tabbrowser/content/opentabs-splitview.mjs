@@ -4,6 +4,7 @@
 
 import { html, when } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
+import { escapeHtmlEntities } from "chrome://browser/content/firefoxview/helpers.mjs";
 
 const lazy = {};
 const BROWSER_NEW_TAB_URL = "about:newtab";
@@ -180,7 +181,9 @@ class OpenTabsInSplitView extends MozLitElement {
         ? html`<moz-card
             data-l10n-id="opentabs-search-results-header"
             data-l10n-attrs="heading"
-            data-l10n-args=${JSON.stringify({ query: this.searchQuery })}
+            data-l10n-args=${JSON.stringify({
+              query: this.searchQuery,
+            })}
           >
             ${when(
               filteredTabs.length,
@@ -197,7 +200,7 @@ class OpenTabsInSplitView extends MozLitElement {
                   class="empty-search-message"
                   data-l10n-id="firefoxview-search-results-empty"
                   data-l10n-args=${JSON.stringify({
-                    query: this.searchQuery,
+                    query: escapeHtmlEntities(this.searchQuery),
                   })}
                 ></div>
               `

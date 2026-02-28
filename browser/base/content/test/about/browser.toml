@@ -47,6 +47,7 @@ support-files = [
 ["browser_aboutDialog_distribution.js"]
 skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && msix && verify-standalone",
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && msix && verify-standalone",
 ]
 
 ["browser_aboutNetError.js"]
@@ -89,6 +90,7 @@ support-files = [
 ["browser_aboutNetError_trr.js"]
 skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && asan", # Bug 1831977
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && asan", # Bug 1831977
   "socketprocess_networking",
 ]
 

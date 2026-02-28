@@ -4793,6 +4793,8 @@ dialog:dir(rtl)::after {
 .weather-forecast-widget {
   background: var(--newtab-background-card);
   transition: opacity 0.2s ease;
+  position: relative;
+  text-decoration: none;
   grid-column: span 1;
   width: var(--newtab-card-width-medium);
   border-radius: var(--border-radius-large);
@@ -4833,9 +4835,28 @@ dialog:dir(rtl)::after {
 .weather-forecast-widget .city-wrapper .location-input-wrapper input {
   width: 100%;
 }
+.weather-forecast-widget .forecast-anchor {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: var(--border-radius-large);
+  text-decoration: none;
+}
 .weather-forecast-widget .weather-forecast-context-menu-wrapper {
+  position: relative;
+  z-index: 1;
   opacity: 0;
   pointer-events: none;
+}
+.weather-forecast-widget:hover {
+  background: var(--newtab-background-card);
+}
+.weather-forecast-widget:hover .sponsored-text {
+  visibility: visible;
+}
+.weather-forecast-widget:hover .full-forecast {
+  text-decoration: underline;
+  color: var(--newtab-primary-action-background);
 }
 .weather-forecast-widget:hover .weather-forecast-context-menu-wrapper, .weather-forecast-widget:focus-within .weather-forecast-context-menu-wrapper {
   opacity: 1;
@@ -4863,6 +4884,20 @@ dialog:dir(rtl)::after {
 }
 .weather-forecast-widget .current-weather-wrapper:has(.iconId30), .weather-forecast-widget.small-widget .forecast-row-items > li:first-of-type:has(.iconId30) {
   background-color: var(--weather-hot-background-color);
+}
+.weather-forecast-widget.forecast-error-state .full-forecast {
+  display: none;
+}
+.weather-forecast-widget .forecast-error {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: space-evenly;
+  margin-block-start: auto;
+}
+.weather-forecast-widget .forecast-error p {
+  font-size: var(--font-size-small);
+  color: var(--text-color-deemphasized);
 }
 .weather-forecast-widget .weather-icon-column {
   display: flex;
@@ -5041,22 +5076,32 @@ hr {
   justify-content: space-between;
   margin-block-start: auto;
 }
-.forecast-footer a {
-  font-size: var(--font-size-small);
-}
 .forecast-footer span {
   font-size: var(--font-size-xsmall);
+}
+.forecast-footer .sponsored-text {
+  visibility: hidden;
 }
 
 .small-widget {
   height: 100%;
   padding: var(--space-small);
 }
+.small-widget .forecast-error {
+  flex-direction: row;
+  justify-content: flex-start;
+}
+.small-widget .forecast-error span {
+  margin-inline-end: var(--space-small);
+}
 .small-widget .forecast-row-items li {
   padding: var(--space-xsmall) var(--space-medium);
 }
 .small-widget .forecast-footer {
   margin-block-start: auto;
+}
+.small-widget .forecast-footer .full-forecast {
+  display: none;
 }
 .small-widget:has(.location-search) .forecast-row-items {
   display: none;

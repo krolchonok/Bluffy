@@ -97,7 +97,9 @@ skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1829935
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1829935
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'",
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt && verify-standalone", # Bug 1829935
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt && verify-standalone", # Bug 1829935
 ]
 
 ["browser_103_csp.js"]
@@ -271,4 +273,5 @@ support-files = [
 ["browser_test_offline_tab.js"]
 skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && verify-standalone",
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug && verify-standalone",
 ]

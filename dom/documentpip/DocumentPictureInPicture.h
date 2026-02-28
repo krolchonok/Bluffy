@@ -30,7 +30,7 @@ class DocumentPictureInPicture final : public DOMEventTargetHelper,
       const DocumentPictureInPictureOptions& aOptions, ErrorResult& aRv);
 
   // Get the current PiP window, exposed as webidl property
-  nsGlobalWindowInner* GetWindow();
+  nsGlobalWindowInner* GetWindow() const;
 
   IMPL_EVENT_HANDLER(enter);
 

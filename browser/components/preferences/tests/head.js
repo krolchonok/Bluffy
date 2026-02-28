@@ -943,8 +943,8 @@ let { Region } = ChromeUtils.importESModule(
   "resource://gre/modules/Region.sys.mjs"
 );
 
-const initialHomeRegion = Region._home;
-const initialCurrentRegion = Region._current;
+const initialHomeRegion = Region.home;
+const initialCurrentRegion = Region.current;
 
 function setupRegions(home, current) {
   Region._setHomeRegion(home || "");

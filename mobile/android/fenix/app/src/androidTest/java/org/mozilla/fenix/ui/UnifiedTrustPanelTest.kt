@@ -155,11 +155,13 @@ class UnifiedTrustPanelTest : TestSetup() {
         // browsing a generic page to allow GV to load on a fresh run
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericPage.url) {
+            verifyPageContent(genericPage.content)
         }
 
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(trackingProtectionPage.toUri()) {
             verifyPageContent("Tracker Blocking")
+            verifyPageContent("BLOCKED")
         }
         navigationToolbar(composeTestRule) {
         }.openUnifiedTrustPanel {

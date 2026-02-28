@@ -86,7 +86,9 @@ run-if = [
 ["browser_test_moving_tab_to_new_window.js"]
 skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && ccov", # Bug 1894797
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && ccov", # Bug 1894797
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 1894797
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 1894797
 ]
 
 ["browser_test_prevent_events.js"]

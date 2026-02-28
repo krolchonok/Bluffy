@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.5.156
- * pdfjsBuild = 2bab2a87a
+ * pdfjsVersion = 5.5.168
+ * pdfjsBuild = e5656e430
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -8499,7 +8499,6 @@ class PDFThumbnailView extends RenderableView {
     const thumbnailContainer = this.div = document.createElement("div");
     thumbnailContainer.className = "thumbnail";
     thumbnailContainer.setAttribute("page-number", id);
-    thumbnailContainer.setAttribute("page-id", id);
     const imageContainer = this.imageContainer = document.createElement("div");
     thumbnailContainer.append(imageContainer);
     imageContainer.classList.add("thumbnailImageContainer", "missingThumbnailImage");
@@ -12408,7 +12407,7 @@ class PDFViewer {
   #viewerAlert = null;
   #copiedPageViews = null;
   constructor(options) {
-    const viewerVersion = "5.5.156";
+    const viewerVersion = "5.5.168";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -15613,6 +15612,7 @@ const SIDEBAR_RESIZING_CLASS = "viewsManagerResizing";
 const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
 class ViewsManager extends Sidebar {
   static #l10nDescription = null;
+  #hasAnimations = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   constructor({
     elements: {
       outerContainer,
@@ -15766,9 +15766,16 @@ class ViewsManager extends Sidebar {
     this._sidebar.hidden = false;
     toggleExpandedBtn(this.toggleButton, true);
     this.switchView(this.active);
-    queueMicrotask(() => {
-      this.outerContainer.classList.add("viewsManagerMoving", "viewsManagerOpen");
-    });
+    if (this.#hasAnimations) {
+      queueMicrotask(() => {
+        this.outerContainer.classList.add("viewsManagerMoving", "viewsManagerOpen");
+      });
+    } else {
+      this.outerContainer.classList.add("viewsManagerOpen");
+      this.eventBus.dispatch("resize", {
+        source: this
+      });
+    }
     if (this.active === SidebarView.THUMBS) {
       this.onUpdateThumbnails();
     }
@@ -15827,14 +15834,16 @@ class ViewsManager extends Sidebar {
       eventBus,
       outerContainer
     } = this;
-    this.sidebarContainer.addEventListener("transitionend", evt => {
-      if (evt.target === this.sidebarContainer) {
-        outerContainer.classList.remove("viewsManagerMoving");
-        eventBus.dispatch("resize", {
-          source: this
-        });
-      }
-    });
+    if (this.#hasAnimations) {
+      this.sidebarContainer.addEventListener("transitionend", evt => {
+        if (evt.target === this.sidebarContainer) {
+          outerContainer.classList.remove("viewsManagerMoving");
+          eventBus.dispatch("resize", {
+            source: this
+          });
+        }
+      });
+    }
     this.thumbnailButton.addEventListener("click", () => {
       this.switchView(SidebarView.THUMBS);
     });

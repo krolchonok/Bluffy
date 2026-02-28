@@ -132,7 +132,9 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1969933
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1969933
   "os == 'win' && os_version == '11.26100' && arch == 'x86'", # Bug 1969933
+  "os == 'win' && os_version == '11.26200' && arch == 'x86'", # Bug 1969933
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1969933
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1969933
 ]
 
 ["browser_experimental_features_hidden_when_not_public.js"]
@@ -283,6 +285,7 @@ skip-if = [
 ["browser_privacy_dnsoverhttps.js"]
 skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 2009120
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 2009120
 ]
 
 ["browser_privacy_gpc.js"]

@@ -14,7 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -26,6 +29,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.rememberNestedScrollInteropConnection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -82,9 +87,12 @@ private fun SummarizationScreen(
             .thenConditional(Modifier.summaryLoadingGradient()) {
                 state is SummarizationState.Summarizing
             }
-            .thenConditional(Modifier.background(MaterialTheme.colorScheme.surface)) {
-                state !is SummarizationState.Summarizing
-            },
+            .nestedScroll(rememberNestedScrollInteropConnection()),
+        color = if (state is SummarizationState.Summarizing) {
+            Color.Transparent
+        } else {
+            MaterialTheme.colorScheme.surface
+        },
     ) {
         when (val state = state) {
             is SummarizationState.Inert -> Unit
@@ -104,7 +112,11 @@ private fun SummarizationScreen(
                 )
             }
             is SummarizationState.Summarizing -> SummarizingContent()
-            is SummarizationState.Summarized -> RichText(state.text)
+            is SummarizationState.Summarized -> SummarizedContent(
+                text = state.text,
+                modifier = Modifier.verticalScroll(rememberScrollState())
+                    .padding(bottom = 16.dp),
+            )
             is SummarizationState.Error -> {
                 if (state.error is SummarizationError.DownloadFailed) {
                     DownloadError()
@@ -119,13 +131,21 @@ private fun SummarizationScreen(
 }
 
 @Composable
+private fun SummarizedContent(text: String, modifier: Modifier = Modifier) {
+    SelectionContainer(modifier = modifier) {
+        RichText(text = text)
+    }
+}
+
+@Composable
 private fun SummarizationScreenScaffold(
     modifier: Modifier,
+    color: Color = Color.Transparent,
     content: @Composable (() -> Unit),
 ) {
     Surface(
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        color = Color.Transparent,
+        color = color,
         modifier = Modifier
             .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
             .then(modifier)

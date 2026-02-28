@@ -50,6 +50,7 @@ extensions = [
     "sphinx_markdown_tables",
     "sphinx_design",
     "bzlink",
+    "etp_matrix",
 ]
 
 myst_enable_extensions = [

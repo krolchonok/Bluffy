@@ -70,7 +70,7 @@ async function runAutocompletionTest(toolbox, inspector, view) {
   await selectNode("h1", inspector);
 
   info("Focusing a new css property editable property");
-  const ruleEditor = getRuleViewRuleEditor(view, 1);
+  const ruleEditor = getRuleViewRuleEditorAt(view, 1);
   let editor = await focusNewRuleViewProperty(ruleEditor);
 
   info("Starting to test for css property completion");

@@ -223,6 +223,7 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1932516
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1932516
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1932516
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 1932516
 ]
 
 
@@ -512,6 +513,7 @@ support-files = ["dummy_page.html"]
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1938142
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1938142
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 1938142
 ]
 
 ["browser_searchMode_heuristic.js"]
@@ -568,6 +570,7 @@ support-files = [
 https_first_disabled = true
 skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1929645
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 1929645
 ]
 
 ["browser_searchSuggestions.js"]
@@ -588,6 +591,7 @@ support-files = [
 support-files = ["../../../search/test/browser/trendingSuggestionEngine.sjs"]
 skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1883249
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 1883249
 ]
 
 ["browser_search_history_from_history_panel.js"]

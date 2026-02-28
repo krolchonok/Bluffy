@@ -2769,6 +2769,7 @@
   padding-bottom:16px;
   flex-direction:column;
   align-items:flex-start;
+  overflow-y:visible;
 
   #editorCommentsSidebarHeader{
     width:100%;
@@ -4845,7 +4846,7 @@ button.hasPopupMenu{
   &.viewsManagerOpen{
     #viewsManager{
       visibility:visible;
-      inset-inline-start:1px;
+      inset-inline-start:8px;
     }
 
     #viewerContainer:not(.pdfPresentationMode){
@@ -4874,7 +4875,7 @@ button.hasPopupMenu{
   --pages-selected-icon:url(images/pages_selected.svg);
   --spinner-icon:url(images/altText_spinner.svg);
 
-  --sidebar-bg-color:light-dark(rgb(255 255 255 / 0.92), rgb(35 34 43 / 0.92));
+  --sidebar-bg-color:light-dark(rgb(255 255 255 / 0.92), rgb(66 65 77 / 0.92));
   --sidebar-backdrop-filter:blur(7px);
   --sidebar-width:230px;
   --sidebar-min-width:min-content;
@@ -4905,13 +4906,14 @@ button.hasPopupMenu{
   --status-warning-bg:light-dark(#ffe8ea, #6e001f);
   --indicator-warning-color:light-dark(#b20037, #ffa0aa);
   --header-shadow:0 0.25px 0.75px -0.75px light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)), 0 2px 6px -6px light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
+  --header-bg:light-dark(rgb(255 255 255 / 0.92), #42414e);
   --image-outline:none;
   --image-border-width:6px;
   --image-border-color:light-dark(#cfcfd8, #3a3944);
   --image-hover-border-color:#bfbfc9;
   --image-current-border-color:var(--button-focus-outline-color);
   --image-current-focused-outline-color:var(--image-hover-border-color);
-  --image-page-number-bg:light-dark(#f0f0f4, #23222b);
+  --image-page-number-bg:light-dark(#f0f0f4, #42414d);
   --image-page-number-fg:var(--text-color);
   --image-page-number-border-color:transparent;
   --image-hover-page-number-bg:var(--image-page-number-bg);
@@ -4992,7 +4994,7 @@ button.hasPopupMenu{
   transition-timing-function:var(--sidebar-transition-timing-function);
 
   .sidebarResizer{
-    inset-inline-start:100%;
+    inset-inline-start:calc(100% + 4px);
   }
 
   .viewsManagerButton{
@@ -5046,6 +5048,7 @@ button.hasPopupMenu{
     width:100%;
     box-shadow:var(--header-shadow);
     flex:0 0 auto;
+    background-color:var(--header-bg);
 
     .viewsManagerLabel{
       flex:1 0 0;
@@ -5677,6 +5680,7 @@ button.hasPopupMenu{
   --sidebar-max-width:632px;
   --sidebar-width:239px;
   --resizer-width:4px;
+  --resizer-shift:calc(0px - var(--resizer-width) - 2px);
   --resizer-hover-bg-color:light-dark(#0062fa, #00cadb);
 
   @media screen and (forced-colors: active){
@@ -5697,6 +5701,7 @@ button.hasPopupMenu{
   max-width:var(--sidebar-max-width);
   backdrop-filter:var(--sidebar-backdrop-filter);
   box-sizing:border-box;
+  position:relative;
 
   .sidebarResizer{
     width:var(--resizer-width);
@@ -5704,9 +5709,9 @@ button.hasPopupMenu{
     forced-color-adjust:none;
     cursor:ew-resize;
     position:absolute;
-    inset-block:calc(var(--sidebar-padding) + var(--sidebar-border-radius));
-    inset-inline-start:calc(0px - var(--resizer-width) / 2);
-    transition:background-color 0.5s ease-in-out;
+    inset-block:0;
+    inset-inline-start:var(--resizer-shift);
+    transition:background-color 0.5s ease-in-out, border-color 0.5s ease-in-out;
     box-sizing:border-box;
     border:1px solid transparent;
     border-block-width:0;
@@ -5714,6 +5719,7 @@ button.hasPopupMenu{
 
     &:hover{
       background-color:var(--resizer-hover-bg-color);
+      border-color:white;
     }
     &:focus-visible{
       background-color:var(--resizer-hover-bg-color);
@@ -7214,9 +7220,13 @@ dialog :link{
       height:1px;
     }
 
-    #toolbarViewerLeft #numPages.toolbarLabel{
-      padding-inline-start:3px;
-      flex:none;
+    #toolbarViewerLeft{
+      margin-inline-start:8px;
+
+      #numPages.toolbarLabel{
+        padding-inline-start:3px;
+        flex:none;
+      }
     }
   }
 

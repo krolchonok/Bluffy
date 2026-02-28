@@ -1316,6 +1316,24 @@ nsresult nsFrameLoader::SwapWithOtherRemoteLoader(
     evict(aOther);
   }
 
+  // Update Document PiP flags/counts for swapped BCs
+  const bool ourControlsPiP = ourBc->GetControlsDocumentPiP();
+  const bool otherControlsPiP = otherBc->GetControlsDocumentPiP();
+  if (ourControlsPiP != otherControlsPiP) {
+    CanonicalBrowsingContext* ourChromeBc =
+        ourBc->Canonical()->TopCrossChromeBoundary();
+    CanonicalBrowsingContext* otherChromeBc =
+        otherBc->Canonical()->TopCrossChromeBoundary();
+
+    if (ourControlsPiP) {
+      otherChromeBc->IncrementDocumentPiPWindowCount();
+      ourChromeBc->DecrementDocumentPiPWindowCount();
+    } else {
+      ourChromeBc->IncrementDocumentPiPWindowCount();
+      otherChromeBc->DecrementDocumentPiPWindowCount();
+    }
+  }
+
   SetOwnerContent(otherContent);
   aOther->SetOwnerContent(ourContent);
 

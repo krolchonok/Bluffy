@@ -298,7 +298,10 @@ struct EmbedderColorSchemes {
   FIELD(ParentalControlsEnabled, bool)                                        \
   /* If true, this traversable is a Document Picture-in-Picture and           \
      is subject to certain restrictions */                                    \
-  FIELD(IsDocumentPiP, bool)
+  FIELD(IsDocumentPiP, bool)                                                  \
+  /* True if this is a content browsing context whose page has an open        \
+     Document Picture-in-Picture window */                                    \
+  FIELD(ControlsDocumentPiP, bool)
 
 // BrowsingContext, in this context, is the cross process replicated
 // environment in which information about documents is stored. In
@@ -454,6 +457,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   nsPIDOMWindowOuter* GetDOMWindow() const {
     return mDocShell ? mDocShell->GetWindow() : nullptr;
   }
+
+  // Returns the current Document PiP window opened from this BrowsingContext,
+  // if there is one. Only works in the content process that opened it.
+  nsGlobalWindowInner* GetOpenedDocumentPiPWindow() const;
 
   uint64_t GetRequestContextId() const { return mRequestContextId; }
 
@@ -1240,6 +1247,9 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void SendCommitTransaction(ContentChild* aChild, const BaseTransaction& aTxn,
                              uint64_t aEpoch);
 
+  // Update dependents if the activeness of this BC was explicitly changed.
+  void ActivenessChanged(bool aIsActive);
+
   bool CanSet(FieldIndex<IDX_SessionStoreEpoch>, uint32_t aEpoch,
               ContentParent* aSource) {
     return IsTop() && !aSource;
@@ -1348,6 +1358,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   bool CanSet(FieldIndex<IDX_ExplicitActive>, const ExplicitActiveStatus&,
               ContentParent* aSource);
   void DidSet(FieldIndex<IDX_ExplicitActive>, ExplicitActiveStatus aOldValue);
+
+  bool CanSet(FieldIndex<IDX_ControlsDocumentPiP>, bool,
+              ContentParent* aSource);
+  void DidSet(FieldIndex<IDX_ControlsDocumentPiP>, bool aOldValue);
 
   bool CanSet(FieldIndex<IDX_IsActiveBrowserWindowInternal>, const bool& aValue,
               ContentParent* aSource);

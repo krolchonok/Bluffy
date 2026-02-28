@@ -89,6 +89,7 @@ const lazy = XPCOMUtils.declareLazy({
 });
 
 const UNLIMITED_MAX_RESULTS = 99;
+const MAX_INPUT_LENGTH = 32000;
 
 let getBoundsWithoutFlushing = element =>
   element.ownerGlobal.windowUtils.getBoundsWithoutFlushing(element);
@@ -667,6 +668,7 @@ export class SmartbarInput extends HTMLElement {
 
   #initSmartbarEditor() {
     const adapter = createEditor(this.inputField);
+    adapter.input.maxLength = MAX_INPUT_LENGTH;
     this.#smartbarInputController = new lazy.SmartbarInputController(adapter);
     this.inputField = adapter.input;
     this.#smartbarEditor = adapter.editor;

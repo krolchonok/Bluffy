@@ -266,6 +266,8 @@ def rust_analyzer_config(command_context):
         str(cpu_count() // 2),
         "--all-crates",
         "--message-format-json",
+        "--workspace",
+        "--keep-going",
     ]
 
     config = {

@@ -6861,14 +6861,14 @@ void nsTextFrame::PaintOneShadow(const PaintShadowParams& aParams,
 
 /* static */
 SelectionTypeMask nsTextFrame::CreateSelectionRangeList(
-    const SelectionDetails* aDetails, SelectionType aSelectionType,
+    const SelectionDetails& aDetails, SelectionType aSelectionType,
     const PaintTextSelectionParams& aParams,
     nsTArray<SelectionRange>& aSelectionRanges, bool* aAnyBackgrounds) {
   SelectionTypeMask allTypes = 0;
   bool anyBackgrounds = false;
 
   uint32_t priorityOfInsertionOrder = 0;
-  for (const SelectionDetails* sd = aDetails; sd; sd = sd->mNext.get()) {
+  for (const SelectionDetails* sd = &aDetails; sd; sd = sd->mNext.get()) {
     MOZ_ASSERT(sd->mStart >= 0 && sd->mEnd >= 0);  // XXX make unsigned?
     uint32_t start = std::max(aParams.contentRange.start, uint32_t(sd->mStart));
     uint32_t end = std::min(aParams.contentRange.end, uint32_t(sd->mEnd));
@@ -7037,7 +7037,7 @@ void nsTextFrame::CombineSelectionRanges(
 }
 
 SelectionTypeMask nsTextFrame::ResolveSelections(
-    const PaintTextSelectionParams& aParams, const SelectionDetails* aDetails,
+    const PaintTextSelectionParams& aParams, const SelectionDetails& aDetails,
     nsTArray<PriorityOrderedSelectionsForRange>& aResult,
     SelectionType aSelectionType, bool* aAnyBackgrounds) const {
   AutoTArray<SelectionRange, 4> selectionRanges;
@@ -7068,14 +7068,13 @@ SelectionTypeMask nsTextFrame::ResolveSelections(
 // aAllSelectionTypeMask, the union of all selection types that are applying to
 // this text.
 bool nsTextFrame::PaintTextWithSelectionColors(
-    const PaintTextSelectionParams& aParams,
-    const UniquePtr<SelectionDetails>& aDetails,
+    const PaintTextSelectionParams& aParams, const SelectionDetails& aDetails,
     SelectionTypeMask* aAllSelectionTypeMask, const ClipEdges& aClipEdges) {
   bool anyBackgrounds = false;
   AutoTArray<PriorityOrderedSelectionsForRange, 8> selectionRanges;
 
   *aAllSelectionTypeMask =
-      ResolveSelections(aParams, aDetails.get(), selectionRanges,
+      ResolveSelections(aParams, aDetails, selectionRanges,
                         SelectionType::eNone, &anyBackgrounds);
   bool vertical = mTextRun->IsVertical();
   const gfxFloat startIOffset =
@@ -7261,15 +7260,15 @@ bool nsTextFrame::PaintTextWithSelectionColors(
 }
 
 void nsTextFrame::PaintTextSelectionDecorations(
-    const PaintTextSelectionParams& aParams,
-    const UniquePtr<SelectionDetails>& aDetails, SelectionType aSelectionType) {
+    const PaintTextSelectionParams& aParams, const SelectionDetails& aDetails,
+    SelectionType aSelectionType) {
   // Hide text decorations if we're currently hiding @font-face fallback text
   if (aParams.provider->GetFontGroup()->ShouldSkipDrawing()) {
     return;
   }
 
   AutoTArray<PriorityOrderedSelectionsForRange, 8> selectionRanges;
-  ResolveSelections(aParams, aDetails.get(), selectionRanges, aSelectionType);
+  ResolveSelections(aParams, aDetails, selectionRanges, aSelectionType);
 
   RefPtr<gfxFont> firstFont =
       aParams.provider->GetFontGroup()->GetFirstValidFont();
@@ -7346,16 +7345,12 @@ void nsTextFrame::PaintTextSelectionDecorations(
 }
 
 bool nsTextFrame::PaintTextWithSelection(
-    const PaintTextSelectionParams& aParams, const ClipEdges& aClipEdges) {
+    const PaintTextSelectionParams& aParams, const ClipEdges& aClipEdges,
+    const SelectionDetails& aDetails) {
   NS_ASSERTION(GetContent()->IsMaybeSelected(), "wrong paint path");
 
-  UniquePtr<SelectionDetails> details = GetSelectionDetails();
-  if (!details) {
-    return false;
-  }
-
   SelectionTypeMask allSelectionTypeMask;
-  if (!PaintTextWithSelectionColors(aParams, details, &allSelectionTypeMask,
+  if (!PaintTextWithSelectionColors(aParams, aDetails, &allSelectionTypeMask,
                                     aClipEdges)) {
     return false;
   }
@@ -7374,7 +7369,7 @@ bool nsTextFrame::PaintTextWithSelection(
       // There is some selection of this selectionType. Try to paint its
       // decorations (there might not be any for this type but that's OK,
       // PaintTextSelectionDecorations will exit early).
-      PaintTextSelectionDecorations(aParams, details, selectionType);
+      PaintTextSelectionDecorations(aParams, aDetails, selectionType);
     }
   }
 
@@ -7669,9 +7664,21 @@ void nsTextFrame::PaintText(const PaintTextParams& aParams,
 
   PropertyProvider provider(this, iter, nsTextFrame::eInflated, mFontMetrics);
 
-  // Trim trailing whitespace, unless we're painting a selection highlight,
-  // which should include trailing spaces if present (bug 1146754).
-  provider.InitializeForDisplay(!aIsSelected);
+  // Trim trailing whitespace, unless we have a normal selection (bug 1146754)
+  // This matches behavior in other browsers.
+  UniquePtr<SelectionDetails> selectionDetails;
+  bool hasNormalSelection = false;
+  if (aIsSelected) {
+    selectionDetails = GetSelectionDetails();
+    for (const SelectionDetails* sd = selectionDetails.get(); sd;
+         sd = sd->mNext.get()) {
+      if (sd->mSelectionType == SelectionType::eNormal) {
+        hasNormalSelection = true;
+        break;
+      }
+    }
+  }
+  provider.InitializeForDisplay(!hasNormalSelection);
 
   const bool reversed = mTextRun->IsInlineReversed();
   const bool verticalRun = mTextRun->IsVertical();
@@ -7717,7 +7724,7 @@ void nsTextFrame::PaintText(const PaintTextParams& aParams,
   textPaintStyle.SetResolveColors(!aParams.callbacks);
 
   // Fork off to the (slower) paint-with-selection path if necessary.
-  if (aIsSelected) {
+  if (aIsSelected && selectionDetails) {
     MOZ_ASSERT(aOpacity == 1.0f, "We don't support opacity with selections!");
     gfxSkipCharsIterator tmp(provider.GetStart());
     Range contentRange(
@@ -7729,7 +7736,7 @@ void nsTextFrame::PaintText(const PaintTextParams& aParams,
     params.contentRange = contentRange;
     params.textPaintStyle = &textPaintStyle;
     params.glyphRange = range;
-    if (PaintTextWithSelection(params, clipEdges)) {
+    if (PaintTextWithSelection(params, clipEdges, *selectionDetails)) {
       return;
     }
   }

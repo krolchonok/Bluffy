@@ -55,13 +55,6 @@ async def send_request(wait_for_event, inline, fetch, wait_for_future_safe):
     return _send_request
 
 
-@pytest.mark.capabilities({
-    "moz:firefoxOptions": {
-        "prefs": {
-            "remote.network.maxTotalDataSize": MAX_TOTAL_SIZE,
-        },
-    },
-})
 @pytest.mark.parametrize(
     "mode",
     [
@@ -78,7 +71,9 @@ async def test_max_total_data_size(
     add_data_collector,
     send_request,
     mode,
+    use_pref,
 ):
+    await use_pref("remote.network.maxTotalDataSize", MAX_TOTAL_SIZE)
     await setup_network_test(
         events=[
             BEFORE_REQUEST_SENT_EVENT,

@@ -23,9 +23,7 @@ use anyhow::Result;
 use crash_annotations::{
     should_include_annotation, type_of_annotation, CrashAnnotation, CrashAnnotationType,
 };
-use crash_helper_common::{
-    BreakpadChar, BreakpadData, BreakpadString, GeckoChildId, Pid,
-};
+use crash_helper_common::{BreakpadChar, BreakpadData, BreakpadString, GeckoChildId, Pid};
 use mozannotation_server::{AnnotationData, CAnnotation};
 use num_traits::FromPrimitive;
 use once_cell::sync::Lazy;

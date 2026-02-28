@@ -94,7 +94,7 @@ bool nsMenuItemIconX::StartIconLoad(nsIContent* aContent) {
 //
 
 nsresult nsMenuItemIconX::OnComplete(imgIContainer* aImage) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   if (mIconImage) {
     [mIconImage release];
@@ -116,14 +116,15 @@ nsresult nsMenuItemIconX::OnComplete(imgIContainer* aImage) {
   mComputedStyle = nullptr;
   mPresContext = nullptr;
 
+  RefPtr<IconLoader> loader = std::move(mIconLoader);
+
   if (mListener) {
     mListener->IconUpdated();
   }
 
-  mIconLoader->Destroy();
-  mIconLoader = nullptr;
+  loader->Destroy();
 
   return NS_OK;
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }

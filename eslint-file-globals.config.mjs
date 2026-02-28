@@ -87,7 +87,6 @@ export default [
   {
     name: "globals-browser-window",
     files: [
-      "browser/actors/ScreenshotsComponentChild.sys.mjs",
       "browser/base/content/browser-a11yUtils.js",
       "browser/base/content/browser-addons.js",
       "browser/base/content/browser-commands.js",
@@ -115,7 +114,6 @@ export default [
       "browser/base/content/main-popupset.js",
       "browser/base/content/navigator-toolbox.js",
       "browser/base/content/nonbrowser-mac.js",
-      "browser/components/downloads/content/allDownloadsView.js",
       "browser/components/downloads/content/downloads.js",
       "browser/components/downloads/content/indicator.js",
       "browser/components/places/content/browserPlacesViews.js",
@@ -130,7 +128,6 @@ export default [
       "browser/components/tabbrowser/content/tabs.js",
       "browser/components/translations/content/fullPageTranslationsPanel.js",
       "browser/components/translations/content/selectTranslationsPanel.js",
-      "browser/fxr/content/fxr-fullScreen.js",
       "testing/mochitest/browser-test.js",
       "toolkit/components/printing/content/printPreviewPagination.js",
       "toolkit/components/printing/content/printUtils.js",

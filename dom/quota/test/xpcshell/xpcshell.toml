@@ -73,6 +73,8 @@ run-if = [
 
 ["test_clearStoragesForPrivateBrowsing.js"]
 
+["test_clearStoragesForPrivateBrowsing_callback.js"]
+
 ["test_clientDirectoryOpeningStarted.js"]
 
 ["test_createLocalStorage.js"]

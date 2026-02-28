@@ -895,9 +895,14 @@ bool Gecko_IsSelectListBox(const Element* aElement) {
   return select && !select->IsCombobox();
 }
 
-bool Gecko_LookupAttrValue(const Element* aElement, const nsAtom& aName,
-                           nsAString& aResult) {
-  return aElement->GetAttr(&aName, aResult);
+bool Gecko_LookupAttrValue(const Element* aElement, nsAtom& aNamespace,
+                           const nsAtom& aName, nsAString& aResult) {
+  int32_t attrNameSpace = kNameSpaceID_None;
+  if (!aNamespace.IsEmpty()) {
+    attrNameSpace = nsNameSpaceManager::GetInstance()->GetNameSpaceID(
+        &aNamespace, nsContentUtils::IsChromeDoc(aElement->OwnerDoc()));
+  }
+  return aElement->GetAttr(attrNameSpace, &aName, aResult);
 }
 
 template <typename Implementor>

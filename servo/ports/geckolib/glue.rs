@@ -1596,7 +1596,7 @@ pub extern "C" fn Servo_Element_ReferencesAttribute(
         return false;
     };
 
-    unsafe { Atom::with(attr, |attr| attrs.contains(AtomIdent::cast(attr))) }
+    unsafe { Atom::with(attr, |attr| attrs.contains_key(AtomIdent::cast(attr))) }
 }
 
 fn mode_to_origin(mode: SheetParsingMode) -> Origin {
@@ -10110,7 +10110,7 @@ pub extern "C" fn Servo_RegisterCustomProperty(
             let parsed = Parser::new(&mut input)
                 .parse_entirely(|input| {
                     input.skip_whitespace();
-                    SpecifiedValue::parse(input, url_data).map(Arc::new)
+                    SpecifiedValue::parse(input, None, url_data).map(Arc::new)
                 })
                 .ok();
             if parsed.is_none() {
@@ -10293,6 +10293,7 @@ pub unsafe extern "C" fn Servo_Value_Matches_Syntax(
         &mut input,
         &syntax,
         url_data,
+        None,
         AllowComputationallyDependent::Yes,
     )
     .is_ok()
