@@ -456,6 +456,13 @@ void ModuleScript::SetModuleRecord(Handle<JSObject*> aModuleRecord) {
     SetModulePrivate(mModuleRecord, PrivateValue(this));
   }
 
+#ifdef DEBUG
+  // Sync the [[PreloadSlot]] in ModuleObject.
+  if (mModuleRecord) {
+    SetModulePreload(mModuleRecord, mForPreload);
+  }
+#endif
+
   mozilla::HoldJSObjects(this);
 }
 
@@ -479,7 +486,37 @@ void ModuleScript::SetErrorToRethrow(const Value& aError) {
   mErrorToRethrow = aError;
 }
 
-void ModuleScript::SetForPreload(bool aValue) { mForPreload = aValue; }
+void ModuleScript::SetForPreload(bool aValue) {
+  mForPreload = aValue;
+#ifdef DEBUG
+  if (ModuleRecord()) {
+    SetModulePreload(ModuleRecord(), aValue);
+  }
+#endif
+}
 void ModuleScript::SetHadImportMap(bool aValue) { mHadImportMap = aValue; }
+
+ResolvedModuleSet* ModuleScript::GetPreloadedResolvedSet() {
+  if (!mPreloadedResolvedSet) {
+    mPreloadedResolvedSet = mozilla::MakeUnique<ResolvedModuleSet>();
+  }
+
+  return mPreloadedResolvedSet.get();
+}
+
+void ModuleScript::ResetPreload() {
+  MOZ_ASSERT(mForPreload);
+  if (mModuleRecord) {
+    ResetPreloadedModule(mModuleRecord);
+  }
+
+  if (HasParseError()) {
+    mParseError = UndefinedValue();
+  }
+
+  if (HasErrorToRethrow()) {
+    mErrorToRethrow = UndefinedValue();
+  }
+}
 
 }  // namespace JS::loader

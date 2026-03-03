@@ -155,10 +155,8 @@ for (const type of [
   "DISCOVERY_STREAM_TOPICS_LOADING",
   "DISCOVERY_STREAM_USER_EVENT",
   "DOWNLOAD_CHANGED",
-  "FAKE_FOCUS_SEARCH",
   "FILL_SEARCH_TERM",
   "FOLLOW_SECTION",
-  "HANDOFF_SEARCH_TO_AWESOMEBAR",
   "HIDE_PERSONALIZE",
   "HIDE_TOAST_MESSAGE",
   "INFERRED_PERSONALIZATION_MODEL_UPDATE",
@@ -4305,7 +4303,6 @@ function AdBannerContextMenu({
 
 
 const PREF_PROMO_CARD_DISMISSED = "discoverystream.promoCard.visible";
-const DEFAULT_PROMO_URL = "https://addons.mozilla.org/firefox/collections/4757633/b4d5649fb087446aa05add5f0258c3/";
 
 /**
  * The PromoCard component displays a promotional message.
@@ -4314,9 +4311,6 @@ const DEFAULT_PROMO_URL = "https://addons.mozilla.org/firefox/collections/475763
 
 const PromoCard = () => {
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
-  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
-  const trainhopConfigPromoCardUrl = prefs.trainhopConfig?.promoCard?.url;
-  const promoUrl = typeof trainhopConfigPromoCardUrl === "string" && trainhopConfigPromoCardUrl ? trainhopConfigPromoCardUrl : DEFAULT_PROMO_URL;
   const onCtaClick = (0,external_React_namespaceObject.useCallback)(() => {
     dispatch(actionCreators.AlsoToMain({
       type: actionTypes.PROMO_CARD_CLICK
@@ -4357,17 +4351,17 @@ const PromoCard = () => {
     alt: ""
   })), /*#__PURE__*/external_React_default().createElement("span", {
     className: "promo-card-title",
-    "data-l10n-id": "newtab-promo-card-title-addons"
+    "data-l10n-id": "newtab-promo-card-title"
   }), /*#__PURE__*/external_React_default().createElement("span", {
     className: "promo-card-body",
-    "data-l10n-id": "newtab-promo-card-body-addons"
+    "data-l10n-id": "newtab-promo-card-body"
   }), /*#__PURE__*/external_React_default().createElement("span", {
     className: "promo-card-cta-wrapper"
   }, /*#__PURE__*/external_React_default().createElement("a", {
-    href: promoUrl,
+    href: "https://support.mozilla.org/kb/sponsor-privacy",
+    "data-l10n-id": "newtab-promo-card-cta",
     target: "_blank",
     rel: "noreferrer",
-    "data-l10n-id": "newtab-promo-card-cta-addons",
     onClick: onCtaClick
   }))));
 };
@@ -4428,8 +4422,7 @@ const AdBanner = ({
       height: undefined
     };
   };
-  const nimbusPromoCardTrainhopEnabled = prefs.trainhopConfig?.promoCard?.enabled;
-  const promoCardEnabled = spoc.format === "billboard" && (nimbusPromoCardTrainhopEnabled || prefs[PREF_PROMOCARD_ENABLED]) && prefs[PREF_PROMOCARD_VISIBLE];
+  const promoCardEnabled = spoc.format === "billboard" && prefs[PREF_PROMOCARD_ENABLED] && prefs[PREF_PROMOCARD_VISIBLE];
   const sectionsEnabled = prefs[AdBanner_PREF_SECTIONS_ENABLED];
   const ohttpEnabled = prefs[AdBanner_PREF_OHTTP_UNIFIED_ADS];
   const showAdReporting = prefs[PREF_REPORT_ADS_ENABLED];
@@ -7208,10 +7201,8 @@ function Search(prevState = INITIAL_STATE.Search, action) {
   switch (action.type) {
     case actionTypes.DISABLE_SEARCH:
       return Object.assign({ ...prevState, disable: true });
-    case actionTypes.FAKE_FOCUS_SEARCH:
-      return Object.assign({ ...prevState, fakeFocus: true });
     case actionTypes.SHOW_SEARCH:
-      return Object.assign({ ...prevState, disable: false, fakeFocus: false });
+      return Object.assign({ ...prevState, disable: false });
     default:
       return prevState;
   }
@@ -11942,7 +11933,7 @@ function Lists({
     "data-l10n-id": "newtab-widget-lists-menu-copy",
     onClick: () => handleCopyListToClipboard()
   }), /*#__PURE__*/external_React_default().createElement("panel-item", {
-    "data-l10n-id": "newtab-widget-lists-menu-hide",
+    "data-l10n-id": "newtab-widget-menu-hide",
     onClick: () => handleHideLists()
   }), /*#__PURE__*/external_React_default().createElement("panel-item", {
     className: "learn-more",
@@ -12772,7 +12763,7 @@ const FocusTimer = ({
       handlePrefUpdate("widgets.focusTimer.showSystemNotifications", !showSystemNotifications);
     }
   }), /*#__PURE__*/external_React_default().createElement("panel-item", {
-    "data-l10n-id": "newtab-widget-timer-menu-hide",
+    "data-l10n-id": "newtab-widget-menu-hide",
     onClick: () => {
       (0,external_ReactRedux_namespaceObject.batch)(() => {
         handlePrefUpdate("widgets.focusTimer.enabled", false);
@@ -13246,7 +13237,7 @@ function WeatherForecast({
       "data-l10n-id": "newtab-weather-menu-change-weather-display-simple",
       onClick: () => handleChangeDisplay("simple")
     }), /*#__PURE__*/external_React_default().createElement("panel-item", {
-      "data-l10n-id": "newtab-weather-menu-hide-weather-v2",
+      "data-l10n-id": "newtab-widget-menu-hide",
       onClick: handleHideWeather
     }), /*#__PURE__*/external_React_default().createElement("panel-item", {
       "data-l10n-id": "newtab-weather-menu-learn-more",
@@ -13400,6 +13391,7 @@ const PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED = "widgets.system.weatherFore
 const PREF_WIDGETS_MAXIMIZED = "widgets.maximized";
 const PREF_WIDGETS_SYSTEM_MAXIMIZED = "widgets.system.maximized";
 const PREF_WIDGETS_FEEDBACK_ENABLED = "widgets.feedback.enabled";
+const PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED = "widgets.hideAllToast.enabled";
 const WIDGETS_FEEDBACK_URL = "https://connect.mozilla.org/t5/discussions/feedback-welcome-for-new-tab-widgets-now-available-via-firefox/td-p/108354";
 
 // resets timer to default values (exported for testing)
@@ -13447,6 +13439,7 @@ function Widgets() {
   const nimbusWeatherForecastTrainhopEnabled = prefs.trainhopConfig?.widgets?.weatherForecastEnabled;
   const nimbusMaximizedTrainhopEnabled = prefs.trainhopConfig?.widgets?.maximized;
   const feedbackEnabled = prefs.trainhopConfig?.widgets?.feedbackEnabled || prefs[PREF_WIDGETS_FEEDBACK_ENABLED];
+  const hideAllToastEnabled = prefs.trainhopConfig?.widgets?.hideAllToastEnabled || prefs[PREF_WIDGETS_HIDE_ALL_TOAST_ENABLED];
   const feedbackUrl = prefs.trainhopConfig?.widgets?.feedbackUrl ?? WIDGETS_FEEDBACK_URL;
   const listsEnabled = (nimbusListsTrainhopEnabled || nimbusListsEnabled || prefs[PREF_WIDGETS_SYSTEM_LISTS_ENABLED]) && prefs[PREF_WIDGETS_LISTS_ENABLED];
   const timerEnabled = (nimbusTimerTrainhopEnabled || nimbusTimerEnabled || prefs[PREF_WIDGETS_SYSTEM_TIMER_ENABLED]) && prefs[PREF_WIDGETS_TIMER_ENABLED];
@@ -13543,6 +13536,15 @@ function Widgets() {
             widget_size: widgetSize
           }
         }));
+      }
+      if (hideAllToastEnabled) {
+        dispatch(actionCreators.OnlyToOneContent({
+          type: actionTypes.SHOW_TOAST_MESSAGE,
+          data: {
+            toastId: "hideWidgetsToast",
+            showNotifications: true
+          }
+        }, "ActivityStream:Content"));
       }
     });
   }
@@ -15428,182 +15430,19 @@ function ExternalComponentWrapper({
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* globals ContentSearchHandoffUIController */
-
-/**
- * @backward-compat { version 148 }
- *
- * Temporary dual implementation to support train hopping. The old handoff UI
- * is kept alongside the new contentSearchHandoffUI.mjs custom element until
- * the module lands on all channels. Controlled by the pref
- * browser.newtabpage.activity-stream.search.useHandoffComponent.
- * Remove the old implementation and the pref once this ships to Release.
- */
 
 
 
-
-
-
-class _Search extends (external_React_default()).PureComponent {
-  constructor(props) {
-    super(props);
-    this.onSearchHandoffClick = this.onSearchHandoffClick.bind(this);
-    this.onSearchHandoffPaste = this.onSearchHandoffPaste.bind(this);
-    this.onSearchHandoffDrop = this.onSearchHandoffDrop.bind(this);
-    this.onInputMountHandoff = this.onInputMountHandoff.bind(this);
-    this.onSearchHandoffButtonMount = this.onSearchHandoffButtonMount.bind(this);
-  }
-  handleEvent(event) {
-    // Also track search events with our own telemetry
-    if (event.detail.type === "Search") {
-      this.props.dispatch(actionCreators.UserEvent({
-        event: "SEARCH"
-      }));
-    }
-  }
-  doSearchHandoff(text) {
-    this.props.dispatch(actionCreators.OnlyToMain({
-      type: actionTypes.HANDOFF_SEARCH_TO_AWESOMEBAR,
-      data: {
-        text
-      }
-    }));
-    this.props.dispatch({
-      type: actionTypes.FAKE_FOCUS_SEARCH
-    });
-    this.props.dispatch(actionCreators.UserEvent({
-      event: "SEARCH_HANDOFF"
-    }));
-    if (text) {
-      this.props.dispatch({
-        type: actionTypes.DISABLE_SEARCH
-      });
-    }
-  }
-  onSearchHandoffClick(event) {
-    // When search hand-off is enabled, we render a big button that is styled to
-    // look like a search textbox. If the button is clicked, we style
-    // the button as if it was a focused search box and show a fake cursor but
-    // really focus the awesomebar without the focus styles ("hidden focus").
-    event.preventDefault();
-    this.doSearchHandoff();
-  }
-  onSearchHandoffPaste(event) {
-    event.preventDefault();
-    this.doSearchHandoff(event.clipboardData.getData("Text"));
-  }
-  onSearchHandoffDrop(event) {
-    event.preventDefault();
-    let text = event.dataTransfer.getData("text");
-    if (text) {
-      this.doSearchHandoff(text);
-    }
-  }
-  componentDidMount() {
-    const {
-      caretBlinkCount,
-      caretBlinkTime,
-      "search.useHandoffComponent": useHandoffComponent,
-      "externalComponents.enabled": useExternalComponents
-    } = this.props.Prefs.values;
-    if (useExternalComponents) {
-      // Nothing to do - the external component will have set the caret
-      // values itself.
-      return;
-    }
-    if (useHandoffComponent) {
-      const {
-        handoffUI
-      } = this;
-      if (handoffUI) {
-        // If caret blink count isn't defined, use the default infinite behavior for animation
-        handoffUI.style.setProperty("--caret-blink-count", caretBlinkCount > -1 ? caretBlinkCount : "infinite");
-
-        // Apply custom blink rate if set, else fallback to default (567ms on/off --> 1134ms total)
-        handoffUI.style.setProperty("--caret-blink-time", caretBlinkTime > 0 ? `${caretBlinkTime * 2}ms` : `${1134}ms`);
-      }
-    } else {
-      const caret = this.fakeCaret;
-      if (caret) {
-        // If caret blink count isn't defined, use the default infinite behavior for animation
-        caret.style.setProperty("--caret-blink-count", caretBlinkCount > -1 ? caretBlinkCount : "infinite");
-
-        // Apply custom blink rate if set, else fallback to default (567ms on/off --> 1134ms total)
-        caret.style.setProperty("--caret-blink-time", caretBlinkTime > 0 ? `${caretBlinkTime * 2}ms` : `${1134}ms`);
-      }
-    }
-  }
-  onInputMountHandoff(input) {
-    if (input) {
-      // The handoff UI controller helps us set the search icon and reacts to
-      // changes to default engine to keep everything in sync.
-      this._handoffSearchController = new ContentSearchHandoffUIController();
-    }
-  }
-  onSearchHandoffButtonMount(button) {
-    // Keep a reference to the button for use during "paste" event handling.
-    this._searchHandoffButton = button;
-  }
-
-  /*
-   * Do not change the ID on the input field, as legacy newtab code
-   * specifically looks for the id 'newtab-search-text' on input fields
-   * in order to execute searches in various tests
-   */
+class Search_Search extends (external_React_default()).PureComponent {
   render() {
-    const useHandoffComponent = this.props.Prefs.values["search.useHandoffComponent"];
-    const useExternalComponents = this.props.Prefs.values["externalComponents.enabled"];
-    if (useHandoffComponent) {
-      if (useExternalComponents) {
-        return /*#__PURE__*/external_React_default().createElement("div", {
-          className: "search-wrapper"
-        }, this.props.showLogo && /*#__PURE__*/external_React_default().createElement(Logo, null), /*#__PURE__*/external_React_default().createElement(ExternalComponentWrapper, {
-          type: "SEARCH",
-          className: "search-inner-wrapper"
-        }));
-      }
-      return /*#__PURE__*/external_React_default().createElement("div", {
-        className: "search-wrapper"
-      }, this.props.showLogo && /*#__PURE__*/external_React_default().createElement(Logo, null), /*#__PURE__*/external_React_default().createElement("div", {
-        className: "search-inner-wrapper"
-      }, /*#__PURE__*/external_React_default().createElement("content-search-handoff-ui", {
-        ref: el => {
-          this.handoffUI = el;
-        }
-      })));
-    }
-    const wrapperClassName = ["search-wrapper", this.props.disable && "search-disabled", this.props.fakeFocus && "fake-focus"].filter(v => v).join(" ");
     return /*#__PURE__*/external_React_default().createElement("div", {
-      className: wrapperClassName
-    }, this.props.showLogo && /*#__PURE__*/external_React_default().createElement(Logo, null), /*#__PURE__*/external_React_default().createElement("div", {
+      className: "search-wrapper"
+    }, this.props.showLogo && /*#__PURE__*/external_React_default().createElement(Logo, null), /*#__PURE__*/external_React_default().createElement(ExternalComponentWrapper, {
+      type: "SEARCH",
       className: "search-inner-wrapper"
-    }, /*#__PURE__*/external_React_default().createElement("button", {
-      className: "search-handoff-button",
-      ref: this.onSearchHandoffButtonMount,
-      onClick: this.onSearchHandoffClick,
-      tabIndex: "-1"
-    }, /*#__PURE__*/external_React_default().createElement("div", {
-      className: "fake-textbox"
-    }), /*#__PURE__*/external_React_default().createElement("input", {
-      type: "search",
-      className: "fake-editable",
-      tabIndex: "-1",
-      "aria-hidden": "true",
-      onDrop: this.onSearchHandoffDrop,
-      onPaste: this.onSearchHandoffPaste,
-      ref: this.onInputMountHandoff
-    }), /*#__PURE__*/external_React_default().createElement("div", {
-      className: "fake-caret",
-      ref: el => {
-        this.fakeCaret = el;
-      }
-    }))));
+    }));
   }
 }
-const Search_Search = (0,external_ReactRedux_namespaceObject.connect)(state => ({
-  Prefs: state.Prefs
-}))(_Search);
 ;// CONCATENATED MODULE: ./content-src/components/Weather/Weather.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -16103,7 +15942,7 @@ class _Weather extends (external_React_default()).PureComponent {
       onClick: () => this.handleChangeDisplay("simple")
     }), /*#__PURE__*/external_React_default().createElement("panel-item", {
       id: "weather-menu-hide",
-      "data-l10n-id": "newtab-weather-menu-hide-weather-v2",
+      "data-l10n-id": "newtab-widget-menu-hide",
       onClick: this.handleHideWeather
     }), /*#__PURE__*/external_React_default().createElement("panel-item", {
       id: "weather-menu-learn-more",
@@ -16235,6 +16074,38 @@ function DownloadModalToggle({
   }));
 }
 
+;// CONCATENATED MODULE: ./content-src/components/Notifications/Toasts/HideWidgetsToast.jsx
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function HideWidgetsToast({
+  onDismissClick,
+  onAnimationEnd
+}) {
+  const mozMessageBarRef = (0,external_React_namespaceObject.useRef)(null);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    const {
+      current: mozMessageBarElement
+    } = mozMessageBarRef;
+    mozMessageBarElement.addEventListener("message-bar:user-dismissed", onDismissClick, {
+      once: true
+    });
+    return () => {
+      mozMessageBarElement.removeEventListener("message-bar:user-dismissed", onDismissClick);
+    };
+  }, [onDismissClick]);
+  return /*#__PURE__*/external_React_default().createElement("moz-message-bar", {
+    type: "info",
+    class: "notification-feed-item",
+    dismissable: true,
+    "data-l10n-id": "newtab-toast-widgets-hidden",
+    ref: mozMessageBarRef,
+    onAnimationEnd: onAnimationEnd
+  });
+}
+
 ;// CONCATENATED MODULE: ./content-src/components/Notifications/Toasts/ReportContentToast.jsx
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
@@ -16276,6 +16147,7 @@ function ReportContentToast({
 
 
 
+
 function Notifications_Notifications({
   dispatch
 }) {
@@ -16309,6 +16181,12 @@ function Notifications_Notifications({
     switch (latestToastItem) {
       case "reportSuccessToast":
         return /*#__PURE__*/external_React_default().createElement(ReportContentToast, {
+          onDismissClick: syncHiddenToastData,
+          onAnimationEnd: syncHiddenToastData,
+          key: toastCounter
+        });
+      case "hideWidgetsToast":
+        return /*#__PURE__*/external_React_default().createElement(HideWidgetsToast, {
           onDismissClick: syncHiddenToastData,
           onAnimationEnd: syncHiddenToastData,
           key: toastCounter
@@ -17015,18 +16893,6 @@ class BaseContent extends (external_React_default()).PureComponent {
     __webpack_require__.g.addEventListener("keydown", this.handleOnKeyDown);
     const prefs = this.props.Prefs.values;
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
-    if (!prefs["externalComponents.enabled"]) {
-      if (prefs["search.useHandoffComponent"]) {
-        // Dynamically import the contentSearchHandoffUI module, but don't worry
-        // about webpacking this one.
-        import(/* webpackIgnore: true */"chrome://browser/content/contentSearchHandoffUI.mjs");
-      } else {
-        const scriptURL = "chrome://browser/content/contentSearchHandoffUI.js";
-        const scriptEl = document.createElement("script");
-        scriptEl.src = scriptURL;
-        document.head.appendChild(scriptEl);
-      }
-    }
     if (this.props.document.visibilityState === Base_VISIBLE) {
       this.onVisible();
     } else {

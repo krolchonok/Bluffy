@@ -55,7 +55,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         }
 
         args.preferenceToScrollTo?.let {
-            scrollToPreference(it)
+            scrollToPreferenceWithHighlight(it)
         }
 
         requirePreference<Preference>(R.string.pref_key_remote_settings_server).summary =
@@ -465,6 +465,12 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         requirePreference<SwitchPreference>(R.string.pref_key_tab_search).apply {
             isVisible = true
             isChecked = context.settings().tabSearchEnabled
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_tab_groups).apply {
+            isVisible = true
+            isChecked = context.settings().tabGroupsEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 

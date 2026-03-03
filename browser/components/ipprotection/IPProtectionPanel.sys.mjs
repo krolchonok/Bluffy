@@ -677,16 +677,32 @@ export class IPProtectionPanel {
   /**
    * BigInts throw when using JSON.stringify or when using arithmetic with
    * numbers so we convert them to numbers here so they max and remaining can
-   * be safely used.
+   * be safely used. Check usageInfo first, if that doesn't exist, check the
+   * entitlement. If neither exist, return null.
    *
    * @returns {object} An object with max and remaining as numbers
    */
   #getBandwidthUsage() {
-    if (lazy.BANDWIDTH_USAGE_ENABLED && lazy.IPPProxyManager.usageInfo) {
+    if (
+      lazy.BANDWIDTH_USAGE_ENABLED &&
+      lazy.IPPProxyManager.usageInfo?.max != null
+    ) {
       return {
         max: Number(lazy.IPPProxyManager.usageInfo.max),
         remaining: Number(lazy.IPPProxyManager.usageInfo.remaining),
         reset: lazy.IPPProxyManager.usageInfo.reset,
+      };
+    } else if (
+      lazy.BANDWIDTH_USAGE_ENABLED &&
+      lazy.IPPEnrollAndEntitleManager.entitlement?.maxBytes != null
+    ) {
+      // Usage info doesn't exist yet. Check the entitlement
+      return {
+        max: Number(lazy.IPPEnrollAndEntitleManager.entitlement?.maxBytes),
+        remaining: Number(
+          lazy.IPPEnrollAndEntitleManager.entitlement?.maxBytes
+        ),
+        reset: null,
       };
     }
 
@@ -817,8 +833,13 @@ export class IPProtectionPanel {
         remainingPercent > BANDWIDTH.THIRD_THRESHOLD
       ) {
         threshold = firstWarning;
-      } else if (remainingPercent <= BANDWIDTH.THIRD_THRESHOLD) {
+      } else if (
+        remainingPercent > 0 &&
+        remainingPercent <= BANDWIDTH.THIRD_THRESHOLD
+      ) {
         threshold = secondWarning;
+      } else if (remainingPercent === 0) {
+        threshold = 100;
       }
 
       const lastRecordedThreshold = Services.prefs.getIntPref(
@@ -847,8 +868,10 @@ export class IPProtectionPanel {
         });
       }
 
-      // Show warning only if threshold is 75 or 90 and higher than dismissed threshold
-      if (
+      // Check threshold and clear or set warning
+      if (threshold === 100) {
+        this.setState({ bandwidthWarning: false });
+      } else if (
         (threshold === firstWarning || threshold === secondWarning) &&
         threshold > this.#lastBandwidthWarningMessageDismissed
       ) {

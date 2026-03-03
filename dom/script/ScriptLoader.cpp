@@ -1179,7 +1179,7 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
     aRequest->NoCacheEntryFound(aReferrerPolicy, aFetchOptions, aURI);
     LOG(
         ("ScriptLoader (%p): Created LoadedScript (%p) for "
-         "ScriptLoadRequest(%p) %s.",
+         "ScriptLoadRequest(%p) because inline %s.",
          this, aRequest->getLoadedScript(), aRequest,
          aRequest->URI()->GetSpecOrDefault().get()));
     return;
@@ -1206,7 +1206,7 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
     aRequest->NoCacheEntryFound(aReferrerPolicy, aFetchOptions, aURI);
     LOG(
         ("ScriptLoader (%p): Created LoadedScript (%p) for "
-         "ScriptLoadRequest(%p) %s.",
+         "ScriptLoadRequest(%p) because cache is not found %s.",
          this, aRequest->getLoadedScript(), aRequest,
          aRequest->URI()->GetSpecOrDefault().get()));
     return;
@@ -1246,7 +1246,7 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
       aRequest->NoCacheEntryFound(aReferrerPolicy, aFetchOptions, aURI);
       LOG(
           ("ScriptLoader (%p): Created LoadedScript (%p) for "
-           "ScriptLoadRequest(%p) %s.",
+           "ScriptLoadRequest(%p) because content policy violation %s.",
            this, aRequest->getLoadedScript(), aRequest,
            aRequest->URI()->GetSpecOrDefault().get()));
       return;
@@ -1413,7 +1413,8 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
 
     // https://html.spec.whatwg.org/multipage/webappapis.html#fetch-a-module-script-tree
     // Step 1. Disallow further import maps given settings object.
-    if (request->IsModuleRequest()) {
+    if (request->IsModuleRequest() &&
+        !StaticPrefs::dom_multiple_import_maps_enabled()) {
       LOG(("ScriptLoadRequest (%p): Disallow further import maps.",
            request.get()));
       mModuleLoader->DisallowImportMaps();
@@ -1706,10 +1707,14 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
 
   request->SetBaseURL(mDocument->GetDocBaseURI());
 
+  const bool multiImportMapsEnabled =
+      StaticPrefs::dom_multiple_import_maps_enabled();
   if (request->IsModuleRequest()) {
-    // https://html.spec.whatwg.org/multipage/webappapis.html#fetch-an-inline-module-script-graph
-    // Step 1. Disallow further import maps given settings object.
-    mModuleLoader->DisallowImportMaps();
+    if (!multiImportMapsEnabled) {
+      // https://html.spec.whatwg.org/multipage/webappapis.html#fetch-an-inline-module-script-graph
+      // Step 1. Disallow further import maps given settings object.
+      mModuleLoader->DisallowImportMaps();
+    }
 
     ModuleLoadRequest* modReq = request->AsModuleRequest();
     if (aElement->GetParserCreated() != NOT_FROM_PARSER) {
@@ -1732,13 +1737,16 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
   }
 
   if (request->IsImportMapRequest()) {
-    // https://html.spec.whatwg.org/multipage/scripting.html#prepare-the-script-element
-    // Step 31.2 type is "importmap":
-    //   Impl note: Step 1 is done above before creating a ScriptLoadRequest.
-    MOZ_ASSERT(mModuleLoader->IsImportMapAllowed());
+    if (!multiImportMapsEnabled) {
+      // https://html.spec.whatwg.org/multipage/scripting.html#prepare-the-script-element
+      // Step 31.2 type is "importmap":
+      //   Impl note: Step 1 is done above before creating a ScriptLoadRequest.
+      MOZ_ASSERT(mModuleLoader->IsImportMapAllowed());
 
-    //   Step 2. Set el's relevant global object's import maps allowed to false.
-    mModuleLoader->DisallowImportMaps();
+      //   Step 2. Set el's relevant global object's import maps allowed to
+      //   false.
+      mModuleLoader->DisallowImportMaps();
+    }
 
     //   Step 3. Let result be the result of creating an import map parse result
     //   given source text and base URL.
@@ -1752,13 +1760,20 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
 
     // Remove any module preloads. Module specifier resolution is invalidated by
     // adding an import map, and incorrect dependencies may have been loaded.
-    mPreloads.RemoveElementsBy([](const PreloadInfo& info) {
-      if (info.mRequest->IsModuleRequest()) {
-        info.mRequest->Cancel();
-        return true;
-      }
-      return false;
-    });
+    mPreloads.RemoveElementsBy(
+        [this, multiImportMapsEnabled](const PreloadInfo& info) {
+          if (!info.mRequest->IsModuleRequest()) {
+            return false;
+          }
+
+          info.mRequest->Cancel();
+          if (multiImportMapsEnabled) {
+            mModuleLoader->ClearPreloadedModuleGraph(
+                info.mRequest->AsModuleRequest());
+          }
+
+          return true;
+        });
 
     // TODO: Bug 1781758: Move RegisterImportMap into EvaluateScriptElement.
     //
@@ -1769,7 +1784,7 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
     // However, as import maps could be only inline scripts by now, the
     // 'preparation-time document check' will never fail for import maps.
     // So we simply call 'register an import map' here.
-    mModuleLoader->RegisterImportMap(std::move(importMap));
+    mModuleLoader->RegisterImportMap(std::move(importMap), request);
     return false;
   }
 
@@ -1858,6 +1873,15 @@ ScriptLoadRequest* ScriptLoader::LookupPreloadRequest(
       request->Cancel();
     }
     return nullptr;
+  }
+
+  if (StaticPrefs::dom_multiple_import_maps_enabled()) {
+    // During preload, the resolved module specifiers are stored in the module
+    // script. Now the preload request is reused, so adding the resolved
+    // specifiers into the global's resolved module set.
+    if (request->IsModuleRequest()) {
+      mModuleLoader->MovePreloadedSetToResolvedSet(request->AsModuleRequest());
+    }
   }
 
   // Report any errors that we skipped while preloading.

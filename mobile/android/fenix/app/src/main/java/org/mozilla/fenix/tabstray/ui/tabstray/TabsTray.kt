@@ -43,16 +43,14 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import mozilla.components.browser.state.state.ContentState
-import mozilla.components.browser.state.state.TabSessionState
-import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.storage.sync.TabEntry
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.snackbar.Snackbar
 import mozilla.components.compose.base.snackbar.SnackbarVisuals
 import mozilla.components.compose.base.snackbar.displaySnackbar
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
-import org.mozilla.fenix.tabstray.ext.isNormalTab
+import org.mozilla.fenix.tabstray.data.TabsTrayItem
+import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
@@ -83,12 +81,12 @@ private val DefaultStatusBarHeight = 50.dp
  * @param isSignedIn Whether the user is signed into their Firefox account.
  * @param isPbmLocked Whether the private browsing mode is currently locked.
  * @param snackbarHostState [SnackbarHostState] of this component to read and show [Snackbar]s accordingly.
- * @param modifier The [Modifier] used to style the container of the the Tabs Tray UI.
+ * @param modifier The [Modifier] used to style the container of the Tabs Tray UI.
  * @param shouldShowInactiveTabsAutoCloseDialog Whether the inactive tabs auto close dialog should be displayed.
  * @param onTabPageClick Invoked when the user clicks on the Normal, Private, or Synced tabs page button.
  * @param onTabClose Invoked when the user clicks to close a tab.
- * @param onTabClick Invoked when the user clicks on a tab.
- * @param onTabLongClick Invoked when the user long clicks a tab.
+ * @param onItemClick Invoked when the user clicks on a tab.
+ * @param onItemLongClick Invoked when the user long clicks a tab.
  * @param onInactiveTabsHeaderClick Invoked when the user clicks on the inactive tabs section header.
  * @param onDeleteAllInactiveTabsClick Invoked when the user clicks on the delete all inactive tabs button.
  * @param onInactiveTabsAutoCloseDialogShown Invoked when the inactive tabs auto close dialog
@@ -143,16 +141,16 @@ fun TabsTray(
     modifier: Modifier = Modifier,
     shouldShowInactiveTabsAutoCloseDialog: (Int) -> Boolean,
     onTabPageClick: (Page) -> Unit,
-    onTabClose: (TabSessionState) -> Unit,
-    onTabClick: (TabSessionState) -> Unit,
-    onTabLongClick: (TabSessionState) -> Unit,
+    onTabClose: (TabsTrayItem.Tab) -> Unit,
+    onItemClick: (TabsTrayItem) -> Unit,
+    onItemLongClick: (TabsTrayItem) -> Unit,
     onInactiveTabsHeaderClick: (Boolean) -> Unit,
     onDeleteAllInactiveTabsClick: () -> Unit,
     onInactiveTabsAutoCloseDialogShown: () -> Unit,
     onInactiveTabAutoCloseDialogCloseButtonClick: () -> Unit,
     onEnableInactiveTabAutoCloseClick: () -> Unit,
-    onInactiveTabClick: (TabSessionState) -> Unit,
-    onInactiveTabClose: (TabSessionState) -> Unit,
+    onInactiveTabClick: (TabsTrayItem.Tab) -> Unit,
+    onInactiveTabClose: (TabsTrayItem.Tab) -> Unit,
     onSyncedTabClick: OnSyncedTabClick,
     onSyncedTabClose: OnSyncedTabClose,
     onSignInClick: () -> Unit,
@@ -282,8 +280,8 @@ fun TabsTray(
                             inactiveTabsExpanded = tabsTrayState.inactiveTabsExpanded,
                             displayTabsInGrid = displayTabsInGrid,
                             onTabClose = onTabClose,
-                            onTabClick = onTabClick,
-                            onTabLongClick = onTabLongClick,
+                            onItemClick = onItemClick,
+                            onItemLongClick = onItemLongClick,
                             shouldShowInactiveTabsAutoCloseDialog = shouldShowInactiveTabsAutoCloseDialog,
                             onInactiveTabsHeaderClick = onInactiveTabsHeaderClick,
                             onDeleteAllInactiveTabsClick = onDeleteAllInactiveTabsClick,
@@ -311,8 +309,8 @@ fun TabsTray(
                             displayTabsInGrid = displayTabsInGrid,
                             privateTabsLocked = isPbmLocked,
                             onTabClose = onTabClose,
-                            onTabClick = onTabClick,
-                            onTabLongClick = onTabLongClick,
+                            onItemClick = onItemClick,
+                            onItemLongClick = onItemLongClick,
                             onMove = onMove,
                             onUnlockPbmClick = onUnlockPbmClick,
                         )
@@ -394,12 +392,12 @@ private fun TabsTrayPreview(
                 tabsTrayStore.dispatch(TabsTrayAction.PageSelected(page))
             },
             onTabClose = { tab ->
-                if (tab.isNormalTab()) {
-                    val newTabs = tabsTrayStore.state.normalTabs - tab
-                    tabsTrayStore.dispatch(TabsTrayAction.UpdateNormalTabs(newTabs))
-                } else {
+                if (tab.private) {
                     val newTabs = tabsTrayStore.state.privateTabs - tab
                     tabsTrayStore.dispatch(TabsTrayAction.UpdatePrivateTabs(newTabs))
+                } else {
+                    val newTabs = tabsTrayStore.state.normalTabs - tab
+                    tabsTrayStore.dispatch(TabsTrayAction.UpdateNormalTabs(newTabs))
                 }
 
                 scope.launch {
@@ -410,7 +408,7 @@ private fun TabsTrayPreview(
                     )
                 }
             },
-            onTabClick = { tab ->
+            onItemClick = { tab ->
                 when (tabsTrayStore.state.mode) {
                     TabsTrayState.Mode.Normal -> {
                         tabsTrayStore.dispatch(TabsTrayAction.UpdateSelectedTabId(tabId = tab.id))
@@ -425,7 +423,7 @@ private fun TabsTrayPreview(
                     }
                 }
             },
-            onTabLongClick = { tab ->
+            onItemLongClick = { tab ->
                 tabsTrayStore.dispatch(TabsTrayAction.AddSelectTab(tab))
             },
             onInactiveTabsHeaderClick = { expanded ->
@@ -578,9 +576,9 @@ private data class TabsTrayPreviewModel(
     val selectedPage: Page = Page.NormalTabs,
     val selectedTabId: String? = null,
     val mode: TabsTrayState.Mode = TabsTrayState.Mode.Normal,
-    val normalTabs: List<TabSessionState> = emptyList(),
-    val inactiveTabs: List<TabSessionState> = emptyList(),
-    val privateTabs: List<TabSessionState> = emptyList(),
+    val normalTabs: List<TabsTrayItem> = emptyList(),
+    val inactiveTabs: List<TabsTrayItem.Tab> = emptyList(),
+    val privateTabs: List<TabsTrayItem> = emptyList(),
     val syncedTabs: List<SyncedTabsListItem> = emptyList(),
     val inactiveTabsExpanded: Boolean = false,
     val showInactiveTabsAutoCloseDialog: Boolean = false,
@@ -593,14 +591,12 @@ private data class TabsTrayPreviewModel(
 private fun generateFakeTabsList(
     tabCount: Int = 10,
     isPrivate: Boolean = false,
-): List<TabSessionState> =
+): List<TabsTrayItem.Tab> =
     List(tabCount) { index ->
-        TabSessionState(
+        createTab(
             id = "tabId$index-$isPrivate",
-            content = ContentState(
-                url = "www.mozilla.com",
-                private = isPrivate,
-            ),
+            url = "www.mozilla.com",
+            private = isPrivate,
         )
     }
 

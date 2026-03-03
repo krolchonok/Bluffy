@@ -28,6 +28,7 @@
 #include "nsIMemoryReporter.h"
 
 #include "jsapi.h"
+#include "ResolvedModuleSet.h"
 #include "ScriptKind.h"
 #include "ScriptFetchOptions.h"
 
@@ -664,6 +665,8 @@ class ModuleScript final : public LoadedScript {
   bool mForPreload = false;
   bool mHadImportMap = false;
 
+  mozilla::UniquePtr<JS::loader::ResolvedModuleSet> mPreloadedResolvedSet;
+
   ~ModuleScript();
 
  public:
@@ -704,6 +707,9 @@ class ModuleScript final : public LoadedScript {
   bool ForPreload() const { return mForPreload; }
   bool HadImportMap() const { return mHadImportMap; }
 
+  // This is used to reset the module graph information which happened during
+  // preload.
+  void ResetPreload();
   void Shutdown();
 
   void UnlinkModuleRecord();
@@ -713,6 +719,10 @@ class ModuleScript final : public LoadedScript {
   void UpdateReferrerPolicy(mozilla::dom::ReferrerPolicy aReferrerPolicy) {
     mReferrerPolicy = aReferrerPolicy;
   }
+
+  bool HasPreloadedResolvedSet() { return !!mPreloadedResolvedSet; }
+  ResolvedModuleSet* GetPreloadedResolvedSet();
+  void ReleasePreloadedResolvedSet() { mPreloadedResolvedSet = nullptr; }
 };
 
 ClassicScript* LoadedScript::AsClassicScript() {

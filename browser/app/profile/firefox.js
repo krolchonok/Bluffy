@@ -1891,18 +1891,6 @@ pref("browser.newtabpage.activity-stream.mobileDownloadModal.variant-a", false);
 pref("browser.newtabpage.activity-stream.mobileDownloadModal.variant-b", false);
 pref("browser.newtabpage.activity-stream.mobileDownloadModal.variant-c", false);
 
-/**
- * @backward-compat { version 148 }
- *
- * Temporary dual implementation to support train hopping. The old handoff UI
- * is kept alongside the new contentSearchHandoffUI.mjs custom element until
- * the module lands on all channels. Controlled by the pref
- * browser.newtabpage.activity-stream.search.useHandoffComponent.
- * Remove the old implementation and the pref once this ships to Release.
- */
-pref("browser.newtabpage.activity-stream.search.useHandoffComponent", true);
-pref("browser.newtabpage.activity-stream.externalComponents.enabled", true);
-
 // Mozilla Ad Routing Service (MARS) unified ads service
 pref("browser.newtabpage.activity-stream.unifiedAds.tiles.enabled", true);
 pref("browser.newtabpage.activity-stream.unifiedAds.spocs.enabled", true);
@@ -2280,7 +2268,9 @@ pref("browser.ml.pageAssist.enabled", false);
 pref("browser.smartwindow.apiKey", '');
 pref("browser.smartwindow.enabled", false);
 pref("browser.smartwindow.endpoint", "https://mlpa-prod-prod-mozilla.global.ssl.fastly.net/v1");
-pref("browser.smartwindow.memories", true);
+pref("browser.smartwindow.memories.generateFromHistory", true);
+pref("browser.smartwindow.memories.generateFromConversation", true);
+pref("browser.smartwindow.memoriesLogLevel", "Warn");
 pref("browser.smartwindow.firstrun.autoAdvanceMS", 3000);
 pref("browser.smartwindow.firstrun.hasCompleted", false);
 pref("browser.smartwindow.showThemesNotice", true);
@@ -2293,7 +2283,6 @@ pref("browser.smartwindow.firstrun.explainerURL", "https://www.firefox.com/en-US
 pref("browser.smartwindow.chatHistory.loglevel", "Error");
 pref("browser.smartwindow.chatStore.loglevel", "Error");
 pref("browser.smartwindow.smartbarMentions.loglevel", "Error");
-pref("browser.smartwindow.memoriesLogLevel", "Warn");
 
 // Block insecure active content on https pages
 pref("security.mixed_content.block_active_content", true);

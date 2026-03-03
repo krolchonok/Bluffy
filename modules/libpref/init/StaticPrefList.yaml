@@ -2618,6 +2618,12 @@
   value: false
   mirror: always
 
+# Similar to caretPositionFromPoint, but non-standard.
+- name: dom.caretRangeFromPoint.enabled
+  type: bool
+  value: true
+  mirror: always
+
 # HTML specification says the level should be 5
 # https://html.spec.whatwg.org/#timer-initialisation-steps
 - name: dom.clamp.timeout.nesting.level
@@ -3758,6 +3764,12 @@
 - name: dom.movebefore.enabled
   type: bool
   value: true
+  mirror: always
+
+# Enable mutiple import maps.
+- name: dom.multiple_import_maps.enabled
+  type: bool
+  value: false
   mirror: always
 
 # Limit of location change caused by content scripts in a time span per
@@ -13642,6 +13654,13 @@
 - name: network.cookie.CHIPS.enabled
   type: RelaxedAtomicBool
   value: true
+  mirror: always
+
+# Whether TCP cookies also appear when unpartitioned cookies are queried
+# at the same time.
+- name: network.cookie.CHIPS.affectsTCP
+  type: RelaxedAtomicBool
+  value: false
   mirror: always
 
 # Updated to match the target count when we migrate the unpartitioned CHIPS

@@ -399,7 +399,6 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Switch to Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Switch to Celsius
-newtab-weather-menu-hide-weather-v2 = Hide weather
 newtab-weather-menu-learn-more = Learn more
 newtab-weather-menu-detect-my-location = Detect my location
 # This message is shown if user is working offline
@@ -544,10 +543,13 @@ newtab-report-cancel = Cancel
 newtab-report-submit = Submit
 newtab-toast-thanks-for-reporting =
     .message = Thank you for reporting this.
+newtab-toast-widgets-hidden =
+    .message = Select the pencil icon to add widgets back anytime.
 
 ## Strings for task / to-do list productivity widget
 
 newtab-widget-section-title = Widgets
+newtab-widget-menu-hide = Hide widget
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Hide widgets
@@ -583,7 +585,6 @@ newtab-widget-lists-menu-edit = Edit list name
 newtab-widget-lists-menu-create = Create a new list
 newtab-widget-lists-menu-delete = Delete this list
 newtab-widget-lists-menu-copy = Copy list to clipboard
-newtab-widget-lists-menu-hide = Hide all lists
 newtab-widget-lists-menu-learn-more = Learn more
 newtab-widget-lists-input-add-an-item =
     .placeholder = Add an item
@@ -617,7 +618,6 @@ newtab-widget-timer-reset =
     .title = Reset
 newtab-widget-timer-menu-notifications = Turn off notifications
 newtab-widget-timer-menu-notifications-on = Turn on notifications
-newtab-widget-timer-menu-hide = Hide timer
 newtab-widget-timer-menu-learn-more = Learn more
 
 # Strings for daily briefing card
@@ -636,10 +636,9 @@ newtab-widget-message-copy = From quick reminders to daily to-dos, focus session
 
 # Strings for the default promo card
 
-newtab-promo-card-title-addons = Simple add-ons, big impact
-# “starter pack” means a curated set of recommended browser extensions to help users get started
-newtab-promo-card-body-addons = Try the { -brand-product-name } staff picks extension starter pack.
-newtab-promo-card-cta-addons = See our picks
+newtab-promo-card-title = Support { -brand-product-name }
+newtab-promo-card-body = Our sponsors support our mission to build a better web
+newtab-promo-card-cta = Learn more
 newtab-promo-card-dismiss-button =
     .title = Dismiss
     .aria-label = Dismiss

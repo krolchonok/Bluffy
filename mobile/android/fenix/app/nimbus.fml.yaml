@@ -266,6 +266,14 @@ features:
           download-link: "[Download Link]"
           show-snackbar: true
 
+  shake-to-summarize:
+    description: A feature that can summarize the content of a page when you shake the screen.
+    variables:
+      enabled:
+        type: Boolean
+        description: If true, shake to summarize will be enabled
+        default: false
+
   setup-checklist:
     description: A feature on the home page that allows the user to track onboarding setup progress.
     variables:
@@ -907,6 +915,25 @@ features:
         value:
           enabled: true
 
+  tab-groups:
+    description: Control the visibility of the tab groups feature.
+    variables:
+      enabled:
+        description: >
+          Whether or not to enable the tab groups feature.
+        type: Boolean
+        default: false
+    defaults:
+      - channel: release
+        value:
+          enabled: false
+      - channel: beta
+        value:
+          enabled: false
+      - channel: nightly
+        value:
+          enabled: false
+
   suppress-sponsored-top-sites:
     description: Suppress sponsored top sites for new users for 14 days.
     variables:
@@ -1063,7 +1090,7 @@ features:
     defaults:
       - channel: developer
         value:
-          enabled: false
+          enabled: true
       - channel: nightly
         value:
           enabled: true

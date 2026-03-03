@@ -39,7 +39,6 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
-import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.button.ExtendedFloatingActionButton
 import mozilla.components.compose.base.button.FloatingActionButtonDefaults
 import mozilla.components.compose.base.button.TextButton
@@ -50,6 +49,7 @@ import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
@@ -469,7 +469,7 @@ private class TabManagerFloatingToolbarParameterProvider :
                 state = TabsTrayState(
                     selectedPage = Page.PrivateTabs,
                     tabSearchEnabled = true,
-                    privateTabs = listOf(createTab(url = "url", private = true)),
+                    privateTabs = listOf(createTab(url = "url")),
                 ),
                 expanded = false,
             ),
@@ -477,7 +477,7 @@ private class TabManagerFloatingToolbarParameterProvider :
                 state = TabsTrayState(
                     selectedPage = Page.PrivateTabs,
                     tabSearchEnabled = true,
-                    privateTabs = listOf(createTab(url = "url", private = true)),
+                    privateTabs = listOf(createTab(url = "url")),
                 ),
                 expanded = true,
             ),

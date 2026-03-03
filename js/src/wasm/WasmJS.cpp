@@ -2419,6 +2419,12 @@ bool WasmMemoryObject::toFixedLengthBufferImpl(JSContext* cx,
     return true;
   }
 
+  if (!memory->isShared() && buffer->as<ArrayBufferObject>().isLengthPinned()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_ARRAYBUFFER_LENGTH_PINNED);
+    return false;
+  }
+
   Rooted<ArrayBufferObjectMaybeShared*> fixedBuffer(cx);
   if (memory->isShared()) {
     Rooted<SharedArrayBufferObject*> oldBuffer(
@@ -2463,6 +2469,12 @@ bool WasmMemoryObject::toResizableBufferImpl(JSContext* cx,
   if (buffer->wasmSourceMaxPages().isNothing()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_WASM_MEMORY_NOT_RESIZABLE);
+    return false;
+  }
+
+  if (!memory->isShared() && buffer->as<ArrayBufferObject>().isLengthPinned()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_ARRAYBUFFER_LENGTH_PINNED);
     return false;
   }
 
@@ -5492,6 +5504,11 @@ bool WasmSuspendingObject::construct(JSContext* cx, unsigned argc, Value* vp) {
 
 static bool WebAssembly_promising(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
+
+  if (!JSPromiseIntegrationAvailable(cx)) {
+    JS_ReportErrorASCII(cx, "JS-PI is not enabled");
+    return false;
+  }
 
   if (!args.requireAtLeast(cx, "WebAssembly.promising", 1)) {
     return false;

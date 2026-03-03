@@ -801,6 +801,10 @@ void ChromeUtils::ImportESModule(
   nsresult rv =
       moduleloader->ImportESModule(cx, registryLocation, &moduleNamespace);
   if (NS_FAILED(rv)) {
+    if (maybeSyncLoaderScope) {
+      // Import error itself should be propagated.
+      maybeSyncLoaderScope->Finish();
+    }
     aRv.Throw(rv);
     return;
   }
@@ -1018,6 +1022,10 @@ static bool ESModuleGetter(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
   JS::Rooted<JSObject*> moduleNamespace(aCx);
   nsresult rv = moduleloader->ImportESModule(aCx, uri, &moduleNamespace);
   if (NS_FAILED(rv)) {
+    if (maybeSyncLoaderScope) {
+      // Import error itself should be propagated.
+      maybeSyncLoaderScope->Finish();
+    }
     Throw(aCx, rv);
     return false;
   }
@@ -1802,11 +1810,11 @@ void ChromeUtils::InvalidateResourceCache(GlobalObject& aGlobal,
 
 void ChromeUtils::GetCachedJavaScriptSource(
     GlobalObject& aGlobal, const nsACString& aKey, const nsACString& aURI,
-    const nsACString& aNonce, const nsACString& aHintCharset,
-    JS::MutableHandle<JS::Value> aRetval, ErrorResult& aRv) {
+    const nsACString& aHintCharset, JS::MutableHandle<JS::Value> aRetval,
+    ErrorResult& aRv) {
   JSContext* cx = aGlobal.Context();
-  if (!SharedScriptCache::GetCachedScriptSource(cx, aKey, aURI, aNonce,
-                                                aHintCharset, aRetval)) {
+  if (!SharedScriptCache::GetCachedScriptSource(cx, aKey, aURI, aHintCharset,
+                                                aRetval)) {
     aRv.NoteJSContextException(aGlobal.Context());
   }
 }

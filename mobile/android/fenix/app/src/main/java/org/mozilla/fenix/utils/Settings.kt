@@ -34,7 +34,7 @@ import mozilla.components.support.ktx.android.content.longPreference
 import mozilla.components.support.ktx.android.content.stringPreference
 import mozilla.components.support.ktx.android.content.stringSetPreference
 import mozilla.components.support.locale.LocaleManager
-import mozilla.components.support.utils.BrowsersCache
+import mozilla.components.support.utils.Browsers
 import mozilla.components.support.utils.ext.PackageManagerCompatHelper
 import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import org.mozilla.experiments.nimbus.NimbusEventStore
@@ -1157,8 +1157,7 @@ class Settings(
      * G5+).
      */
     fun isDefaultBrowserBlocking(): Boolean {
-        val browsers = BrowsersCache.all(appContext)
-        return browsers.isDefaultBrowser
+        return Browsers.isDefaultBrowser(appContext)
     }
 
     var reEngagementNotificationShown by booleanPreference(
@@ -1780,15 +1779,6 @@ class Settings(
     )
 
     /**
-     * Used in [SearchWidgetProvider] to update when the search widget
-     * exists on home screen or if it has been removed completely.
-     */
-    fun setSearchWidgetInstalled(installed: Boolean) {
-        val key = appContext.getPreferenceKey(R.string.pref_key_search_widget_installed_2)
-        preferences.edit { putBoolean(key, installed) }
-    }
-
-    /**
      * In Bug 1853113, we changed the type of [searchWidgetInstalled] from int to boolean without
      * changing the pref key, now we have to migrate users that were using the previous type int
      * to the new one boolean. The migration will only happens if pref_key_search_widget_installed
@@ -1803,12 +1793,12 @@ class Settings(
         }
 
         if (installedCount > 0) {
-            setSearchWidgetInstalled(true)
+            searchWidgetInstalled = true
             preferences.edit { remove(oldKey) }
         }
     }
 
-    val searchWidgetInstalled by booleanPreference(
+    var searchWidgetInstalled by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_search_widget_installed_2),
         default = false,
     )
@@ -2584,7 +2574,7 @@ class Settings(
      */
     var shakeToSummarizeFeatureFlagEnabled by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_shake_to_summarize),
-        default = Config.channel.isDebug,
+        default = { FxNimbus.features.shakeToSummarize.value().enabled },
     )
 
     /**
@@ -2912,6 +2902,14 @@ class Settings(
     var tabSearchEnabled by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_tab_search),
         default = { DefaultTabManagementFeatureHelper.tabSearchEnabled },
+    )
+
+    /**
+     * Whether the Tab Groups feature is enabled.
+     */
+    var tabGroupsEnabled by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_tab_groups),
+        default = { DefaultTabManagementFeatureHelper.tabGroupsEnabled },
     )
 
     /**

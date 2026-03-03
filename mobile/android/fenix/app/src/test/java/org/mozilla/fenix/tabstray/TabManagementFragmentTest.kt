@@ -12,8 +12,6 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
-import mozilla.components.browser.state.state.ContentState
-import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -28,6 +26,7 @@ import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.helpers.MockkRetryTestRule
 import org.mozilla.fenix.home.HomeScreenViewModel
 import org.mozilla.fenix.navigation.NavControllerProvider
+import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.ui.TabManagementFragment
@@ -85,34 +84,9 @@ class TabManagementFragmentTest {
 
     @Test
     fun `GIVEN a list of tabs WHEN a tab is present with an ID THEN the index is returned`() {
-        val tab1 = TabSessionState(
-            id = "tab1",
-            content = ContentState(
-                url = "https://mozilla.org",
-                private = false,
-            ),
-        )
-        val tab2 = TabSessionState(
-            id = "tab2",
-            content = ContentState(
-                url = "https://mozilla.org",
-                private = false,
-            ),
-        )
-        val tab3 = TabSessionState(
-            id = "tab3",
-            content = ContentState(
-                url = "https://mozilla.org",
-                private = false,
-            ),
-        )
-        val tabsList = listOf(
-            tab1,
-            tab2,
-            tab3,
-        )
+        val tabsList = List(size = 3) { createTab(id = "tab$it", url = "https://mozilla.org") }
         val position = fragment.getTabPositionFromId(tabsList, "tab2")
-        assertEquals(1, position)
+        assertEquals(2, position)
     }
 
     @Test
@@ -160,7 +134,7 @@ class TabManagementFragmentTest {
             fragment.shouldPerformTransitionAnimation(
                 selectedPage = Page.NormalTabs,
                 mode = TabsTrayState.Mode.Normal,
-                tabState = fakeTabSessionState(isPrivate = false),
+                tabState = fakeTab(isPrivate = false),
             ),
         )
     }
@@ -173,8 +147,8 @@ class TabManagementFragmentTest {
         assertFalse(
             fragment.shouldPerformTransitionAnimation(
                 selectedPage = Page.NormalTabs,
-                mode = TabsTrayState.Mode.Select(setOf(fakeTabSessionState(isPrivate = false))),
-                tabState = fakeTabSessionState(isPrivate = false),
+                mode = TabsTrayState.Mode.Select(setOf(fakeTab(isPrivate = false))),
+                tabState = fakeTab(isPrivate = false),
             ),
         )
     }
@@ -188,7 +162,7 @@ class TabManagementFragmentTest {
             fragment.shouldPerformTransitionAnimation(
                 selectedPage = Page.NormalTabs,
                 mode = TabsTrayState.Mode.Normal,
-                tabState = fakeTabSessionState(isPrivate = false),
+                tabState = fakeTab(isPrivate = false),
             ),
         )
     }
@@ -202,7 +176,7 @@ class TabManagementFragmentTest {
             fragment.shouldPerformTransitionAnimation(
                 selectedPage = Page.PrivateTabs,
                 mode = TabsTrayState.Mode.Normal,
-                tabState = fakeTabSessionState(isPrivate = true),
+                tabState = fakeTab(isPrivate = true),
             ),
         )
     }
@@ -216,7 +190,7 @@ class TabManagementFragmentTest {
             fragment.shouldPerformTransitionAnimation(
                 selectedPage = Page.NormalTabs,
                 mode = TabsTrayState.Mode.Normal,
-                tabState = fakeTabSessionState(isPrivate = true),
+                tabState = fakeTab(isPrivate = true),
             ),
         )
     }
@@ -230,7 +204,7 @@ class TabManagementFragmentTest {
             fragment.shouldPerformTransitionAnimation(
                 selectedPage = Page.PrivateTabs,
                 mode = TabsTrayState.Mode.Normal,
-                tabState = fakeTabSessionState(isPrivate = false),
+                tabState = fakeTab(isPrivate = false),
             ),
         )
     }
@@ -244,7 +218,7 @@ class TabManagementFragmentTest {
             fragment.shouldPerformTransitionAnimation(
                 selectedPage = Page.SyncedTabs,
                 mode = TabsTrayState.Mode.Normal,
-                tabState = fakeTabSessionState(isPrivate = false),
+                tabState = fakeTab(isPrivate = false),
             ),
         )
     }
@@ -258,19 +232,15 @@ class TabManagementFragmentTest {
             fragment.shouldPerformTransitionAnimation(
                 selectedPage = Page.SyncedTabs,
                 mode = TabsTrayState.Mode.Normal,
-                tabState = fakeTabSessionState(isPrivate = true),
+                tabState = fakeTab(isPrivate = true),
             ),
         )
     }
 
-    private fun fakeTabSessionState(isPrivate: Boolean): TabSessionState {
-        return TabSessionState(
-            content = ContentState(
-                url = "www.mozilla.org",
-                private = isPrivate,
-            ),
-        )
-    }
+    private fun fakeTab(isPrivate: Boolean) = createTab(
+        url = "www.mozilla.org",
+        private = isPrivate,
+    )
 
     private fun testShouldShowLockPbmBanner(
         isPrivateMode: Boolean = true,

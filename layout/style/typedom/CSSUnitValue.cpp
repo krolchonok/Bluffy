@@ -80,7 +80,11 @@ void CSSUnitValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
   // and fully spec-compliant manner. See bug 2005142
   const bool isValueOutOfRange = [](NonCustomCSSPropertyId aId, double aValue) {
     switch (aId) {
+      case eCSSProperty_font_size_adjust:
       case eCSSProperty_font_stretch:
+      case eCSSProperty_flex_grow:
+      case eCSSProperty_flex_shrink:
+      case eCSSProperty_stroke_miterlimit:
       case eCSSProperty_column_width:
       case eCSSProperty_flex_basis:
       case eCSSProperty_font_size:

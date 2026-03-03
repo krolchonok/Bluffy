@@ -15,6 +15,7 @@
 #include "nsIChannel.h"
 #include "xptinfo.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ScopedPrefs.h"
 
 mozilla::LazyLogModule gBCWebProgressLog("BCWebProgress");
 
@@ -41,7 +42,14 @@ NS_INTERFACE_MAP_END
 
 BrowsingContextWebProgress::BrowsingContextWebProgress(
     CanonicalBrowsingContext* aBrowsingContext)
-    : mCurrentBrowsingContext(aBrowsingContext) {}
+    : mCurrentBrowsingContext(aBrowsingContext) {
+  if (aBrowsingContext->IsTop()) {
+    mScopedPrefs = new mozilla::ScopedPrefs();
+  } else {
+    // inherit top scoped prefs from top browsing context
+    mScopedPrefs = aBrowsingContext->Top()->GetWebProgress()->mScopedPrefs;
+  }
+}
 
 BrowsingContextWebProgress::~BrowsingContextWebProgress() = default;
 
@@ -207,6 +215,10 @@ BrowsingContextWebProgress::GetBounceTrackingState() {
 
 void BrowsingContextWebProgress::DropBounceTrackingState() {
   mBounceTrackingState = nullptr;
+}
+
+already_AddRefed<nsIScopedPrefs> BrowsingContextWebProgress::ScopedPrefs() {
+  return do_AddRef(mScopedPrefs);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

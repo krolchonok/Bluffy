@@ -227,7 +227,11 @@ class BookmarksRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "selectFolder: Clicked folder with title: $title")
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun longClickBookmarkedItem(title: String) {
+        Log.i(TAG, "longClickBookmarkedItem: Waiting for $waitingTime for bookmark with title: $title to exist")
+        composeTestRule.waitUntilAtLeastOneExists(hasText(title), waitingTime)
+        Log.i(TAG, "longClickBookmarkedItem: Waited for $waitingTime for bookmark with title: $title to exist")
         Log.i(TAG, "longClickBookmarkedItem: Trying to long click bookmark with title: $title")
         composeTestRule.onNodeWithText(title).performTouchInput { longClick(durationMillis = LONG_CLICK_DURATION) }
         Log.i(TAG, "longClickBookmarkedItem: Long clicked bookmark with title: $title")
@@ -253,7 +257,11 @@ class BookmarksRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     class Transition(private val composeTestRule: ComposeTestRule) {
+        @OptIn(ExperimentalTestApi::class)
         fun openThreeDotMenu(bookmarkedItem: String, interact: ThreeDotMenuBookmarksRobot.() -> Unit): ThreeDotMenuBookmarksRobot.Transition {
+            Log.i(TAG, "openThreeDotMenu: Waiting for $waitingTime for the bookmarked item $bookmarkedItem three dot button to exist")
+            composeTestRule.waitUntilAtLeastOneExists(hasContentDescription("Item Menu for $bookmarkedItem"), waitingTime)
+            Log.i(TAG, "openThreeDotMenu: Waited for $waitingTime for the bookmarked item $bookmarkedItem three dot button to exist")
             Log.i(TAG, "openThreeDotMenu: Trying to click three dot button for bookmark item: $bookmarkedItem")
             composeTestRule.threeDotMenuButton(bookmarkedItem).performClick()
             Log.i(TAG, "openThreeDotMenu: Clicked three dot button for bookmark item: $bookmarkedItem")
