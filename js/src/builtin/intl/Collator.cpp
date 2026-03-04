@@ -245,17 +245,11 @@ static bool InitializeCollator(JSContext* cx, Handle<CollatorObject*> collator,
                                Handle<JS::Value> locales,
                                Handle<JS::Value> optionsValue) {
   // Steps 4-5.
-  Rooted<LocalesList> requestedLocales(cx, cx);
-  if (!CanonicalizeLocaleList(cx, locales, &requestedLocales)) {
+  auto* requestedLocales = CanonicalizeLocaleList(cx, locales);
+  if (!requestedLocales) {
     return false;
   }
-
-  Rooted<ArrayObject*> requestedLocalesArray(
-      cx, LocalesListToArray(cx, requestedLocales));
-  if (!requestedLocalesArray) {
-    return false;
-  }
-  collator->setRequestedLocales(requestedLocalesArray);
+  collator->setRequestedLocales(requestedLocales);
 
   CollatorOptions colOptions{};
 
@@ -505,7 +499,7 @@ static bool ResolveLocale(JSContext* cx, Handle<CollatorObject*> collator) {
     // through a fallback (da), we need to get the actual data locale first.
     Rooted<JSLinearString*> dataLocale(cx);
     if (!BestAvailableLocale(cx, AvailableLocaleKind::Collator,
-                             resolved.dataLocale(), nullptr, &dataLocale)) {
+                             resolved.dataLocale(), &dataLocale)) {
       return false;
     }
     MOZ_ASSERT(dataLocale);

@@ -66,7 +66,7 @@ protobuf = "4.33.2" # Keep Protobuf in sync with the version used by AppServices
 # Gradle plugins
 dependency-analysis = "3.5.1"
 jacoco = "0.8.14"
-kaml = "0.61.0"
+kaml = "0.104.0"
 kotlin-dsl = "6.4.1"
 protobuf-plugin = "0.9.6"
 python-envs-plugin = "0.0.31"
@@ -78,7 +78,7 @@ tomlj = "1.1.1"
 detekt = "1.23.8"
 google-java-format = "1.28.0"
 ktlint = "1.8.0"
-spotless = "8.2.0"
+spotless = "8.3.0"
 
 # Mozilla
 glean = "67.0.0"

@@ -354,7 +354,8 @@ nsresult nsHttpTransaction::Init(
 
   bool forceUseHTTPSRR = StaticPrefs::network_dns_force_use_https_rr();
   if ((StaticPrefs::network_dns_use_https_rr_as_altsvc() &&
-       !(mCaps & NS_HTTP_DISALLOW_HTTPS_RR)) ||
+       !(mCaps & NS_HTTP_DISALLOW_HTTPS_RR) &&
+       !(mCaps & NS_HTTP_USE_HAPPY_EYEBALLS)) ||
       forceUseHTTPSRR) {
     nsCOMPtr<nsIEventTarget> target;
     (void)gHttpHandler->GetSocketThreadTarget(getter_AddRefs(target));
@@ -418,9 +419,11 @@ void nsHttpTransaction::OnPendingQueueInserted(
     mHashKeyOfConnectionEntry.Assign(aConnectionHashKey);
   }
 
-  // Don't create mHttp3BackupTimer if HTTPS RR is in play.
+  // Don't create mHttp3BackupTimer if HTTPS RR is used or Happy Eyeballs is
+  // enabled. The Happy Eyeballs state machine will handle fallback to h2.
   if ((mConnInfo->IsHttp3() || mConnInfo->IsHttp3ProxyConnection()) &&
-      !mOrigConnInfo && !mConnInfo->GetWebTransport()) {
+      !mOrigConnInfo && !mConnInfo->GetWebTransport() &&
+      !(mCaps & NS_HTTP_USE_HAPPY_EYEBALLS)) {
     // Backup timer should only be created once.
     if (!mHttp3BackupTimerCreated) {
       CreateAndStartTimer(mHttp3BackupTimer, this,
@@ -3534,7 +3537,7 @@ void nsHttpTransaction::OnBackupConnectionReady(bool aTriggeredByHTTPSRR) {
 
 static void CreateBackupConnection(
     nsHttpConnectionInfo* aBackupConnInfo, nsIInterfaceRequestor* aCallbacks,
-    uint32_t aCaps, std::function<void(bool)>&& aResultCallback) {
+    uint32_t aCaps, std::function<void(nsresult)>&& aResultCallback) {
   aBackupConnInfo->SetFallbackConnection(true);
   RefPtr<SpeculativeTransaction> trans = new FallbackTransaction(
       aBackupConnInfo, aCallbacks, aCaps | NS_HTTP_DISALLOW_HTTP3,
@@ -3563,8 +3566,8 @@ void nsHttpTransaction::OnHttp3BackupTimer() {
   }
 
   RefPtr<nsHttpTransaction> self = this;
-  auto callback = [self](bool aSucceded) {
-    if (aSucceded) {
+  auto callback = [self](nsresult aResult) {
+    if (NS_SUCCEEDED(aResult)) {
       self->OnBackupConnectionReady(false);
     }
   };
@@ -3619,8 +3622,8 @@ void nsHttpTransaction::OnFastFallbackTimer() {
   MOZ_ASSERT(!mBackupConnInfo->IsHttp3());
 
   RefPtr<nsHttpTransaction> self = this;
-  auto callback = [self](bool aSucceded) {
-    if (!aSucceded) {
+  auto callback = [self](nsresult aResult) {
+    if (NS_FAILED(aResult)) {
       return;
     }
 

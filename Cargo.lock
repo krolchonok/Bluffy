@@ -2689,6 +2689,7 @@ dependencies = [
  "geckoservo",
  "gkrust-uniffi-components",
  "gkrust_utils",
+ "happy_eyeballs_glue",
  "harfbuzz_glue",
  "http_sfv",
  "idna_glue",
@@ -2734,6 +2735,7 @@ dependencies = [
  "rure",
  "rusqlite 0.37.0",
  "rust_minidump_writer_linux",
+ "shell_windows",
  "signature_cache",
  "static_prefs",
  "storage",
@@ -2989,6 +2991,30 @@ dependencies = [
  "crunchy",
  "num-traits",
  "serde",
+]
+
+[[package]]
+name = "happy-eyeballs"
+version = "0.1.0"
+source = "git+https://github.com/mozilla/happy-eyeballs?branch=main#2da23db70020c4f1f3359fffa0661a9cee8ed560"
+dependencies = [
+ "log",
+ "thiserror 2.0.12",
+ "url",
+]
+
+[[package]]
+name = "happy_eyeballs_glue"
+version = "0.1.0"
+dependencies = [
+ "happy-eyeballs",
+ "libc",
+ "log",
+ "nserror",
+ "nsstring",
+ "thin-vec",
+ "winapi",
+ "xpcom",
 ]
 
 [[package]]
@@ -3699,6 +3725,7 @@ dependencies = [
  "icu_capi",
  "mozglue-static",
  "normalizer_glue",
+ "properties_glue",
  "unicode-bidi-ffi",
 ]
 
@@ -5859,6 +5886,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "74605f360ce573babfe43964cbe520294dcb081afbf8c108fc6e23036b4da2df"
 
 [[package]]
+name = "properties_glue"
+version = "0.1.0"
+dependencies = [
+ "icu_casemap",
+ "icu_collections",
+ "icu_properties",
+]
+
+[[package]]
 name = "prost"
 version = "0.13.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6661,6 +6697,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f40ca3c46823713e0d4209592e8d6e826aa57e928f09752619fc696c499637f6"
 dependencies = [
  "lazy_static",
+]
+
+[[package]]
+name = "shell_windows"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "log",
+ "nserror",
+ "nsstring",
+ "sha2",
+ "windows",
+ "xpcom",
 ]
 
 [[package]]
