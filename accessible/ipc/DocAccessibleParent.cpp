@@ -111,11 +111,7 @@ mozilla::ipc::IPCResult DocAccessibleParent::ProcessShowEvent(
     // required show events.
     if (!parent) {
       NS_ERROR("adding child to unknown accessible");
-#ifdef DEBUG
       return IPC_FAIL(this, "unknown parent accessible");
-#else
-      return IPC_OK();
-#endif
     }
     lastParent = parent;
     lastParentID = accData.ParentID();
@@ -123,11 +119,7 @@ mozilla::ipc::IPCResult DocAccessibleParent::ProcessShowEvent(
     uint32_t childIdx = accData.IndexInParent();
     if (childIdx > parent->ChildCount()) {
       NS_ERROR("invalid index to add child at");
-#ifdef DEBUG
       return IPC_FAIL(this, "invalid index");
-#else
-      return IPC_OK();
-#endif
     }
 
     RemoteAccessible* child = CreateAcc(accData);
@@ -890,13 +882,9 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvBindChildDoc(
   ipc::IPCResult result = AddChildDoc(childDoc, aID, false);
   MOZ_ASSERT(result);
   MOZ_ASSERT(CheckDocTree());
-#ifdef DEBUG
   if (!result) {
     return result;
   }
-#else
-  result = IPC_OK();
-#endif
 
   return result;
 }
@@ -913,12 +901,7 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
   // document it self.
   ProxyEntry* e = mAccessibles.GetEntry(aParentID);
   if (!e) {
-#ifndef FUZZING_SNAPSHOT
-    // This diagnostic assert and the one down below expect a well-behaved
-    // child process. In IPC fuzzing, we directly fuzz parameters of each
-    // method over IPDL and the asserts are not valid under these conditions.
-    MOZ_DIAGNOSTIC_CRASH("Binding to nonexistent proxy!");
-#endif
+    MOZ_ASSERT_UNREACHABLE("Binding to nonexistent proxy!");
     return IPC_FAIL(this, "binding to nonexistant proxy!");
   }
 
@@ -930,9 +913,7 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
   // here.
   if (!outerDoc->IsOuterDoc() || outerDoc->ChildCount() > 1 ||
       (outerDoc->ChildCount() == 1 && !outerDoc->RemoteChildAt(0)->IsDoc())) {
-#ifndef FUZZING_SNAPSHOT
-    MOZ_DIAGNOSTIC_CRASH("Binding to parent that isn't a valid OuterDoc!");
-#endif
+    MOZ_ASSERT_UNREACHABLE("Binding to parent that isn't a valid OuterDoc!");
     return IPC_FAIL(this, "Binding to parent that isn't a valid OuterDoc!");
   }
 

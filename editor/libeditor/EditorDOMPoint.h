@@ -11,6 +11,7 @@
 #include "mozilla/EditorForwards.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RangeBoundary.h"
+#include "mozilla/ToString.h"
 #include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"  // for Selection::InterlinePosition
@@ -636,8 +637,8 @@ class EditorDOMPointBase final {
    * mOffset may be invalidated.
    */
   template <typename ContainerType>
-  void Set(ContainerType* aContainer, uint32_t aOffset) {
-    mParent = aContainer;
+  void Set(const ContainerType* aContainer, uint32_t aOffset) {
+    mParent = const_cast<ContainerType*>(aContainer);
     mChild = nullptr;
     mOffset = mozilla::Some(aOffset);
     mIsChildInitialized = false;
@@ -1461,6 +1462,10 @@ class EditorDOMPointBase final {
     return aStream;
   }
 
+  friend inline auto format_as(const SelfType& aDOMPoint) {
+    return ToString(aDOMPoint);
+  }
+
  private:
   void EnsureChild() {
     if (mIsChildInitialized) {
@@ -1706,6 +1711,13 @@ class EditorDOMRangeBase final {
     mEnd.Clear();
   }
 
+  inline void AssertBoundariesAreSetAndValid() const {
+    NS_WARNING_ASSERTION(mStart.IsSetAndValid(), ToString(mStart).c_str());
+    MOZ_ASSERT(mStart.IsSetAndValid());
+    NS_WARNING_ASSERTION(mEnd.IsSetAndValid(), ToString(mEnd).c_str());
+    MOZ_ASSERT(mEnd.IsSetAndValid());
+  }
+
   const PointType& StartRef() const { return mStart; }
   const PointType& EndRef() const { return mEnd; }
 
@@ -1817,6 +1829,10 @@ class EditorDOMRangeBase final {
               << " }";
     }
     return aStream;
+  }
+
+  friend inline auto format_as(const SelfType& aRange) {
+    return ToString(aRange);
   }
 
  private:

@@ -3670,7 +3670,7 @@
 # Media element pseudo-classes
 - name: dom.media.pseudo-classes.enabled
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
   rust: true
 
@@ -10555,6 +10555,13 @@
 
 # Enable relative color syntax: https://drafts.csswg.org/css-color-5/#relative-colors
 - name: layout.css.relative-color-syntax.enabled
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+  rust: true
+
+# Enable revert-rule: https://drafts.csswg.org/css-cascade-5/#revert-rule-keyword
+- name: layout.css.revert-rule.enabled
   type: RelaxedAtomicBool
   value: true
   mirror: always
@@ -18094,6 +18101,16 @@
   mirror: always
 
 - name: security.integrity_policy.stylesheet.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
+- name: security.waict.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
+- name: security.waict.downgrade_protection.enable
   type: RelaxedAtomicBool
   value: false
   mirror: always

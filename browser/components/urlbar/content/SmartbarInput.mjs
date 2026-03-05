@@ -2482,10 +2482,12 @@ export class SmartbarInput extends HTMLElement {
     resetSearchState = true,
     event,
   } = {}) {
-    // When mentions panel is open, skip queries triggered by input events
-    // since the mentions plugin will handle querying providers directly.
+    // When mentions panel is open, skip queries triggered by input events and
+    // close the suggestions view. The mentions plugin will handle querying
+    // providers directly.
     const isHandlingMentions = this.inputField.isHandlingMentions;
     if (isHandlingMentions && event) {
+      this.view.close();
       return;
     }
 
@@ -5492,6 +5494,13 @@ export class SmartbarInput extends HTMLElement {
       }
     }
 
+    // Suppress queries when there are inline mentions.
+    if (this.inputField.hasMention) {
+      this.suppressStartQuery();
+    } else if (!this._permanentlySuppressStartQuery) {
+      this.unsuppressStartQuery();
+    }
+
     if (!value) {
       this.#updateSmartbarCTAButton();
     }
@@ -5803,17 +5812,6 @@ export class SmartbarInput extends HTMLElement {
       // bar but we should not untrim in that case.
       this._untrimOnFocusAfterKeydown = !this.focused;
       return;
-    }
-
-    // When mentions panel is open don’t let key navigation select urlbar results.
-    if (this.inputField.isHandlingMentions) {
-      if (
-        event.keyCode === KeyEvent.DOM_VK_TAB ||
-        event.keyCode === KeyEvent.DOM_VK_DOWN ||
-        event.keyCode === KeyEvent.DOM_VK_UP
-      ) {
-        return;
-      }
     }
 
     if (
@@ -6233,7 +6231,7 @@ export class SmartbarInput extends HTMLElement {
           type: "tab",
           url,
           label: tab.label || url,
-          iconSrc: tab.image || lazy.UrlbarUtils.getIconForUrl(url),
+          iconSrc: this.#resolveTabIconSrc(tab.image, url),
         });
       }
     }
@@ -6254,6 +6252,7 @@ export class SmartbarInput extends HTMLElement {
     const container = this.#findWebsiteContextChipsContainer();
     if (container) {
       container.websites = finalWebsites;
+      container.removable = true;
       container.hidden = !finalWebsites.length;
     }
   }
@@ -6264,6 +6263,22 @@ export class SmartbarInput extends HTMLElement {
    */
   updateContextChips() {
     this.#updateContextChips();
+  }
+
+  /**
+   * Resolves a tab favicon to a URL safe for use in both aiWindow.html and
+   * aiChatContent.html. Only chrome: URLs are passed through; all others
+   * (data:, moz-remote-image:, https:, etc.) fall back to page-icon: which
+   * works in both the chrome process and the privileged about content process.
+   *
+   * @param {string} tabImage
+   * @param {string} url
+   * @returns {string}
+   */
+  #resolveTabIconSrc(tabImage, url) {
+    return tabImage?.startsWith("chrome:")
+      ? tabImage
+      : lazy.UrlbarUtils.getIconForUrl(url);
   }
 
   /**

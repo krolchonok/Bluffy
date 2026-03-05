@@ -10,6 +10,8 @@ import { createMentionsPlugin } from "chrome://browser/content/multilineeditor/p
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AIWindowUI:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
   MENTION_TYPE:
     "moz-src:///browser/components/urlbar/SmartbarMentionsPanelSearch.sys.mjs",
   SkippableTimer: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
@@ -277,8 +279,20 @@ function setupMentionsPlugin(editorElement, panelList) {
   editorElement.addEventListener("keydown", handleEditorKeyDown, {
     capture: true,
   });
-  Object.defineProperty(editorElement, "isHandlingMentions", {
-    get: () => isHandlingMentions,
+
+  /**
+   * Adds the following properties to `editorElement`:
+   *
+   * @property {boolean} isHandlingMentions - Whether the mentions panel is open
+   * @property {boolean} hasMention - Whether the editor has inline mentions
+   */
+  Object.defineProperties(editorElement, {
+    isHandlingMentions: {
+      get: () => isHandlingMentions,
+    },
+    hasMention: {
+      get: () => plugin.mentions.hasMention(),
+    },
   });
 
   return plugin;
@@ -331,6 +345,8 @@ export function createEditor(inputElement) {
     container.querySelector("smartwindow-panel-list")
   );
   panelList.placeholderL10nId = "smartbar-mentions-list-no-results-label";
+  panelList.sidebarMode =
+    window.browsingContext?.embedderElement?.id === lazy.AIWindowUI.BROWSER_ID;
 
   const mentionsPlugin = setupMentionsPlugin(editorElement, panelList);
   editorElement.plugins = [mentionsPlugin];

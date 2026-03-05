@@ -585,12 +585,13 @@ HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
   // Make sure we don't end up with selection collapsed after an invisible
   // `<br>` element.
   EditorDOMPoint pointToPutCaret = adjustedEditablePoint.To<EditorDOMPoint>();
+  // FIXME: Handle preformatted linefeed too
   const WSScanResult prevVisibleThing =
       WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
           // We want to put caret to an editable point so that we need to scan
           // only editable nodes.
           {WSRunScanner::Option::OnlyEditableNodes}, pointToPutCaret);
-  if (prevVisibleThing.ReachedInvisibleBRElement()) {
+  if (prevVisibleThing.ReachedBRElementFollowedByBlockBoundary()) {
     const WSScanResult prevVisibleThingOfBRElement =
         WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
             {WSRunScanner::Option::OnlyEditableNodes},
@@ -939,7 +940,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HTMLWithContextInserter::Run(
             .NextPointOrAfterContainer<EditorDOMPoint>();
     if (MOZ_LIKELY(afterLastInsertedContent.IsInContentNode())) {
       nsresult rv = mHTMLEditor.EnsureNoFollowingUnnecessaryLineBreak(
-          afterLastInsertedContent);
+          afterLastInsertedContent, mEditingHost);
       if (NS_FAILED(rv)) {
         NS_WARNING(
             "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
@@ -3478,6 +3479,21 @@ nsresult HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
   // Set the selection to after the <span> if and only if we wrap the text into
   // it.
   if (containerSpanElement) {
+    // If we inserted the quotation into the new span, it may have a padding
+    // line break at last. However, we don't want it because the user does not
+    // intent to modify the empty line in the quotation block.
+    // FIXME: We need a way to make HandleInsertText() not to insert a padding
+    // line break for the last empty line to save the footprint.
+    if (const RefPtr<HTMLBRElement> brElement = HTMLBRElement::FromNodeOrNull(
+            containerSpanElement->GetLastChild())) {
+      if (brElement->IsPaddingForEmptyLastLine()) {
+        nsresult rv = DeleteNodeWithTransaction(*brElement);
+        if (NS_FAILED(rv)) {
+          NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+          return rv;
+        }
+      }
+    }
     EditorRawDOMPoint afterNewSpanElement(
         EditorRawDOMPoint::After(*containerSpanElement));
     NS_WARNING_ASSERTION(

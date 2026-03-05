@@ -146,7 +146,12 @@ static constexpr uint32_t kVideoDroppedRatio = 1;
 #  define DESKTOP_DEFAULT(name) RFPTarget::name,
 #endif
 
-constinit const RFPTargetSet kDefaultFingerprintingProtectionsBase = {
+#if defined(MOZ_WIDGET_ANDROID) || !defined(NIGHTLY_BUILD)
+constinit
+#else
+MOZ_RUNINIT
+#endif
+    const RFPTargetSet kDefaultFingerprintingProtectionsBase = {
 #include "RFPTargetsDefaultBaseline.inc"
 };
 
@@ -3022,7 +3027,7 @@ Maybe<RFPTargetSet> nsRFPService::GetOverriddenFingerprintingSettingsForURI(
     addIsBaseline(key, isBaseline);
     fpOverrides = service->mFingerprintingOverrides.MaybeGet(key);
     if (fpOverrides) {
-      result = fpOverrides;
+      result = std::move(fpOverrides);
     }
 
     return result;
@@ -3071,7 +3076,7 @@ Maybe<RFPTargetSet> nsRFPService::GetOverriddenFingerprintingSettingsForURI(
   addIsBaseline(key, isBaseline);
   fpOverrides = service->mFingerprintingOverrides.MaybeGet(key);
   if (fpOverrides) {
-    result = fpOverrides;
+    result = std::move(fpOverrides);
   }
 
   return result;

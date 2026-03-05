@@ -1271,11 +1271,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
 
     mozilla::ipc::IPCResult added = parentDoc->AddChildDoc(doc, aParentID);
     if (!added) {
-#  ifdef DEBUG
       return added;
-#  else
-      return IPC_OK();
-#  endif
     }
 
 #  ifdef XP_WIN
@@ -1285,6 +1281,14 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
 #  endif
 
     return IPC_OK();
+  }
+
+  if (auto* prevTopLevel = GetTopLevelDocAccessible()) {
+    // Sometimes, we can get a new top level DocAccessibleParent before the
+    // old one gets destroyed. The old one will die pretty shortly anyway,
+    // so just destroy it now. If we don't do this, GetTopLevelDocAccessible()
+    // might return the wrong document for a short while.
+    prevTopLevel->Destroy();
   }
 
   if (aBrowsingContext) {
@@ -1304,11 +1308,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
             bridge->GetEmbedderAccessibleDoc()) {
       mozilla::ipc::IPCResult added = embedderDoc->AddChildDoc(bridge);
       if (!added) {
-#  ifdef DEBUG
         return added;
-#  else
-        return IPC_OK();
-#  endif
       }
     }
     return IPC_OK();
@@ -1321,13 +1321,6 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
       return IPC_FAIL_NO_REASON(this);
     }
 
-    if (auto* prevTopLevel = GetTopLevelDocAccessible()) {
-      // Sometimes, we can get a new top level DocAccessibleParent before the
-      // old one gets destroyed. The old one will die pretty shortly anyway,
-      // so just destroy it now. If we don't do this, GetTopLevelDocAccessible()
-      // might return the wrong document for a short while.
-      prevTopLevel->Destroy();
-    }
     doc->SetTopLevel();
     a11y::DocManager::RemoteDocAdded(doc);
 #  ifdef XP_WIN

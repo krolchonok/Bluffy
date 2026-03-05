@@ -33,6 +33,7 @@ namespace mozilla {
 using namespace dom;
 
 using LeafNodeOption = HTMLEditUtils::LeafNodeOption;
+using TreatInvisibleLineBreakAs = HTMLEditUtils::TreatInvisibleLineBreakAs;
 
 Result<EditorDOMPoint, nsresult>
 WhiteSpaceVisibilityKeeper::PrepareToSplitBlockElement(
@@ -450,7 +451,7 @@ Result<MoveNodeResult, nsresult> WhiteSpaceVisibilityKeeper::
           aHTMLEditor.MoveChildrenWithTransaction(
               aRightBlockElement, moveResult.NextInsertionPointRef(),
               HTMLEditor::PreserveWhiteSpaceStyle::No,
-              HTMLEditor::RemoveIfCommentNode::Yes);
+              HTMLEditor::RemoveIfInvisibleNode::Yes);
       if (MOZ_UNLIKELY(moveChildrenResult.isErr())) {
         if (NS_WARN_IF(moveChildrenResult.inspectErr() ==
                        NS_ERROR_EDITOR_DESTROYED)) {
@@ -1730,7 +1731,8 @@ nsresult WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesAfter(
     }
     // If the preceding Text is collapsed and invisible, we should delete it
     // and keep deleting preceding invisible white-spaces.
-    if (!HTMLEditUtils::IsVisibleTextNode(*followingTextNode)) {
+    if (!HTMLEditUtils::IsVisibleTextNode(
+            *followingTextNode, TreatInvisibleLineBreakAs::Invisible)) {
       nsIContent* emptyInlineContent =
           HTMLEditUtils::GetMostDistantAncestorEditableEmptyInlineElement(
               *followingTextNode, BlockInlineCheck::UseComputedDisplayStyle);
@@ -1816,7 +1818,8 @@ nsresult WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpacesBefore(
     }
     // If the preceding Text is collapsed and invisible, we should delete it
     // and keep deleting preceding invisible white-spaces.
-    if (!HTMLEditUtils::IsVisibleTextNode(*precedingTextNode)) {
+    if (!HTMLEditUtils::IsVisibleTextNode(
+            *precedingTextNode, TreatInvisibleLineBreakAs::Invisible)) {
       nsIContent* emptyInlineContent =
           HTMLEditUtils::GetMostDistantAncestorEditableEmptyInlineElement(
               *precedingTextNode, BlockInlineCheck::UseComputedDisplayStyle);
@@ -2393,22 +2396,17 @@ WhiteSpaceVisibilityKeeper::DeleteContentNodeAndJoinTextNodesAroundIt(
       // the deleting empty block for the compatibility with the other
       // browsers.
       if (pointToPutCaret.IsBefore(EditorRawDOMPoint(&aContentToDelete))) {
-        WSScanResult nextThingOfCaretPoint =
-            WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-                {}, pointToPutCaret);
-        Maybe<EditorLineBreak> lineBreak;
-        if (nextThingOfCaretPoint.ReachedLineBreak()) {
-          lineBreak.emplace(
-              nextThingOfCaretPoint.CreateEditorLineBreak<EditorLineBreak>());
-          nextThingOfCaretPoint =
-              WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
-                  {}, lineBreak->After<EditorRawDOMPoint>());
-        }
+        const WSScanResult nextThingOfCaretPoint = HTMLEditUtils::
+            ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
+                pointToPutCaret,
+                // We never delete a line break in an empty block so that we can
+                // treat it as significant and can skip the normalization.
+                PaddingForEmptyBlock::Significant, aEditingHost);
         if (nextThingOfCaretPoint.ReachedBlockBoundary()) {
           const EditorDOMPoint atBlockBoundary =
-              nextThingOfCaretPoint.ReachedCurrentBlockBoundary()
-                  ? EditorDOMPoint::AtEndOf(*nextThingOfCaretPoint.ElementPtr())
-                  : EditorDOMPoint(nextThingOfCaretPoint.ElementPtr());
+              nextThingOfCaretPoint
+                  .PointAtReachedBlockBoundaryOrEditingHostBoundary<
+                      EditorDOMPoint>();
           Result<EditorDOMPoint, nsresult> afterLastVisibleThingOrError =
               WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore(
                   aHTMLEditor, atBlockBoundary, {});
@@ -2423,14 +2421,20 @@ WhiteSpaceVisibilityKeeper::DeleteContentNodeAndJoinTextNodesAroundIt(
           }
           // If the previous content ends with an invisible line break, let's
           // delete it.
-          if (lineBreak.isSome() && lineBreak->IsInComposedDoc()) {
+          const Maybe<EditorLineBreak>& unnecessaryLineBreak =
+              nextThingOfCaretPoint.MaybeIgnoredLineBreak();
+          if (unnecessaryLineBreak.isSome() &&
+              unnecessaryLineBreak->IsInComposedDoc() &&
+              unnecessaryLineBreak->IsInclusiveDescendantOf(aEditingHost)) {
             const WSScanResult prevThing =
                 WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-                    {}, lineBreak->To<EditorRawDOMPoint>(), &aEditingHost);
+                    {}, unnecessaryLineBreak->To<EditorRawDOMPoint>(),
+                    &aEditingHost);
             if (!prevThing.ReachedLineBoundary()) {
               Result<EditorDOMPoint, nsresult> pointOrError =
                   aHTMLEditor.DeleteLineBreakWithTransaction(
-                      lineBreak.ref(), nsIEditor::eStrip, aEditingHost);
+                      unnecessaryLineBreak.ref(), nsIEditor::eStrip,
+                      aEditingHost);
               if (MOZ_UNLIKELY(pointOrError.isErr())) {
                 NS_WARNING(
                     "HTMLEditor::DeleteLineBreakWithTransaction() failed");

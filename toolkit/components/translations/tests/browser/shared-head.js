@@ -197,8 +197,11 @@ async function loadNewPage(browser, url) {
  * opens up about:translations, and passes the test requirements into the content process.
  *
  * @param {object} [options={}]
- * @param {boolean} [options.disabled]
- *        When true, ensures that Translations is disabled via pref before opening the page.
+ * @param {boolean} [options.featureEnabled=true]
+ *        Whether Translations starts enabled before opening the page.
+ * @param {boolean} [options.lockEnabledState=false]
+ *        When true, locks the prefs that govern the Translations feature enabled state as
+ *        though they were controlled by an enterprise policy before opening the page.
  * @param {Array<{fromLang: string, toLang: string}>} [options.languagePairs=LANGUAGE_PAIRS]
  *        Language pairs that should be available in Remote Settings mocks.
  * @param {Array<[string, any]>} [options.prefs]
@@ -216,7 +219,8 @@ async function loadNewPage(browser, url) {
  * }>}
  */
 async function openAboutTranslations({
-  disabled,
+  featureEnabled = true,
+  lockEnabledState = false,
   languagePairs = LANGUAGE_PAIRS,
   prefs,
   autoDownloadFromRemoteSettings = false,
@@ -234,7 +238,9 @@ async function openAboutTranslations({
   await SpecialPowers.pushPrefEnv({
     set: [
       // Enabled by default.
-      ["browser.translations.enable", !disabled],
+      ["browser.translations.enable", featureEnabled],
+      ["browser.ai.control.default", "available"],
+      ["browser.ai.control.translations", "default"],
       ["browser.translations.logLevel", "All"],
       ["browser.translations.mostRecentTargetLanguages", ""],
       ["dom.events.testing.asyncClipboard", true],
@@ -242,6 +248,18 @@ async function openAboutTranslations({
       ...(prefs ?? []),
     ],
   });
+  const lockedFeaturePrefs = [];
+
+  if (!featureEnabled) {
+    await TranslationsParent.AIFeature.disable();
+  }
+
+  if (lockEnabledState) {
+    for (const pref of ["browser.ai.control.translations"]) {
+      Services.prefs.lockPref(pref);
+      lockedFeaturePrefs.push(pref);
+    }
+  }
 
   /**
    * Collect any relevant selectors for the page here.
@@ -253,15 +271,35 @@ async function openAboutTranslations({
     targetLanguageSelector: "moz-select#about-translations-target-select",
     detectLanguageOption:
       "moz-option#about-translations-detect-language-label-option",
+    detectedLanguageUnsupportedHeading:
+      "#about-translations-detected-language-unsupported-heading",
+    detectedLanguageUnsupportedLearnMoreLink:
+      "a#about-translations-detected-language-unsupported-learn-more-link",
+    detectedLanguageUnsupportedMessage:
+      "moz-message-bar#about-translations-detected-language-unsupported-message",
     swapLanguagesButton: "moz-button#about-translations-swap-languages-button",
+    sourceSection: "div#about-translations-source-section",
     sourceSectionTextArea: "textarea#about-translations-source-textarea",
+    targetSection: "div#about-translations-target-section",
     targetSectionTextArea: "textarea#about-translations-target-textarea",
     clearButton: "moz-button#about-translations-clear-button",
     copyButton: "moz-button#about-translations-copy-button",
+    translationErrorMessage:
+      "moz-message-bar#about-translations-translation-error-message",
+    translationErrorButton:
+      "moz-button#about-translations-translation-error-button",
     unsupportedInfoMessage:
       "moz-message-bar#about-translations-unsupported-info-message",
+    policyDisabledInfoMessage:
+      "moz-message-bar#about-translations-policy-disabled-info-message",
+    featureBlockedInfoMessage:
+      "moz-message-bar#about-translations-feature-blocked-info-message",
+    unblockFeatureButton:
+      "moz-button#about-translations-feature-blocked-unblock-button",
     languageLoadErrorMessage:
       "moz-message-bar#about-translations-language-load-error-message",
+    languageLoadErrorButton:
+      "button#about-translations-language-load-error-button",
   };
 
   // Start the tab at a blank page.
@@ -277,7 +315,7 @@ async function openAboutTranslations({
   });
 
   // Now load the about:translations page, since the actor could be mocked.
-  await loadNewPage(tab.linkedBrowser, "about:translations");
+  await loadNewPage(tab.linkedBrowser, "about:translations#src=detect");
 
   // Ensure the window always opens with a horizontal page layout.
   // Divide everything by sqrt(2) to halve the overall content size.
@@ -288,7 +326,11 @@ async function openAboutTranslations({
    * @param {number} count - Count of the language pairs expected.
    */
   const resolveDownloads = async count => {
+    await remoteClients.translationsWasm.waitForPendingDownloads(1);
     await remoteClients.translationsWasm.resolvePendingDownloads(1);
+    await remoteClients.translationModels.waitForPendingDownloads(
+      downloadedFilesPerLanguagePair() * count
+    );
     await remoteClients.translationModels.resolvePendingDownloads(
       downloadedFilesPerLanguagePair() * count
     );
@@ -317,24 +359,47 @@ async function openAboutTranslations({
   };
 
   const aboutTranslationsTestUtils = new AboutTranslationsTestUtils(
+    tab.linkedBrowser,
     runInPage,
     resolveDownloads,
     rejectDownloads,
     autoDownloadFromRemoteSettings
   );
 
-  let originalCopyButtonResetDelay;
+  await aboutTranslationsTestUtils.waitForReady();
 
-  if (!disabled) {
-    await aboutTranslationsTestUtils.waitForReady();
+  if (featureEnabled) {
+    await aboutTranslationsTestUtils.setThrottleDelay(25);
+
+    const isTranslationEngineSupported =
+      TranslationsParent.getIsTranslationsEngineSupported();
+
+    if (isTranslationEngineSupported) {
+      // Consume any debounce event from startup so that test cases
+      // will only receive debounce events from within the test task.
+      await aboutTranslationsTestUtils.setDebounceDelay(0);
+      await aboutTranslationsTestUtils.assertEvents(
+        {
+          expected: [
+            [
+              AboutTranslationsTestUtils.Events.SourceTextInputDebounced,
+              { sourceText: "" },
+            ],
+          ],
+        },
+        async () => {
+          await aboutTranslationsTestUtils.setSourceTextAreaValue("");
+        }
+      );
+    }
+
+    await aboutTranslationsTestUtils.setDebounceDelay(100);
 
     if (requireManualCopyButtonReset !== undefined) {
       await aboutTranslationsTestUtils.setManualCopyButtonResetEnabled(
         requireManualCopyButtonReset
       );
     } else if (copyButtonResetDelay !== undefined) {
-      originalCopyButtonResetDelay =
-        await aboutTranslationsTestUtils.getCopyButtonResetDelay();
       await aboutTranslationsTestUtils.setCopyButtonResetDelay(
         copyButtonResetDelay
       );
@@ -345,16 +410,17 @@ async function openAboutTranslations({
     aboutTranslationsTestUtils,
     async cleanup() {
       await aboutTranslationsTestUtils.setManualCopyButtonResetEnabled(false);
-      if (originalCopyButtonResetDelay) {
-        await aboutTranslationsTestUtils.setCopyButtonResetDelay(
-          originalCopyButtonResetDelay
-        );
-      }
+      await aboutTranslationsTestUtils.clearCopyButtonResetDelayOverride();
       await loadBlankPage();
       BrowserTestUtils.removeTab(tab);
 
       await removeMocks();
       await EngineProcess.destroyTranslationsEngine();
+      for (const pref of lockedFeaturePrefs) {
+        if (Services.prefs.prefIsLocked(pref)) {
+          Services.prefs.unlockPref(pref);
+        }
+      }
 
       await SpecialPowers.popPrefEnv();
       TestTranslationsTelemetry.cleanup();
@@ -4197,8 +4263,6 @@ async function destroyTranslationsEngine() {
 }
 
 class AboutTranslationsTestUtils {
-  static AnyEventDetail = Symbol("AboutTranslationsTestUtils.AnyEventDetail");
-
   /**
    * A collection of custom events that the about:translations document may dispatch.
    */
@@ -4239,6 +4303,12 @@ class AboutTranslationsTestUtils {
      */
     static ShowTranslatingPlaceholder =
       "AboutTranslationsTest:ShowTranslatingPlaceholder";
+
+    /**
+     * Event fired when the debounce-delay action triggers after input to the source text.
+     */
+    static SourceTextInputDebounced =
+      "AboutTranslationsTest:SourceTextInputDebounced";
 
     /**
      * Event fired after the URL has been updated from UI interactions.
@@ -4334,7 +4404,82 @@ class AboutTranslationsTestUtils {
      * @type {string}
      */
     static ClearTargetText = "AboutTranslationsTest:ClearTargetText";
+
+    /**
+     * Event fired when the unsupported info message is shown.
+     *
+     * @type {string}
+     */
+    static UnsupportedInfoMessageShown =
+      "AboutTranslationsTest:UnsupportedInfoMessageShown";
+
+    /**
+     * Event fired when the unsupported info message is hidden.
+     *
+     * @type {string}
+     */
+    static UnsupportedInfoMessageHidden =
+      "AboutTranslationsTest:UnsupportedInfoMessageHidden";
+
+    /**
+     * Event fired when the policy-disabled info message is shown.
+     *
+     * @type {string}
+     */
+    static PolicyDisabledInfoMessageShown =
+      "AboutTranslationsTest:PolicyDisabledInfoMessageShown";
+
+    /**
+     * Event fired when the policy-disabled info message is hidden.
+     *
+     * @type {string}
+     */
+    static PolicyDisabledInfoMessageHidden =
+      "AboutTranslationsTest:PolicyDisabledInfoMessageHidden";
+
+    /**
+     * Event fired when the language-load error message is shown.
+     *
+     * @type {string}
+     */
+    static LanguageLoadErrorMessageShown =
+      "AboutTranslationsTest:LanguageLoadErrorMessageShown";
+
+    /**
+     * Event fired when the language-load error message is hidden.
+     *
+     * @type {string}
+     */
+    static LanguageLoadErrorMessageHidden =
+      "AboutTranslationsTest:LanguageLoadErrorMessageHidden";
+
+    /**
+     * Event fired when the language-load retry flow starts.
+     *
+     * @type {string}
+     */
+    static LanguageLoadRetryStarted =
+      "AboutTranslationsTest:LanguageLoadRetryStarted";
+
+    /**
+     * Event fired when the language-load retry flow succeeds.
+     *
+     * @type {string}
+     */
+    static LanguageLoadRetrySucceeded =
+      "AboutTranslationsTest:LanguageLoadRetrySucceeded";
+
+    /**
+     * Event fired when the language-load retry flow fails.
+     *
+     * @type {string}
+     */
+    static LanguageLoadRetryFailed =
+      "AboutTranslationsTest:LanguageLoadRetryFailed";
   };
+
+  /** @type {object} */
+  #browser;
 
   /**
    * A function that runs a closure in the content page.
@@ -4366,6 +4511,8 @@ class AboutTranslationsTestUtils {
   #autoDownloadFromRemoteSettings;
 
   /**
+   * @param {object} browser
+   *   The browser used for parent-process page navigation in tests.
    * @param {RunInPageFn} runInPage
    *   A function that runs a closure in the content page.
    * @param {(number) => Promise<void>} resolveDownloads
@@ -4377,11 +4524,13 @@ class AboutTranslationsTestUtils {
    *   or manually resolved by the test code.
    */
   constructor(
+    browser,
     runInPage,
     resolveDownloads,
     rejectDownloads,
     autoDownloadFromRemoteSettings
   ) {
+    this.#browser = browser;
     this.#runInPage = runInPage;
     this.#resolveDownloads = resolveDownloads;
     this.#rejectDownloads = rejectDownloads;
@@ -4447,23 +4596,106 @@ class AboutTranslationsTestUtils {
     url.hash = hashString ? hashString : "src=detect";
 
     logAction(url);
-
-    await this.#runInPage(
-      async (_, { url }) => {
-        const { window, document: oldDocument } = content;
-
-        window.location.assign(url);
-        window.location.reload();
-
-        await ContentTaskUtils.waitForCondition(
-          () => window.document !== oldDocument,
-          "Waiting for the old document to be destroyed."
-        );
-      },
-      { url }
-    );
+    await loadNewPage(this.#browser, BLANK_PAGE);
+    await loadNewPage(this.#browser, url.href);
 
     await this.waitForReady();
+  }
+
+  /**
+   * Navigates to a new hash URL in the current about:translations document.
+   *
+   * @param {object}  [options={}]
+   * @param {string}  [options.sourceLanguage] - Value for the "src" hash parameter.
+   * @param {string}  [options.targetLanguage] - Value for the "trg" hash parameter.
+   * @param {string}  [options.sourceText]     - Value for the "text" hash parameter.
+   * @returns {Promise<void>}
+   */
+  async updateCurrentPageHash({
+    sourceLanguage,
+    targetLanguage,
+    sourceText,
+  } = {}) {
+    const searchParams = new URLSearchParams();
+
+    if (sourceLanguage) {
+      searchParams.set("src", sourceLanguage);
+    }
+
+    if (targetLanguage) {
+      searchParams.set("trg", targetLanguage);
+    }
+
+    if (sourceText) {
+      searchParams.set("text", sourceText);
+    }
+
+    const hashString = searchParams.toString();
+    const hash = hashString || "src=detect";
+    const url = new URL("about:translations");
+    url.hash = hash;
+    logAction(url);
+
+    await this.#setCurrentPageHash(hash);
+  }
+
+  /**
+   * Clears the hash in the current about:translations document.
+   *
+   * @returns {Promise<void>}
+   */
+  async clearCurrentPageHash() {
+    const url = new URL("about:translations");
+    logAction(url);
+    await this.#setCurrentPageHash("");
+  }
+
+  /**
+   * Updates the hash in the current about:translations document and waits for a hashchange.
+   *
+   * @param {string} hash
+   * @returns {Promise<void>}
+   */
+  async #setCurrentPageHash(hash) {
+    await this.#runInPage(
+      async (_, { hash }) => {
+        const { window } = content;
+        const nextHash = hash ? `#${hash}` : "";
+
+        if (window.location.hash === nextHash) {
+          return;
+        }
+
+        const hashChange = new Promise(resolve => {
+          window.addEventListener("hashchange", resolve, { once: true });
+        });
+
+        window.location.hash = hash;
+        await hashChange;
+      },
+      { hash }
+    );
+  }
+
+  /**
+   * Sets a new delay timer for the throttle on reacting to input.
+   *
+   * @param {number} ms - The delay milliseconds.
+   * @returns {Promise<void>}
+   */
+  async setThrottleDelay(ms) {
+    logAction(ms);
+    try {
+      await this.#runInPage(
+        (_, { ms }) => {
+          const { window } = content;
+          Cu.waiveXrays(window).THROTTLE_DELAY = ms;
+        },
+        { ms }
+      );
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
   }
 
   /**
@@ -4499,7 +4731,7 @@ class AboutTranslationsTestUtils {
       );
     }
     try {
-      this.#resolveDownloads(count);
+      await this.#resolveDownloads(count);
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
     }
@@ -4517,7 +4749,7 @@ class AboutTranslationsTestUtils {
       );
     }
     try {
-      this.#rejectDownloads(requestCount);
+      await this.#rejectDownloads(requestCount);
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
     }
@@ -4606,7 +4838,11 @@ class AboutTranslationsTestUtils {
       await this.#runInPage(
         (_, { delayMs }) => {
           const { window } = content;
-          Cu.waiveXrays(window).COPY_BUTTON_RESET_DELAY = delayMs;
+          const aboutTranslations = Cu.waiveXrays(window).aboutTranslations;
+          if (!aboutTranslations) {
+            throw new Error("aboutTranslations instance is unavailable.");
+          }
+          aboutTranslations.testSetCopyButtonResetDelayOverride(delayMs);
         },
         { delayMs: ms }
       );
@@ -4616,21 +4852,21 @@ class AboutTranslationsTestUtils {
   }
 
   /**
-   * Returns the current copy button reset delay applied within the page.
-   *
-   * @returns {Promise<number>}
+   * Clears any copy button reset delay override.
    */
-  async getCopyButtonResetDelay() {
+  async clearCopyButtonResetDelayOverride() {
     try {
-      return await this.#runInPage(() => {
+      await this.#runInPage(() => {
         const { window } = content;
-        return Cu.waiveXrays(window).COPY_BUTTON_RESET_DELAY;
+        const aboutTranslations = Cu.waiveXrays(window).aboutTranslations;
+        if (!aboutTranslations) {
+          throw new Error("aboutTranslations instance is unavailable.");
+        }
+        aboutTranslations.testSetCopyButtonResetDelayOverride(null);
       });
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
     }
-
-    return NaN;
   }
 
   /**
@@ -4647,7 +4883,11 @@ class AboutTranslationsTestUtils {
       await this.#runInPage(
         (_, { enabled }) => {
           const { window } = content;
-          Cu.waiveXrays(window).testManualCopyButtonReset = enabled;
+          const aboutTranslations = Cu.waiveXrays(window).aboutTranslations;
+          if (!aboutTranslations) {
+            throw new Error("aboutTranslations instance is unavailable.");
+          }
+          aboutTranslations.testSetManualCopyButtonResetEnabled(enabled);
         },
         { enabled }
       );
@@ -4708,6 +4948,57 @@ class AboutTranslationsTestUtils {
   }
 
   /**
+   * Clicks the translation error retry button in the about:translations UI.
+   */
+  async clickTranslationErrorButton() {
+    logAction();
+    try {
+      await this.#runInPage(selectors => {
+        const button = content.document.querySelector(
+          selectors.translationErrorButton
+        );
+        button.click();
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  /**
+   * Clicks the language-load error retry button in the about:translations UI.
+   */
+  async clickLanguageLoadErrorButton() {
+    logAction();
+    try {
+      await this.#runInPage(selectors => {
+        const button = content.document.querySelector(
+          selectors.languageLoadErrorButton
+        );
+        button.click();
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  /**
+   * Clicks the feature-blocked "unblock" button in the about:translations UI.
+   */
+  async clickUnblockFeatureButton() {
+    logAction();
+    try {
+      await this.#runInPage(selectors => {
+        const button = content.document.querySelector(
+          selectors.unblockFeatureButton
+        );
+        button.click();
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  /**
    * Waits for the specified AboutTranslations event to fire, then returns its detail payload.
    * Rejects if the event doesn’t fire within the given time limit.
    *
@@ -4748,13 +5039,78 @@ class AboutTranslationsTestUtils {
   }
 
   /**
+   * Waits for the translation error message to match the requested visibility.
+   *
+   * @param {object} options
+   * @param {boolean} [options.visible=true]
+   * @returns {Promise<void>}
+   */
+  async waitForTranslationErrorMessage({ visible = true } = {}) {
+    try {
+      await this.#runInPage(
+        (selectors, { visible }) => {
+          const { document } = content;
+          const message = document.querySelector(
+            selectors.translationErrorMessage
+          );
+          if (!message) {
+            throw new Error("Could not find the translation error message.");
+          }
+          return ContentTaskUtils.waitForMutationCondition(
+            message,
+            { attributes: true, attributeFilter: ["hidden"] },
+            () => message.hidden === !visible
+          );
+        },
+        { visible }
+      );
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  /**
+   * Waits for the detected-language unsupported message to match the requested visibility.
+   *
+   * @param {object} options
+   * @param {boolean} [options.visible=true]
+   * @returns {Promise<void>}
+   */
+  async waitForDetectedLanguageUnsupportedMessage({ visible = true } = {}) {
+    try {
+      await this.#runInPage(
+        (selectors, { visible }) => {
+          const { document } = content;
+          const message = document.querySelector(
+            selectors.detectedLanguageUnsupportedMessage
+          );
+          if (!message) {
+            throw new Error(
+              "Could not find the detected-language unsupported message."
+            );
+          }
+          return ContentTaskUtils.waitForMutationCondition(
+            message,
+            { attributes: true, attributeFilter: ["hidden"] },
+            () => message.hidden === !visible
+          );
+        },
+        { visible }
+      );
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  /**
    * Asserts that expected AboutTranslations events fire (with optional details)
    * and that unexpected events do not fire during as a result of the given callback.
    *
    * @param {object} [options={}]
    * @param {Array.<[string, any]>} [options.expected=[]] — An array of
-   *        `[eventName, expectedDetail?]` pairs. `expectedDetail` is optional;
-   *        if omitted, only the fact of the event firing is asserted.
+   *        `[eventName, expectedDetail?]` pairs. `expectedDetail` may be:
+   *          - a predicate function `(detail) => boolean`,
+   *          - an exact detail object for equality comparison.
    * @param {Array.<string>} [options.unexpected=[]] — An array of event names
    *        that should *not* fire during the execution of `callback`.
    * @param {() => Promise<void>} callback — Async function to execute while
@@ -4783,18 +5139,27 @@ class AboutTranslationsTestUtils {
           });
       }
 
+      // Wait for one content-task spawn to guarantee that event waiters are fully registered.
+      await this.#runInPage(() => {});
+
       await callback();
 
       for (const [eventName, expectedDetail] of expected) {
         const actualDetail = await expectedEventWaiters[eventName];
-        if (expectedDetail === AboutTranslationsTestUtils.AnyEventDetail) {
-          continue;
+        const actualDetailString = JSON.stringify(actualDetail ?? {});
+
+        if (typeof expectedDetail === "function") {
+          ok(
+            expectedDetail(actualDetail ?? {}),
+            `Expected detail for "${eventName}" predicate to pass. Got ${actualDetailString}.`
+          );
+        } else {
+          is(
+            actualDetailString,
+            JSON.stringify(expectedDetail ?? {}),
+            `Expected detail for "${eventName}" to match.`
+          );
         }
-        is(
-          JSON.stringify(actualDetail ?? {}),
-          JSON.stringify(expectedDetail ?? {}),
-          `Expected detail for "${eventName}" to match.`
-        );
       }
 
       await TestUtils.waitForTick();
@@ -4952,6 +5317,163 @@ class AboutTranslationsTestUtils {
   }
 
   /**
+   * Asserts properties of the translation error message.
+   *
+   * @param {object} options
+   * @param {boolean} [options.visible]
+   * @param {boolean} [options.retryButtonEnabled]
+   * @param {boolean} [options.targetTextAreaVisible]
+   * @param {boolean} [options.hasErrorClass]
+   * @returns {Promise<void>}
+   */
+  async assertTranslationErrorMessage({
+    visible,
+    retryButtonEnabled,
+    targetTextAreaVisible,
+    hasErrorClass,
+  } = {}) {
+    await doubleRaf(document);
+
+    let pageResult = {};
+    try {
+      pageResult = await this.#runInPage(selectors => {
+        const { document, window } = content;
+        const isElementVisible = selector => {
+          const element = document.querySelector(selector);
+          if (element?.offsetParent === null) {
+            return false;
+          }
+
+          const computedStyle = window.getComputedStyle(element);
+          if (!computedStyle) {
+            return false;
+          }
+
+          const { display, visibility } = computedStyle;
+          return !(display === "none" || visibility === "hidden");
+        };
+
+        const message = document.querySelector(
+          selectors.translationErrorMessage
+        );
+        const retryButton = document.querySelector(
+          selectors.translationErrorButton
+        );
+        const targetSection = document.querySelector(selectors.targetSection);
+
+        return {
+          messageExists: Boolean(message),
+          retryButtonExists: Boolean(retryButton),
+          targetSectionExists: Boolean(targetSection),
+          messageVisible: isElementVisible(selectors.translationErrorMessage),
+          targetTextAreaVisible: isElementVisible(
+            selectors.targetSectionTextArea
+          ),
+          retryButtonDisabled: retryButton?.hasAttribute("disabled") ?? true,
+          hasErrorClass:
+            targetSection?.classList.contains("has-translation-error") ?? false,
+        };
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+
+    const {
+      messageExists,
+      retryButtonExists,
+      targetSectionExists,
+      messageVisible,
+      retryButtonDisabled,
+      targetTextAreaVisible: actualTargetTextAreaVisible,
+      hasErrorClass: actualHasErrorClass,
+    } = pageResult;
+
+    ok(messageExists, "Expected translation error message to be present.");
+    ok(retryButtonExists, "Expected translation error button to be present.");
+    ok(targetSectionExists, "Expected target section to be present.");
+
+    if (visible !== undefined) {
+      visible
+        ? ok(
+            messageVisible,
+            "Expected translation error message to be visible."
+          )
+        : ok(
+            !messageVisible,
+            "Expected translation error message to be hidden."
+          );
+    }
+
+    if (retryButtonEnabled !== undefined) {
+      retryButtonEnabled
+        ? ok(
+            !retryButtonDisabled,
+            "Expected translation error button to be enabled."
+          )
+        : ok(
+            retryButtonDisabled,
+            "Expected translation error button to be disabled."
+          );
+    }
+
+    if (targetTextAreaVisible !== undefined) {
+      targetTextAreaVisible
+        ? ok(
+            actualTargetTextAreaVisible,
+            "Expected target textarea to be visible."
+          )
+        : ok(
+            !actualTargetTextAreaVisible,
+            "Expected target textarea to be hidden."
+          );
+    }
+
+    if (hasErrorClass !== undefined) {
+      hasErrorClass
+        ? ok(actualHasErrorClass, "Expected target section error styling.")
+        : ok(
+            !actualHasErrorClass,
+            "Expected target section error styling to be removed."
+          );
+    }
+  }
+
+  /**
+   * Returns the current pixel heights for the source and target sections.
+   *
+   * @returns {Promise<{ sourceSectionHeight: number, targetSectionHeight: number }>}
+   */
+  async getSectionHeights() {
+    await doubleRaf(document);
+
+    let pageResult = {
+      sourceSectionHeight: NaN,
+      targetSectionHeight: NaN,
+    };
+
+    try {
+      pageResult = await this.#runInPage(selectors => {
+        const { document } = content;
+        const sourceSection = document.querySelector(selectors.sourceSection);
+        const targetSection = document.querySelector(selectors.targetSection);
+
+        return {
+          sourceSectionHeight: Math.round(
+            sourceSection.getBoundingClientRect().height
+          ),
+          targetSectionHeight: Math.round(
+            targetSection.getBoundingClientRect().height
+          ),
+        };
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+
+    return pageResult;
+  }
+
+  /**
    * Asserts properties of the source-language selector.
    *
    * @param {object}   options
@@ -5025,6 +5547,138 @@ class AboutTranslationsTestUtils {
         detectLanguageAttribute,
         detectedLanguage,
         `Expected detect-language option "language" attribute to be "${detectedLanguage}", but got "${detectLanguageAttribute}".`
+      );
+    }
+  }
+
+  /**
+   * Asserts properties of the detected-language unsupported message.
+   *
+   * @param {object} options
+   * @param {boolean} [options.visible]
+   * @param {boolean} [options.sourceTextAreaVisible]
+   * @param {boolean} [options.targetTextAreaVisible]
+   * @param {string} [options.learnMoreSupportPage]
+   * @returns {Promise<void>}
+   */
+  async assertDetectedLanguageUnsupportedMessage({
+    visible,
+    sourceTextAreaVisible,
+    targetTextAreaVisible,
+    learnMoreSupportPage,
+  } = {}) {
+    await doubleRaf(document);
+
+    let pageResult = {};
+    try {
+      pageResult = await this.#runInPage(selectors => {
+        const { document, window } = content;
+        const isElementVisible = selector => {
+          const element = document.querySelector(selector);
+          if (element?.offsetParent === null) {
+            return false;
+          }
+
+          const computedStyle = window.getComputedStyle(element);
+          if (!computedStyle) {
+            return false;
+          }
+
+          const { display, visibility } = computedStyle;
+          return !(display === "none" || visibility === "hidden");
+        };
+
+        const message = document.querySelector(
+          selectors.detectedLanguageUnsupportedMessage
+        );
+        const heading = document.querySelector(
+          selectors.detectedLanguageUnsupportedHeading
+        );
+        const link = document.querySelector(
+          selectors.detectedLanguageUnsupportedLearnMoreLink
+        );
+
+        return {
+          messageExists: Boolean(message),
+          headingExists: Boolean(heading),
+          linkExists: Boolean(link),
+          messageVisible: isElementVisible(
+            selectors.detectedLanguageUnsupportedMessage
+          ),
+          sourceTextAreaVisible: isElementVisible(
+            selectors.sourceSectionTextArea
+          ),
+          targetTextAreaVisible: isElementVisible(
+            selectors.targetSectionTextArea
+          ),
+          learnMoreSupportPage: link?.getAttribute("support-page") ?? "",
+        };
+      });
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+
+    const {
+      messageExists,
+      headingExists,
+      linkExists,
+      messageVisible,
+      sourceTextAreaVisible: actualSourceTextAreaVisible,
+      targetTextAreaVisible: actualTargetTextAreaVisible,
+      learnMoreSupportPage: actualLearnMoreSupportPage,
+    } = pageResult;
+
+    ok(
+      messageExists,
+      "Expected detected-language unsupported message to be present."
+    );
+    ok(headingExists, "Expected unsupported message heading to be present.");
+    ok(
+      linkExists,
+      "Expected unsupported message learn-more link to be present."
+    );
+
+    if (visible !== undefined) {
+      visible
+        ? ok(
+            messageVisible,
+            "Expected detected-language unsupported message to be visible."
+          )
+        : ok(
+            !messageVisible,
+            "Expected detected-language unsupported message to be hidden."
+          );
+    }
+
+    if (sourceTextAreaVisible !== undefined) {
+      sourceTextAreaVisible
+        ? ok(
+            actualSourceTextAreaVisible,
+            "Expected source textarea to be visible."
+          )
+        : ok(
+            !actualSourceTextAreaVisible,
+            "Expected source textarea to be hidden."
+          );
+    }
+
+    if (targetTextAreaVisible !== undefined) {
+      targetTextAreaVisible
+        ? ok(
+            actualTargetTextAreaVisible,
+            "Expected target textarea to be visible."
+          )
+        : ok(
+            !actualTargetTextAreaVisible,
+            "Expected target textarea to be hidden."
+          );
+    }
+
+    if (learnMoreSupportPage !== undefined) {
+      is(
+        actualLearnMoreSupportPage,
+        learnMoreSupportPage,
+        `Expected unsupported message learn-more support-page to be "${learnMoreSupportPage}", but got "${actualLearnMoreSupportPage}".`
       );
     }
   }
@@ -5582,6 +6236,36 @@ class AboutTranslationsTestUtils {
   }
 
   /**
+   * Returns the current selected-browser session history entry count.
+   *
+   * @returns {number}
+   */
+  getHistoryLength() {
+    try {
+      return this.#browser.browsingContext?.sessionHistory?.count ?? NaN;
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+
+    return NaN;
+  }
+
+  /**
+   * Asserts that the content-page history length matches the expected value.
+   *
+   * @param {object} options
+   * @param {number} options.expectedLength
+   */
+  assertHistoryLength({ expectedLength }) {
+    const actualLength = this.getHistoryLength();
+    is(
+      actualLength,
+      expectedLength,
+      "Expected history length to match the expected length."
+    );
+  }
+
+  /**
    * Asserts visibility of each element based on the provided options.
    *
    * @param {object}  options
@@ -5595,7 +6279,11 @@ class AboutTranslationsTestUtils {
    * @param {boolean} [options.swapLanguagesButton=false]
    * @param {boolean} [options.sourceSectionTextArea=false]
    * @param {boolean} [options.targetSectionTextArea=false]
+   * @param {boolean} [options.detectedLanguageUnsupportedMessage=false]
+   * @param {boolean} [options.translationErrorMessage=false]
    * @param {boolean} [options.unsupportedInfoMessage=false]
+   * @param {boolean} [options.policyDisabledInfoMessage=false]
+   * @param {boolean} [options.featureBlockedInfoMessage=false]
    * @param {boolean} [options.languageLoadErrorMessage=false]
    * @returns {Promise<void>}
    */
@@ -5609,7 +6297,11 @@ class AboutTranslationsTestUtils {
     swapLanguagesButton = false,
     sourceSectionTextArea = false,
     targetSectionTextArea = false,
+    detectedLanguageUnsupportedMessage = false,
+    translationErrorMessage = false,
     unsupportedInfoMessage = false,
+    policyDisabledInfoMessage = false,
+    featureBlockedInfoMessage = false,
     languageLoadErrorMessage = false,
   } = {}) {
     // This helps the test visually render at each step without significantly slowing test speed.
@@ -5661,8 +6353,20 @@ class AboutTranslationsTestUtils {
           targetSectionTextArea: isElementVisible(
             selectors.targetSectionTextArea
           ),
+          detectedLanguageUnsupportedMessage: isElementVisible(
+            selectors.detectedLanguageUnsupportedMessage
+          ),
+          translationErrorMessage: isElementVisible(
+            selectors.translationErrorMessage
+          ),
           unsupportedInfoMessage: isElementVisible(
             selectors.unsupportedInfoMessage
+          ),
+          policyDisabledInfoMessage: isElementVisible(
+            selectors.policyDisabledInfoMessage
+          ),
+          featureBlockedInfoMessage: isElementVisible(
+            selectors.featureBlockedInfoMessage
           ),
           languageLoadErrorMessage: isElementVisible(
             selectors.languageLoadErrorMessage
@@ -5714,9 +6418,29 @@ class AboutTranslationsTestUtils {
         "target textarea"
       );
       assertVisibility(
+        detectedLanguageUnsupportedMessage,
+        visibilityMap.detectedLanguageUnsupportedMessage,
+        "detected-language unsupported message"
+      );
+      assertVisibility(
+        translationErrorMessage,
+        visibilityMap.translationErrorMessage,
+        "translation error message"
+      );
+      assertVisibility(
         unsupportedInfoMessage,
         visibilityMap.unsupportedInfoMessage,
         "unsupported info message"
+      );
+      assertVisibility(
+        policyDisabledInfoMessage,
+        visibilityMap.policyDisabledInfoMessage,
+        "policy-disabled info message"
+      );
+      assertVisibility(
+        featureBlockedInfoMessage,
+        visibilityMap.featureBlockedInfoMessage,
+        "feature-blocked info message"
       );
       assertVisibility(
         languageLoadErrorMessage,

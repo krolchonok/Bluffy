@@ -168,10 +168,12 @@ async function closePanel(win = window) {
  * Does not proxy anything really.
  * Given it refuses the proxy connection, it will be removed from as proxy-info of the channel.
  *
- * @param {*} testFn
- * @param {Function<Promise<void>>} handler - A custom path handler for "/" requests.
+ * Use with `await using` for automatic cleanup:
+ *   await using proxyInfo = withProxyServer();
+ *
+ * @param {Function} [handler] - A custom path handler for "/" and "CONNECT" requests.
  */
-async function withProxyServer(testFn, handler) {
+function withProxyServer(handler) {
   const server = new HttpServer();
   let { promise, resolve } = Promise.withResolvers();
 
@@ -217,7 +219,7 @@ async function withProxyServer(testFn, handler) {
   server.identity.add("http", "example.com", "443");
 
   server.start(-1);
-  await testFn({
+  return {
     server: new Server({
       hostname: "localhost",
       port: server.identity.primaryPort,
@@ -233,8 +235,10 @@ async function withProxyServer(testFn, handler) {
     }),
     type: "http",
     gotConnection: promise,
-  });
-  return server;
+    async [Symbol.asyncDispose]() {
+      await new Promise(r => server.stop(r));
+    },
+  };
 }
 /* exported withProxyServer */
 
@@ -260,6 +264,7 @@ let DEFAULT_SERVICE_STATUS = {
     pass: makePass(),
     usage: makeUsage(),
   },
+  usageInfo: makeUsage(),
 };
 /* exported DEFAULT_SERVICE_STATUS */
 
@@ -269,9 +274,51 @@ let STUBS = {
   enroll: undefined,
   fetchUserInfo: undefined,
   fetchProxyPass: undefined,
+  fetchProxyUsage: undefined,
   isLinkedToGuardian: undefined,
 };
 /* exported STUBS */
+
+async function waitForServiceInitialized() {
+  if (IPProtectionService.state !== IPProtectionStates.UNINITIALIZED) {
+    return;
+  }
+  await BrowserTestUtils.waitForEvent(
+    IPProtectionService,
+    "IPProtectionService:StateChanged",
+    false,
+    () => IPProtectionService.state !== IPProtectionStates.UNINITIALIZED
+  );
+}
+/* exported waitForServiceInitialized */
+
+async function waitForServiceState(state) {
+  if (IPProtectionService.state === state) {
+    return;
+  }
+
+  await BrowserTestUtils.waitForEvent(
+    IPProtectionService,
+    "IPProtectionService:StateChanged",
+    false,
+    () => IPProtectionService.state === state
+  );
+}
+/* exported waitForServiceState */
+
+async function waitForProxyState(state) {
+  if (IPPProxyManager.state === state) {
+    return;
+  }
+
+  await BrowserTestUtils.waitForEvent(
+    IPPProxyManager,
+    "IPPProxyManager:StateChanged",
+    false,
+    () => IPPProxyManager.state === state
+  );
+}
+/* exported waitForProxyState */
 
 let setupSandbox = sinon.createSandbox();
 add_setup(async function setupVPN() {
@@ -285,9 +332,15 @@ add_setup(async function setupVPN() {
     set: [["browser.ipProtection.enabled", true]],
   });
 
+  await waitForServiceInitialized();
+
   registerCleanupFunction(async () => {
     cleanupService();
+
     Services.prefs.clearUserPref("browser.ipProtection.enabled");
+
+    await waitForServiceState(IPProtectionStates.UNINITIALIZED);
+
     setupSandbox.restore();
     CustomizableUI.reset();
     Services.prefs.clearUserPref(IPProtectionWidget.ADDED_PREF);
@@ -319,11 +372,13 @@ function setupStubs(stubs = STUBS) {
     enroll: setupSandbox.stub(),
     fetchUserInfo: setupSandbox.stub(),
     fetchProxyPass: setupSandbox.stub(),
+    fetchProxyUsage: setupSandbox.stub(),
     isLinkedToGuardian: setupSandbox.stub().resolves(false),
   };
   stubs.enroll = guardianStub.enroll;
   stubs.fetchUserInfo = guardianStub.fetchUserInfo;
   stubs.fetchProxyPass = guardianStub.fetchProxyPass;
+  stubs.fetchProxyUsage = guardianStub.fetchProxyUsage;
   stubs.isLinkedToGuardian = guardianStub.isLinkedToGuardian;
 
   setupSandbox.stub(IPProtectionService, "guardian").get(() => guardianStub);
@@ -338,6 +393,7 @@ function setupService(
     canEnroll,
     entitlement,
     proxyPass,
+    usageInfo,
   } = DEFAULT_SERVICE_STATUS,
   stubs = STUBS
 ) {
@@ -367,6 +423,10 @@ function setupService(
 
   if (typeof proxyPass != "undefined") {
     stubs.fetchProxyPass.resolves(proxyPass);
+  }
+
+  if (typeof usageInfo != "undefined") {
+    stubs.fetchProxyUsage.resolves(usageInfo);
   }
 }
 /* exported setupService */
@@ -455,7 +515,7 @@ function makePass(
 function makeUsage(
   max = "5368709120",
   remaining = "4294967296",
-  reset = "2026-01-01T00:00:00.000Z"
+  reset = Temporal.Now.instant().add({ hours: 24 }).toString()
 ) {
   return new ProxyUsage(max, remaining, reset);
 }

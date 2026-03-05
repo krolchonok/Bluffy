@@ -334,6 +334,7 @@ add_task(async function test_IPPProxyManager_activation_failure() {
  * Tests that usage data is preserved when quota is exceeded.
  */
 add_task(async function test_IPPProxyManager_quota_exceeded() {
+  Services.fog.testResetFOG();
   let sandbox = sinon.createSandbox();
 
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => true);
@@ -407,6 +408,14 @@ add_task(async function test_IPPProxyManager_quota_exceeded() {
     "Should be in PAUSED state"
   );
 
+  let pausedEvent = Glean.ipprotection.paused.testGetValue();
+  Assert.equal(pausedEvent.length, 1, "Should have recorded the paused event");
+  Assert.equal(
+    pausedEvent[0].extra.wasActive,
+    "false",
+    "Previous state was not active"
+  );
+
   // Verify usage is still accessible in manager
   Assert.notEqual(IPPProxyManager.usageInfo, null, "Usage should be stored");
   Assert.equal(
@@ -427,6 +436,7 @@ add_task(async function test_IPPProxyManager_quota_exceeded() {
   );
   IPProtectionService.uninit();
   sandbox.restore();
+  Services.fog.testResetFOG();
 });
 
 /**
@@ -652,6 +662,7 @@ add_task(
 
 add_task(
   async function test_IPPProxyManager_paused_on_rotation_with_zero_quota() {
+    Services.fog.testResetFOG();
     IPPProxyManager.uninit();
     let sandbox = sinon.createSandbox();
     setupStubs(sandbox, {
@@ -714,15 +725,28 @@ add_task(
       "Should not have an isolationKey when paused, as the connection is paused"
     );
 
+    let pausedEvent = Glean.ipprotection.paused.testGetValue();
+    Assert.equal(
+      pausedEvent.length,
+      1,
+      "Should have recorded the paused event"
+    );
+    Assert.equal(
+      pausedEvent[0].extra.wasActive,
+      "true",
+      "Previous state was active"
+    );
+
     await IPPProxyManager.stop();
     Assert.equal(
       IPPProxyManager.state,
-      IPPProxyStates.NOT_READY,
-      "Proxy should be in NOT_READY state when stopping from PAUSED state"
+      IPPProxyStates.PAUSED,
+      "Proxy should remain in the PAUSED state when stopping from PAUSED state"
     );
 
     IPProtectionService.uninit();
     sandbox.restore();
+    Services.fog.testResetFOG();
   }
 );
 
@@ -815,7 +839,10 @@ add_task(async function test_IPPProxyManager_restores_cached_usage() {
     "Cached reset loaded correctly"
   );
 
+  Services.prefs.setBoolPref("browser.ipProtection.cacheDisabled", true);
   Services.prefs.clearUserPref("browser.ipProtection.usageCache");
+  Services.prefs.clearUserPref("browser.ipProtection.stateCache");
+  IPPProxyManager.uninit();
 });
 
 const refreshUsageTestCases = [
@@ -828,8 +855,8 @@ const refreshUsageTestCases = [
     expectedRemaining: BigInt("0"),
   },
   {
-    name: "NOT_READY -> ready",
-    initialState: IPPProxyStates.NOT_READY,
+    name: "paused -> ready",
+    initialState: IPPProxyStates.PAUSED,
     initialUsage: new ProxyUsage("1000000", "0", "3026-02-05T00:00:00.000Z"),
     refreshedUsage: new ProxyUsage(
       "1000000",
@@ -873,10 +900,7 @@ refreshUsageTestCases.forEach(testCase => {
       IPProtectionService.init();
       await readyEvent;
 
-      if (
-        testCase.initialState === IPPProxyStates.ACTIVE ||
-        testCase.initialState === IPPProxyStates.PAUSED
-      ) {
+      if (testCase.initialState === IPPProxyStates.ACTIVE) {
         const pausedEventPromise = waitForEvent(
           IPPProxyManager,
           "IPPProxyManager:StateChanged",

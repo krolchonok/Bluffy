@@ -102,7 +102,7 @@ export class AIWindow extends MozLitElement {
   #browser;
   #smartbar;
   #smartbarToggleButton;
-  #conversation;
+  #conversation = null;
   #memoriesButton = null;
   #memoriesToggled = null;
 
@@ -138,13 +138,38 @@ export class AIWindow extends MozLitElement {
   }
 
   /**
+   * Stamps the current conversation ID into the fullpage history entry via
+   * replaceState, enabling conversation recovery after back navigation and
+   * serving as a fallback for session restore / undo-close when the
+   * data-conversation-id attribute on the host <browser> is unavailable.
+   *
+   */
+  #syncHistoryState() {
+    if (!this.isConnected || this.mode !== FULLPAGE) {
+      return;
+    }
+    window.history.replaceState(
+      {
+        ...window.history.state,
+        conversationId: this.#conversation?.id ?? null,
+      },
+      ""
+    );
+  }
+
+  /**
    * Checks if there's a pending conversation ID to load.
    *
    * @returns {string|null} The conversation ID or null if none exists
    * @private
    */
   #getPendingConversationId() {
-    return this.#hostBrowser?.getAttribute("data-conversation-id") || null;
+    const findId =
+      this.#hostBrowser?.getAttribute("data-conversation-id") ??
+      window.history.state?.conversationId ??
+      null;
+
+    return findId;
   }
 
   /**
@@ -383,6 +408,14 @@ export class AIWindow extends MozLitElement {
   async #loadPendingConversation() {
     const conversationId = this.#getPendingConversationId();
     if (!conversationId) {
+      // No externally-provided ID — stamp the fresh constructor conversation
+      // onto the host browser so navigating away and back can recover it,
+      // and record it in history.state for session/undo-close restore.
+      this.#hostBrowser?.setAttribute(
+        "data-conversation-id",
+        this.#conversation.id
+      );
+      this.#syncHistoryState();
       return;
     }
 
@@ -436,6 +469,19 @@ export class AIWindow extends MozLitElement {
       this.#getOrCreateSmartbar(doc, container);
       this.#loadStarterPrompts();
     }
+  }
+
+  /**
+   * Update the smartbar input
+   *
+   * @param {string} value The value to update the input with
+   */
+  updateInput(value) {
+    if (!this.#smartbar) {
+      return;
+    }
+
+    this.#smartbar.value = value;
   }
 
   /**
@@ -694,6 +740,18 @@ export class AIWindow extends MozLitElement {
       }
 
       this.submitFollowUp(value, contextMentions);
+      this.#dispatchChromeEvent(
+        "ai-window:smartbar-input",
+        this.#getAIWindowEventOptions("")
+      );
+    } else if (
+      this.mode === SIDEBAR &&
+      (action === "navigate" || action === "search")
+    ) {
+      this.#dispatchChromeEvent(
+        "ai-window:sidebar-navigating",
+        this.#getAIWindowEventOptions()
+      );
     }
   };
 
@@ -1137,6 +1195,7 @@ export class AIWindow extends MozLitElement {
   openConversation(conversation) {
     if (conversation.messages?.length) {
       this.#conversation = conversation;
+      this.#syncHistoryState();
 
       if (this.#conversation.title) {
         document.title = this.#conversation.title;
@@ -1174,8 +1233,10 @@ export class AIWindow extends MozLitElement {
   }
 
   onCreateNewChatClick() {
-    // Clear the conversation state locally
+    // Clear conversation state. The new conversation's ID is persisted to the
+    // host browser attribute and history.state so back navigation can restore it.
     this.#conversation = new lazy.ChatConversation({});
+    this.#syncHistoryState();
 
     const hostBrowser = window.browsingContext?.embedderElement;
     hostBrowser?.setAttribute("data-conversation-id", this.#conversation.id);

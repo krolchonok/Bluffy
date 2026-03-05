@@ -311,7 +311,18 @@ AutoClonedRangeArray::ShrinkRangesIfStartFromOrEndAfterAtomicContent(
                "Changing range in selection may cause running script");
     Result<bool, nsresult> result =
         WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent(
-            {WSRunScanner::Option::OnlyEditableNodes}, range);
+            {// We need to treat non-editable node in the range as an atomic
+             // content.
+             WSRunScanner::Option::OnlyEditableNodes,
+             // The range may contain an atomic content with empty inline
+             // containers and/or comment nodes which should be treated as
+             // invisible to delete content.  Therefore, we shouldn't shrink to
+             // the only visible atomic content in such case so that we need to
+             // stop scanning if the start boundary is followed by an empty
+             // container or a comment.
+             WSRunScanner::Option::StopAtAnyEmptyInlineContainers,
+             WSRunScanner::Option::StopAtComment},
+            range);
     if (result.isErr()) {
       NS_WARNING(
           "WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent() "
@@ -441,7 +452,11 @@ GetPointAtFirstContentOfLineOrParentHTMLBlockIfFirstContentOfBlock(
                 LeafNodeOption::TreatChildBlockAsLeafNode},
                aBlockInlineCheck, &aAncestorLimiter);
        previousEditableContent && previousEditableContent->GetParentNode() &&
-       !HTMLEditUtils::IsVisibleBRElement(*previousEditableContent) &&
+       (!previousEditableContent->IsHTMLElement(nsGkAtoms::br) ||
+        // FIXME: We're scanning backward so that it does not make sense to
+        // check the following thing continuously.
+        HTMLEditUtils::IsBRElementFollowedByBlockBoundary(
+            static_cast<HTMLBRElement&>(*previousEditableContent))) &&
        !HTMLEditUtils::IsBlockElement(*previousEditableContent,
                                       aBlockInlineCheck);
        previousEditableContent =
@@ -564,8 +579,10 @@ GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
       // invisible if it's immediately before a block boundary.  In such
       // case, we should return the block boundary.
       Element* maybeNonEditableBlockElement = nullptr;
-      if (HTMLEditUtils::IsInvisiblePreformattedNewLine(
-              atNextPreformattedNewLine, &maybeNonEditableBlockElement) &&
+      if (HTMLEditUtils::IsPreformattedLineBreakFollowedByBlockBoundary(
+              atNextPreformattedNewLine,
+              HTMLEditUtils::SkipWhiteSpaceStyleCheck::Yes, nullptr,
+              &maybeNonEditableBlockElement) &&
           maybeNonEditableBlockElement) {
         // If the block is a parent of the editing host, let's return end
         // of editing host.
@@ -630,8 +647,10 @@ GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
       // invisible if it's immediately before a block boundary.  In such
       // case, we should return the block boundary.
       Element* maybeNonEditableBlockElement = nullptr;
-      if (HTMLEditUtils::IsInvisiblePreformattedNewLine(
-              atFirstPreformattedNewLine, &maybeNonEditableBlockElement) &&
+      if (HTMLEditUtils::IsPreformattedLineBreakFollowedByBlockBoundary(
+              atFirstPreformattedNewLine,
+              HTMLEditUtils::SkipWhiteSpaceStyleCheck::Yes, nullptr,
+              &maybeNonEditableBlockElement) &&
           maybeNonEditableBlockElement) {
         // If the block is a parent of the editing host, let's return end
         // of editing host.
@@ -656,8 +675,11 @@ GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
     if (NS_WARN_IF(!point.IsSet())) {
       break;
     }
-    if (HTMLEditUtils::IsVisibleBRElement(*nextEditableContent)) {
-      break;
+    if (HTMLBRElement* const nextBRElement =
+            HTMLBRElement::FromNode(*nextEditableContent)) {
+      if (!HTMLEditUtils::IsBRElementFollowedByBlockBoundary(*nextBRElement)) {
+        break;
+      }
     }
   }
 
@@ -1025,7 +1047,8 @@ nsresult AutoClonedRangeArray::CollectEditTargetNodes(
            Reversed(IntegerRange(aOutArrayOfContents.Length()))) {
         if (const Text* text = aOutArrayOfContents[index]->GetAsText()) {
           // Don't select empty text except to empty block
-          if (!HTMLEditUtils::IsVisibleTextNode(*text)) {
+          if (!HTMLEditUtils::IsVisibleTextNode(
+                  *text, HTMLEditUtils::TreatInvisibleLineBreakAs::Visible)) {
             aOutArrayOfContents.RemoveElementAt(index);
           }
         }

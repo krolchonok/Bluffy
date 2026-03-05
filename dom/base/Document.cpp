@@ -193,6 +193,7 @@
 #include "mozilla/dom/HighlightRegistry.h"
 #include "mozilla/dom/InspectorUtils.h"
 #include "mozilla/dom/IntegrityPolicy.h"
+#include "mozilla/dom/IntegrityPolicyWAICT.h"
 #include "mozilla/dom/InteractiveWidget.h"
 #include "mozilla/dom/Link.h"
 #include "mozilla/dom/MediaQueryList.h"
@@ -3719,6 +3720,8 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
 
   MOZ_TRY(InitIntegrityPolicy(aChannel));
 
+  MOZ_TRY(InitIntegrityPolicyWAICT(aChannel));
+
   MOZ_TRY(InitDocPolicy(aChannel));
 
   // Initialize FeaturePolicy
@@ -4041,13 +4044,13 @@ nsresult Document::InitIntegrityPolicy(nsIChannel* aChannel) {
     return NS_OK;
   }
 
-  nsAutoCString headerValue, headerROValue;
   nsCOMPtr<nsIHttpChannel> httpChannel;
   nsresult rv = GetHttpChannelHelper(aChannel, getter_AddRefs(httpChannel));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
+  nsAutoCString headerValue, headerROValue;
   if (httpChannel) {
     (void)httpChannel->GetResponseHeader("integrity-policy"_ns, headerValue);
 
@@ -4061,6 +4064,43 @@ nsresult Document::InitIntegrityPolicy(nsIChannel* aChannel) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   mPolicyContainer->SetIntegrityPolicy(integrityPolicy);
+  return NS_OK;
+}
+
+nsresult Document::InitIntegrityPolicyWAICT(nsIChannel* aChannel) {
+  MOZ_ASSERT(!mScriptGlobalObject,
+             "Integrity Policy must be initialized before mScriptGlobalObject "
+             "is set!");
+  MOZ_ASSERT(mPolicyContainer,
+             "Policy container must be initialized before IntegrityPolicy!");
+
+#ifdef NIGHTLY_BUILD
+  if (mPolicyContainer->GetIntegrityPolicyWAICT()) {
+    // We inherited the integrity policy.
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIHttpChannel> httpChannel;
+  nsresult rv = GetHttpChannelHelper(aChannel, getter_AddRefs(httpChannel));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  nsAutoCString headerValue;
+  if (httpChannel) {
+    (void)httpChannel->GetResponseHeader("integrity-policy-waict-v1"_ns,
+                                         headerValue);
+  }
+
+  RefPtr<IntegrityPolicyWAICT> policy =
+      IntegrityPolicyWAICT::Create(this, headerValue);
+  if (!policy) {
+    return NS_OK;
+  }
+
+  mPolicyContainer->SetIntegrityPolicyWAICT(policy);
+#endif
+
   return NS_OK;
 }
 
@@ -8347,6 +8387,11 @@ void Document::SetScriptGlobalObject(
   if (nsIContentSecurityPolicy* csp =
           PolicyContainer::GetCSP(mPolicyContainer)) {
     nsCSPContext::Cast(csp)->flushConsoleMessages();
+  }
+
+  if (IntegrityPolicyWAICT* policy =
+          PolicyContainer::GetIntegrityPolicyWAICT(mPolicyContainer)) {
+    policy->FlushConsoleMessages();
   }
 
   nsCOMPtr<nsIHttpChannelInternal> internalChannel =
@@ -20764,10 +20809,44 @@ static already_AddRefed<Document> CreateHTMLDocument(GlobalObject& aGlobal,
     return nullptr;
   }
 
+  nsCOMPtr<nsIPrincipal> principal = aGlobal.GetSubjectPrincipal();
+  if (BasePrincipal::Cast(principal)->Is<ExpandedPrincipal>()) {
+    // A Document is never associated with an ExpandedPrincipal. The only way
+    // for the `Document.parseHTMLUnsafe` API to be called from an expanded
+    // principal is when the caller runs in a XPConnect Sandbox with an
+    // ExpandedPrincipal that subsumes the document's principal. Examples of
+    // such Sandbox usage are found in WebExtensions.
+    //
+    // Since documents cannot be associated with an Expanded principal, and we
+    // want to create a new document below, we need to find a good alternative.
+    // In case of the Sandbox described above, we can look up the window
+    // associated with the sandbox, and then grab the principal from there.
+
+    // When a script has access to the Document interface, it is usually
+    // through a window global (Exposed=Window). We want to get the principal
+    // for the global where the Document interface is extracted from.
+    nsCOMPtr<nsIGlobalObject> global =
+        do_QueryInterface(aGlobal.GetAsSupports());
+    MOZ_ASSERT(global);
+    principal = global ? global->PrincipalOrNull() : nullptr;
+    // Now we expect to have a non-expanded principal. The only way to still
+    // have an expanded principal here is if Document was accessed from a
+    // Cu.Sandbox with wantGlobalProperties containing "Document".
+    if (!principal || nsContentUtils::IsExpandedPrincipal(principal)) {
+      // Unexpected - Document.parseHTMLUnsafe called without window...?
+      aError.Throw(NS_ERROR_UNEXPECTED);
+      return nullptr;
+    }
+    // The principal is expected to be one of the principals subsumed by the
+    // expanded principal, because the Document interface was retrieved from
+    // the window, and that can only be done if the subject principal subsumed
+    // the window's principal.
+    MOZ_ASSERT(aGlobal.GetSubjectPrincipal()->Subsumes(principal));
+  }
+
   nsCOMPtr<Document> doc;
-  aError =
-      NS_NewHTMLDocument(getter_AddRefs(doc), aGlobal.GetSubjectPrincipal(),
-                         aGlobal.GetSubjectPrincipal(), LoadedAsData::AsData);
+  aError = NS_NewHTMLDocument(getter_AddRefs(doc), principal, principal,
+                              LoadedAsData::AsData);
   if (aError.Failed()) {
     return nullptr;
   }

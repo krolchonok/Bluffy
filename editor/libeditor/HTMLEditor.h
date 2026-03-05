@@ -1638,7 +1638,7 @@ class HTMLEditor final : public EditorBase,
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateLineBreakResult, nsresult>
   InsertPaddingBRElementToMakeEmptyLineVisibleIfNeeded(
-      const EditorDOMPoint& aPointToInsert);
+      const EditorDOMPoint& aPointToInsert, const Element& aEditingHost);
 
   /**
    * Insert a padding <br> if aPoint is in an empty block.
@@ -1946,21 +1946,24 @@ class HTMLEditor final : public EditorBase,
    *                            style, this method will set `style` attribute to
    *                            moving node or creating new <span> element.
    * @param aRemoveIfCommentNode
-   *                            If yes, this removes a comment node instead of
-   *                            moving it to the destination.  Note that this
-   *                            does not remove comment nodes in moving nodes
-   *                            because it requires additional scan.
+   *                            If yes, this removes invisible nodes such as
+   *                            comment nodes, empty inline containers (even if
+   *                            it has border, etc) instead of moving it to the
+   *                            destination.  Note that this does not remove
+   *                            invisible descendants in containers which have
+   *                            visible nodes because it requires additional
+   *                            scan.
    */
   enum class PreserveWhiteSpaceStyle { No, Yes };
   friend std::ostream& operator<<(
       std::ostream& aStream,
       const PreserveWhiteSpaceStyle aPreserveWhiteSpaceStyle);
-  enum class RemoveIfCommentNode { No, Yes };
+  enum class RemoveIfInvisibleNode { No, Yes };
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<MoveNodeResult, nsresult>
   MoveNodeOrChildrenWithTransaction(
       nsIContent& aContentToMove, const EditorDOMPoint& aPointToInsert,
       PreserveWhiteSpaceStyle aPreserveWhiteSpaceStyle,
-      RemoveIfCommentNode aRemoveIfCommentNode);
+      RemoveIfInvisibleNode aRemoveIfInvisibleNode);
 
   /**
    * CanMoveNodeOrChildren() returns true if
@@ -1986,16 +1989,19 @@ class HTMLEditor final : public EditorBase,
    *                            style, this method will set `style` attribute to
    *                            moving node or creating new <span> element.
    * @param aRemoveIfCommentNode
-   *                            If yes, this removes a comment node instead of
-   *                            moving it to the destination.  Note that this
-   *                            does not remove comment nodes in moving nodes
-   *                            because it requires additional scan.
+   *                            If yes, this removes invisible nodes such as
+   *                            comment nodes, empty inline containers (even if
+   *                            it has border, etc) instead of moving it to the
+   *                            destination.  Note that this does not remove
+   *                            invisible descendants in containers which have
+   *                            visible nodes because it requires additional
+   *                            scan.
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<MoveNodeResult, nsresult>
   MoveChildrenWithTransaction(Element& aElement,
                               const EditorDOMPoint& aPointToInsert,
                               PreserveWhiteSpaceStyle aPreserveWhiteSpaceStyle,
-                              RemoveIfCommentNode aRemoveIfCommentNode);
+                              RemoveIfInvisibleNode aRemoveIfInvisibleNode);
 
   /**
    * CanMoveChildren() returns true if `MoveChildrenWithTransaction()` can move
@@ -3407,10 +3413,13 @@ class HTMLEditor final : public EditorBase,
    *                                    content.
    *                                    If you deleted something, this should be
    *                                    end of the deleted range.
+   * @param aEditingHost                The editing host containing
+   * aNextOrAfterModifiedPoint.
    */
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   EnsureNoFollowingUnnecessaryLineBreak(
-      const EditorDOMPoint& aNextOrAfterModifiedPoint);
+      const EditorDOMPoint& aNextOrAfterModifiedPoint,
+      const Element& aEditingHost);
 
   /**
    * IndentAsSubAction() indents the content around Selection.
@@ -3460,7 +3469,8 @@ class HTMLEditor final : public EditorBase,
   template <size_t N>
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult SetInlinePropertiesAroundRanges(
       AutoClonedRangeArray& aRanges,
-      const AutoTArray<EditorInlineStyleAndValue, N>& aStylesToSet);
+      const AutoTArray<EditorInlineStyleAndValue, N>& aStylesToSet,
+      const Element& aEditingHost);
 
   /**
    * RemoveInlinePropertiesAsSubAction() removes specified styles from

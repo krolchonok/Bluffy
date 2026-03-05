@@ -16,7 +16,7 @@ const { InternalTestingProfileMigrator } = ChromeUtils.importESModule(
 
 async function clickVisibleButton(browser, selector) {
   // eslint-disable-next-line no-shadow
-  await ContentTask.spawn(browser, { selector }, async ({ selector }) => {
+  await SpecialPowers.spawn(browser, [{ selector }], async ({ selector }) => {
     function getVisibleElement() {
       for (const el of content.document.querySelectorAll(selector)) {
         if (el.offsetParent !== null) {
@@ -59,14 +59,6 @@ add_task(function () {
  */
 add_task(async function test_aboutwelcome_mr_template_telemetry() {
   const sandbox = sinon.createSandbox();
-
-  // Prevent Smart Window screens from rendering
-  sandbox
-    .stub(AWScreenUtils, "evaluateScreenTargeting")
-    .callThrough()
-    .withArgs(sinon.match(/smart_window/))
-    .resolves(false);
-
   let { browser, cleanup } = await openMRAboutWelcome();
   let aboutWelcomeActor = await getAboutWelcomeParent(browser);
   // Stub AboutWelcomeParent's Content Message Handler
