@@ -148,13 +148,16 @@ async function setPanelState(state = defaultState, win = window) {
  * Closes the IP Protection panel and resets the state to the default.
  *
  * @param {Window} win - The window the panel is in.
+ * @param {boolean} resetState - Whether to reset the panel state to default before closing.
  * @returns {Promise<void>}
  */
-async function closePanel(win = window) {
+async function closePanel(win = window, resetState = true) {
   // Reset the state
   let panel = IPProtection.getPanel(win);
 
-  panel.setState(defaultState);
+  if (resetState) {
+    panel.setState(defaultState);
+  }
   // Close the panel
   let panelHiddenPromise = waitForPanelEvent(win.document, "popuphidden");
   panel.close();
@@ -477,13 +480,8 @@ async function cleanupExperiment() {
  */
 function createTestEntitlement(overrides = {}) {
   return new Entitlement({
-    autostart: false,
-    created_at: "2023-01-01T12:00:00.000Z",
-    limited_bandwidth: false,
-    location_controls: false,
     subscribed: false,
     uid: 42,
-    website_inclusion: false,
     maxBytes: "0",
     ...overrides,
   });

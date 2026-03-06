@@ -1468,6 +1468,8 @@
     <string name="tab_manager_multiselect_menu_item_share">Share</string>
     <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
     <string name="tab_manager_multiselect_menu_item_add_to_collection">Add to collection</string>
+    <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+    <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Add to group</string>
     <!-- Content description for tabs tray multiselect share button -->
     <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Share selected tabs</string>
     <!-- Content description for tabs tray multiselect menu -->
@@ -1820,7 +1822,7 @@
     <!-- Bookmark overflow menu edit button -->
     <string name="bookmark_menu_edit_button">Edit</string>
     <!-- Bookmark overflow menu copy button -->
-    <string name="bookmark_menu_copy_button">Copy</string>
+    <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Copy</string>
     <!-- Bookmark overflow menu share button -->
     <string name="bookmark_menu_share_button">Share</string>
     <!-- Bookmark overflow menu select all bookmarks -->
@@ -2129,19 +2131,19 @@
     The app name is in the text, due to limitations with localizing Nimbus experiments -->
     <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Make Firefox your default browser</string>
     <!-- Title shown in the notification that pops up to re-engage the user -->
-    <string name="notification_re_engagement_title">Try private browsing</string>
+    <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Try private browsing</string>
     <!-- Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name. -->
-    <string name="notification_re_engagement_text">Browse with no saved cookies or history in %1$s</string>
+    <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Browse with no saved cookies or history in %1$s</string>
     <!-- Title A shown in the notification that pops up to re-engage the user -->
-    <string name="notification_re_engagement_A_title">Browse without a trace</string>
+    <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Browse without a trace</string>
     <!-- Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name. -->
-    <string name="notification_re_engagement_A_text">Private browsing in %1$s doesn’t save your info.</string>
+    <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Private browsing in %1$s doesn’t save your info.</string>
     <!-- Title B shown in the notification that pops up to re-engage the user -->
-    <string name="notification_re_engagement_B_title">Start your first search</string>
+    <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Start your first search</string>
     <!-- Text B shown in the notification that pops up to re-engage the user -->
-    <string name="notification_re_engagement_B_text">Find something nearby. Or discover something fun.</string>
+    <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Find something nearby. Or discover something fun.</string>
 
     <!-- Survey -->
     <!-- Text shown in the fullscreen message that pops up to ask user to take a short survey.

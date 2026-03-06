@@ -547,6 +547,14 @@ class nsWindow final : public nsIWidget {
   void SetDragPopupSurface(RefPtr<gfxImageSurface> aDragPopupSurface,
                            const LayoutDeviceIntRegion& aInvalidRegion);
 
+  static nsWindow* FromWidget(nsIWidget* aWidget) {
+    if (aWidget && aWidget->IsNativeWidget()) {
+      return static_cast<nsWindow*>(aWidget);
+    }
+    return nullptr;
+  }
+  static nsWindow* FromWidget(nsWindow*) = delete;
+
  protected:
   virtual ~nsWindow();
 
@@ -575,7 +583,6 @@ class nsWindow final : public nsIWidget {
                         GdkEventButton* aButtonEvent);
 
   void DestroyChildWindows();
-  GtkWidget* GetToplevelWidget() const;
   nsWindow* GetContainerWindow() const;
   Window GetX11Window();
   void SetUrgencyHint(GtkWidget* top_window, bool state);
@@ -924,7 +931,6 @@ class nsWindow final : public nsIWidget {
                                      GdkPoint* aOffset);
   bool WaylandPopupAnchorAdjustForParentPopup(GdkRectangle* aPopupAnchor,
                                               GdkPoint* aOffset);
-  nsWindow* GetTopmostWindow();
   bool IsPopupInLayoutPopupChain(nsTArray<nsIWidget*>* aLayoutWidgetHierarchy,
                                  bool aMustMatchParent);
   void WaylandPopupMarkAsClosed();

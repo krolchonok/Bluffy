@@ -25,6 +25,11 @@
     <!-- Secret Settings Strings -->
     <!-- Label for the secret settings preference -->
     <string name="preferences_debug_settings">Secret Settings</string>
+
+    <!-- Label for the secret settings homepage preference category -->
+    <string name="homepage_debug_settings_homepage_category_title">Homepage</string>
+    <string name="homepage_debug_settings_homepage_category_key">homepage</string>
+
     <!-- Label for the secret settings preference -->
     <string name="preferences_debug_info" translatable="false">Secret Debug Info</string>
     <!-- Label for remote settings server preference -->
@@ -136,6 +141,9 @@
     <string name="preferences_debug_settings_enable_search_optimization_stock" translatable="false">Show Search Optimization Stock cards</string>
     <string name="preferences_debug_settings_enable_search_optimization_sport" translatable="false">Show Search Optimization Sport cards</string>
     <string name="preferences_debug_settings_search_optimization_card_summary" translatable="false">This needs the Search Optimization Feature enabled</string>
+
+    <!-- Search suggestions title for Firefox Suggest Online -->
+    <string name="firefox_suggest_online_header" tools:ignore="BrandUsage" translatable="false">Firefox Suggest Online</string>
 
     <!-- Label for toggling the native android share sheet feature -->
     <string name="preferences_debug_settings_native_android_share_sheet" translatable="false">Enable Native Android Share Sheet</string>

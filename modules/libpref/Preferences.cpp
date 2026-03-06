@@ -24,6 +24,7 @@
 #include "mozilla/dom/RemoteType.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/glean/LibprefMetrics.h"
+#include "mozilla/glean/GleanPings.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/IdleTaskRunner.h"
 #include "mozilla/HashTable.h"
@@ -2098,7 +2099,6 @@ class Parser {
                               HandlePref, HandleError);
   }
 
- private:
   static void HandlePref(const char* aPrefName, PrefType aType,
                          PrefValueKind aKind, PrefValue aValue, bool aIsSticky,
                          bool aIsLocked) {
@@ -2135,6 +2135,24 @@ class Parser {
   }
 };
 
+static nsresult parsePrefFileData(PrefValueKind aKind, const char* aPath,
+                                  const nsCString& aData,
+                                  PrefsParserPrefFn aPrefFn,
+                                  PrefsParserErrorFn aErrorFn) {
+  if (!prefs_parser_parse(aPath, aKind, aData.get(), aData.Length(), aPrefFn,
+                          aErrorFn)) {
+#ifdef NIGHTLY_BUILD
+    // Added for bug 2004956. We are seeing prefs files fail to parse
+    // much more often than expected, and we want to see a few examples
+    // of failing ones. It's fine to only get one of these per client.
+    glean::preferences::prefs_file_that_failed_to_parse.Set(aData);
+    glean_pings::PrefsFileInvalid.Submit();
+#endif
+    return NS_ERROR_FILE_CORRUPTED;
+  }
+  return NS_OK;
+}
+
 // The following code is test code for the gtest.
 
 static void TestParseErrorHandlePref(const char* aPrefName, PrefType aType,
@@ -2152,15 +2170,16 @@ static void TestParseErrorHandleError(const char* aFullMsg,
 }
 
 // Keep this in sync with the declaration in test/gtest/Parser.cpp.
-void TestParseError(PrefValueKind aKind, const char* aText,
-                    nsCString& aErrorMsg) {
-  prefs_parser_parse("test", aKind, aText, strlen(aText),
-                     TestParseErrorHandlePref, TestParseErrorHandleError);
-
-  // Copy the error messages into the outparam, then clear them from
-  // gTestParseErrorMsgs.
-  aErrorMsg.Assign(gTestParseErrorMsgs);
+nsresult TestParseError(PrefValueKind aKind, const char* aText,
+                        nsCString& aErrorMsg) {
+  nsCString text(aText);
   gTestParseErrorMsgs.Truncate();
+  nsresult rv = parsePrefFileData(aKind, "test", text, TestParseErrorHandlePref,
+                                  TestParseErrorHandleError);
+
+  // Copy the error messages into the outparam
+  aErrorMsg.Assign(gTestParseErrorMsgs);
+  return rv;
 }
 
 //===========================================================================
@@ -3124,20 +3143,19 @@ size_t nsPrefBranch::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
 }
 
 void nsPrefBranch::FreeObserverList() {
-  // We need to prevent anyone from modifying mObservers while we're iterating
-  // over it. In particular, some clients will call RemoveObserver() when
-  // they're removed and destructed via the iterator; we set
-  // mFreeingObserverList to keep those calls from touching mObservers.
+  // Clearing mObservers may release the last strong reference to observers,
+  // whose destructors may call RemoveObserver() re-entrantly. We set
+  // mFreeingObserverList to suppress those calls, both to avoid modifying
+  // mObservers during Clear() and to avoid redundant UnregisterCallback walks
+  // (the bulk removal is already handled by UnregisterCallbacksForBranch).
   mFreeingObserverList = true;
-  for (auto iter = mObservers.Iter(); !iter.Done(); iter.Next()) {
-    auto callback = iter.UserData();
-    DebugOnly<nsresult> rv = Preferences::UnregisterCallback(
-        nsPrefBranch::NotifyObserver, callback->GetDomain(), callback,
-        Preferences::PrefixMatch);
-    MOZ_ASSERT(NS_SUCCEEDED(rv),
-               "Callback node missing for observer in FreeObserverList");
-    iter.Remove();
-  }
+
+  // Remove all callback nodes for this branch in a single pass through the
+  // global callback list, instead of one pass per observer.
+  DebugOnly<uint32_t> removed = Preferences::UnregisterCallbacksForBranch(this);
+  MOZ_ASSERT(removed == mObservers.Count() || Preferences::sShutdown,
+             "Callback list and mObservers are out of sync");
+  mObservers.Clear();
 
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
   if (observerService) {
@@ -4854,19 +4872,11 @@ static nsresult openPrefFile(nsIFile* aFile, PrefValueKind aKind) {
 
   nsCString data = MOZ_TRY(URLPreloader::ReadFile(aFile));
 
-  nsAutoString filenameUtf16;
-  aFile->GetLeafName(filenameUtf16);
-  NS_ConvertUTF16toUTF8 filename(filenameUtf16);
-
   nsAutoString path;
   aFile->GetPath(path);
 
-  Parser parser;
-  if (!parser.Parse(aKind, NS_ConvertUTF16toUTF8(path).get(), data)) {
-    return NS_ERROR_FILE_CORRUPTED;
-  }
-
-  return NS_OK;
+  return parsePrefFileData(aKind, NS_ConvertUTF16toUTF8(path).get(), data,
+                           Parser::HandlePref, Parser::HandleError);
 }
 
 static nsresult parsePrefData(const nsCString& aData, PrefValueKind aKind) {
@@ -5894,6 +5904,37 @@ nsresult Preferences::UnregisterCallbacks(PrefChangedFunc aCallback,
                                           const char* const* aPrefs,
                                           void* aData, MatchKind aMatchKind) {
   return UnregisterCallbackImpl(aCallback, aPrefs, aData, aMatchKind);
+}
+
+/* static */
+uint32_t Preferences::UnregisterCallbacksForBranch(nsPrefBranch* aBranch) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (sShutdown || !sPreferences) {
+    return 0;
+  }
+
+  uint32_t removedCount = 0;
+  CallbackNode* node = gFirstCallback;
+  CallbackNode* prev_node = nullptr;
+
+  while (node) {
+    if (node->Func() == nsPrefBranch::NotifyObserver &&
+        static_cast<PrefCallback*>(node->Data())->GetPrefBranch() == aBranch) {
+      ++removedCount;
+      if (gCallbacksInProgress) {
+        node->ClearFunc();
+        gShouldCleanupDeadNodes = true;
+        prev_node = node;
+        node = node->Next();
+      } else {
+        node = pref_RemoveCallbackNode(node, prev_node);
+      }
+    } else {
+      prev_node = node;
+      node = node->Next();
+    }
+  }
+  return removedCount;
 }
 
 template <typename T>

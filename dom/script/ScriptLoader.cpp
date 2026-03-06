@@ -1277,10 +1277,8 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
   aRequest->mNetworkMetadata = cacheResult.mNetworkMetadata;
 
   MOZ_ASSERT(cacheResult.mCompleteValue->ReferrerPolicy() == aReferrerPolicy);
-  MOZ_ASSERT(aFetchOptions->IsCompatible(
-      cacheResult.mCompleteValue->GetFetchOptions()));
 
-  aRequest->CacheEntryFound(cacheResult.mCompleteValue);
+  aRequest->CacheEntryFound(cacheResult.mCompleteValue, aFetchOptions);
   LOG(
       ("ScriptLoader (%p): Found in-memory cache LoadedScript (%p) for "
        "ScriptLoadRequest(%p) %s.",
@@ -4643,7 +4641,7 @@ void ScriptLoader::HandleLoadError(ScriptLoadRequest* aRequest,
             ->GetScriptElementForCurrentParserInsertedScript();
     FireScriptAvailable(aResult, aRequest);
     ContinueParserAsync(aRequest);
-    mCurrentParserInsertedScript = oldParserInsertedScript;
+    mCurrentParserInsertedScript = std::move(oldParserInsertedScript);
   } else if (!wasHandled) {
     // This happens for blocking requests cancelled by ParsingComplete().
     // Ignore cancellation status for link-preload requests, as cancellation can
@@ -4908,6 +4906,14 @@ nsresult ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
     // When loading a module, only responses with an expected MIME type are
     // acceptable.
     if (!MimeTypeMatchesExpectedModuleType(aChannel, request->mModuleType)) {
+      if (LOG_ENABLED()) {
+        nsAutoCString spec;
+        uri->GetAsciiSpec(spec);
+        LOG(
+            ("ScriptLoadRequest (%p): MimeTypeMatchesExpectedModuleType check "
+             "failed for: %s",
+             aRequest, spec.get()));
+      }
       return NS_ERROR_FAILURE;
     }
 

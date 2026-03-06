@@ -36,13 +36,16 @@ import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.google.android.material.appbar.AppBarLayout
 import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
@@ -61,7 +64,6 @@ import mozilla.components.concept.sync.OAuthAccount
 import mozilla.components.feature.accounts.push.SendTabUseCases
 import mozilla.components.feature.tab.collections.TabCollection
 import mozilla.components.feature.top.sites.presenter.DefaultTopSitesPresenter
-import mozilla.components.lib.state.ext.consumeFlow
 import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.lib.state.ext.observeAsComposableState
@@ -208,6 +210,8 @@ class HomeFragment : Fragment() {
         )
     }
 
+    private val browsingModeManager get() = (activity as HomeActivity).browsingModeManager
+
     private val collectionStorageObserver = object : TabCollectionStorage.Observer {
         @SuppressLint("NotifyDataSetChanged")
         override fun onTabsAdded(tabCollection: TabCollection, sessions: List<TabSessionState>) {
@@ -252,6 +256,7 @@ class HomeFragment : Fragment() {
         get() = nullableToolbarView!!
 
     private var lastAppliedWallpaperName: String = Wallpaper.DEFAULT
+    private var wallpaperUpdatesJob: Job? = null
 
     @VisibleForTesting
     internal val messagingFeatureHomescreen = ViewBoundFeatureWrapper<MessagingFeature>()
@@ -459,10 +464,10 @@ class HomeFragment : Fragment() {
         }
         tabsCleanupFeature.set(
             feature = TabsCleanupFeature(
-                appStore = components.appStore,
                 context = requireContext(),
                 viewModel = homeViewModel,
                 browserStore = components.core.store,
+                browsingModeManager = browsingModeManager,
                 navController = findNavController(),
                 tabsUseCases = components.useCases.tabsUseCases,
                 fenixBrowserUseCases = components.useCases.fenixBrowserUseCases,
@@ -598,8 +603,8 @@ class HomeFragment : Fragment() {
                 viewLifecycleScope = viewLifecycleOwner.lifecycleScope,
             ),
             privateBrowsingController = DefaultPrivateBrowsingController(
-                appStore = components.appStore,
                 navController = findNavController(),
+                browsingModeManager = browsingModeManager,
                 fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
                 settings = components.settings,
             ),
@@ -619,7 +624,6 @@ class HomeFragment : Fragment() {
                 appStore = components.appStore,
             ),
             topSiteController = DefaultTopSiteController(
-                appStore = requireComponents.appStore,
                 activityRef = WeakReference(requireActivity()),
                 store = store,
                 navControllerRef = WeakReference(findNavController()),
@@ -666,9 +670,10 @@ class HomeFragment : Fragment() {
                 if (homepageEdgeToEdgeFeature.get() == null) {
                     homepageEdgeToEdgeFeature.set(
                         feature = HomepageEdgeToEdgeFeature(
-                            appStore = activity.components.appStore,
+                            appStore = requireComponents.appStore,
                             activity = activity,
                             settings = activity.settings(),
+                            browsingModeManager = browsingModeManager,
                             toolbarStore = toolbarStore,
                         ),
                         owner = viewLifecycleOwner,
@@ -709,10 +714,10 @@ class HomeFragment : Fragment() {
             }
 
             false -> HomeToolbarView(
-                appStore = requireComponents.appStore,
                 homeBinding = binding,
                 interactor = sessionControlInteractor,
                 homeFragment = this,
+                homeActivity = activity,
             )
         }
 
@@ -722,6 +727,7 @@ class HomeFragment : Fragment() {
         navController = findNavController(),
         appStore = requireContext().components.appStore,
         browserStore = requireContext().components.core.store,
+        browsingModeManager = activity.browsingModeManager,
     )
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -936,11 +942,9 @@ class HomeFragment : Fragment() {
         }
 
         HomeScreen.homeScreenViewCount.add()
-        if (!requireComponents.appStore.state.mode.isPrivate) {
+        if (!browsingModeManager.mode.isPrivate) {
             HomeScreen.standardHomepageViewCount.add()
         }
-
-        observeWallpaperUpdates()
 
         observePrivateModeLock {
             findNavController().navigate(
@@ -1073,6 +1077,7 @@ class HomeFragment : Fragment() {
                                 appState = appState.value,
                                 privacyNoticeBannerState = privacyNoticeBannerState.value,
                                 settings = settings,
+                                browsingModeManager = browsingModeManager,
                             ),
                             interactor = sessionControlInteractor,
                             onMiddleSearchBarVisibilityChanged = { isVisible ->
@@ -1090,6 +1095,7 @@ class HomeFragment : Fragment() {
                                 appState = appState.value,
                                 privacyNoticeBannerState = privacyNoticeBannerState.value,
                                 settings = settings,
+                                browsingModeManager = browsingModeManager,
                             ),
                             interactor = sessionControlInteractor,
                             onTopSitesItemBound = {
@@ -1160,7 +1166,7 @@ class HomeFragment : Fragment() {
                 onAddTabClick = {
                     if (requireContext().settings().enableHomepageAsNewTab) {
                         requireComponents.useCases.fenixBrowserUseCases.addNewHomepageTab(
-                            private = requireComponents.appStore.state.mode.isPrivate,
+                            private = (requireActivity() as HomeActivity).browsingModeManager.mode.isPrivate,
                         )
                     } else {
                         sessionControlInteractor.onNavigateSearch()
@@ -1340,7 +1346,7 @@ class HomeFragment : Fragment() {
         findNavController().nav(
             R.id.homeFragment,
             HomeFragmentDirections.actionGlobalTabManagementFragment(
-                page = when (requireComponents.appStore.state.mode) {
+                page = when (browsingModeManager.mode) {
                     BrowsingMode.Normal -> Page.NormalTabs
                     BrowsingMode.Private -> Page.PrivateTabs
                 },
@@ -1373,15 +1379,18 @@ class HomeFragment : Fragment() {
         requireContext().settings().currentWallpaperName == Wallpaper.EDGE_TO_EDGE
 
     private fun applyWallpaper(wallpaperName: String, orientationChange: Boolean, orientation: Int) {
-        when {
-            !shouldEnableWallpaper() ||
-                (wallpaperName == lastAppliedWallpaperName && !orientationChange) -> return
-            Wallpaper.isLocalWallpaper(wallpaperName) -> {
-                binding.wallpaperImageView.isVisible = false
-                lastAppliedWallpaperName = wallpaperName
-            }
-            else -> {
-                viewLifecycleOwner.lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
+            when {
+                !shouldEnableWallpaper() || (wallpaperName == lastAppliedWallpaperName && !orientationChange) -> {
+                    // no-op
+                }
+
+                Wallpaper.isLocalWallpaper(wallpaperName) -> {
+                    binding.wallpaperImageView.isVisible = false
+                    lastAppliedWallpaperName = wallpaperName
+                }
+
+                else -> {
                     // loadBitmap does file lookups based on name, so we don't need a fully
                     // qualified type to load the image
                     val wallpaper = Wallpaper.Default.copy(name = wallpaperName)
@@ -1405,23 +1414,32 @@ class HomeFragment : Fragment() {
                     }
                 }
             }
+
+            observeWallpaperUpdates()
         }
     }
 
     private fun observeWallpaperUpdates() {
-        consumeFlow(requireComponents.appStore, viewLifecycleOwner) { flow ->
-            flow.filter { it.mode == BrowsingMode.Normal }
-                .map { it.wallpaperState.currentWallpaper }
-                .distinctUntilChanged()
-                .collect {
-                    if (it.name != lastAppliedWallpaperName) {
-                        applyWallpaper(
-                            wallpaperName = it.name,
-                            orientationChange = false,
-                            orientation = requireContext().resources.configuration.orientation,
-                        )
+        if (wallpaperUpdatesJob?.isActive == true) return
+
+        wallpaperUpdatesJob = viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.CREATED) {
+                requireComponents.appStore.stateFlow
+                    .filter { it.mode == BrowsingMode.Normal }
+                    .map { it.wallpaperState.currentWallpaper }
+                    .distinctUntilChanged()
+                    .collect {
+                        if (it.name != lastAppliedWallpaperName) {
+                            applyWallpaper(
+                                wallpaperName = it.name,
+                                orientationChange = false,
+                                orientation = requireContext().resources.configuration.orientation,
+                            )
+                        }
                     }
-                }
+            }
+        }.also { job ->
+            job.invokeOnCompletion { wallpaperUpdatesJob = null }
         }
     }
 

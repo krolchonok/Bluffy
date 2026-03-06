@@ -112,8 +112,6 @@ export class IPProtectionPanel {
    *  The location country code
    * @property {"generic-error" | "network-error" | ""} error
    *  The error type as a string if an error occurred, or empty string if there are no errors.
-   * @property {boolean} isAlpha
-   *  True if we're running the Alpha variant, else false.
    * @property {boolean} hasUpgraded
    *  True if a Mozilla VPN subscription is linked to the user's Mozilla account.
    * @property {string} onboardingMessage
@@ -207,7 +205,6 @@ export class IPProtectionPanel {
         lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE,
       location: lazy.EGRESS_LOCATION_ENABLED ? DEFAULT_EGRESS_LOCATION : null,
       error: "",
-      isAlpha: lazy.IPPEnrollAndEntitleManager.isAlpha,
       hasUpgraded: lazy.IPPEnrollAndEntitleManager.hasUpgraded,
       onboardingMessage: "",
       bandwidthWarning: false,
@@ -497,6 +494,7 @@ export class IPProtectionPanel {
    * Ensure there is a signed in account and then open the panel after enrolling.
    */
   async enroll() {
+    Glean.ipprotection.getStarted.record();
     const signedIn = await this.startLoginFlow();
     if (!signedIn) {
       return;
@@ -509,10 +507,14 @@ export class IPProtectionPanel {
 
     // Asynchronously enroll and entitle the user.
     // It will only need to finish before the proxy can start.
-    lazy.IPPEnrollAndEntitleManager.maybeEnrollAndEntitle();
+    const enrolling = lazy.IPPEnrollAndEntitleManager.maybeEnrollAndEntitle();
     if (!this.active) {
       await this.open();
     }
+    const result = await enrolling;
+    Glean.ipprotection.enrollment.record({
+      enrolled: result?.isEnrolledAndEntitled,
+    });
   }
 
   /**

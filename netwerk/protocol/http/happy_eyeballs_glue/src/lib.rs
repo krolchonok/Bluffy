@@ -17,12 +17,28 @@ use libc::{AF_INET, AF_INET6};
 #[cfg(windows)]
 use winapi::shared::ws2def::{AF_INET, AF_INET6};
 
+#[repr(C)]
+pub enum IpPreference {
+    DualStackPreferV6 = 0,
+    DualStackPreferV4 = 1,
+}
+
+impl From<IpPreference> for happy_eyeballs::IpPreference {
+    fn from(v: IpPreference) -> Self {
+        match v {
+            IpPreference::DualStackPreferV6 => Self::DualStackPreferV6,
+            IpPreference::DualStackPreferV4 => Self::DualStackPreferV4,
+        }
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn create(
     result: &mut *const HappyEyeballs,
     origin: *const nsACString,
     port: u16,
     alt_svc: *const ThinVec<AltSvc>,
+    ip_preference: IpPreference,
 ) -> nsresult {
     *result = ptr::null_mut();
 
@@ -49,6 +65,7 @@ pub extern "C" fn create(
 
     let network_config = happy_eyeballs::NetworkConfig {
         alt_svc: alt_svc_vec,
+        ip: ip_preference.into(),
         ..Default::default()
     };
 
@@ -275,6 +292,12 @@ impl HappyEyeballs {
                 ipv6_vec.push(ipv6);
             }
 
+            let port = if svc_info.port == 0 {
+                None
+            } else {
+                Some(svc_info.port)
+            };
+
             infos.push(happy_eyeballs::ServiceInfo {
                 priority: svc_info.priority,
                 target_name: target,
@@ -282,6 +305,7 @@ impl HappyEyeballs {
                 ech_config: ech,
                 ipv4_hints: ipv4_vec,
                 ipv6_hints: ipv6_vec,
+                port,
             });
         }
 
@@ -456,6 +480,7 @@ impl From<happy_eyeballs::HttpVersion> for ConnectionAttemptHttpVersions {
 #[repr(C)]
 pub struct ServiceInfo {
     pub priority: u16,
+    pub port: u16,
     pub target_name: nsCString,
     pub alpn_protocols: ThinVec<HttpVersion>,
     pub ech_config: ThinVec<u8>,
