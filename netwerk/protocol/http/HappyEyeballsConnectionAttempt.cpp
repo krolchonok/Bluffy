@@ -140,7 +140,7 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
 
   nsresult rv = NS_OK;
 
-  while (true) {
+  while (!mDone) {
     happy_eyeballs::Output event{};
     nsTArray<uint8_t> echConfig;
     rv = happy_eyeballs::process_output(mHappyEyeballs, &event, &echConfig);
@@ -223,6 +223,8 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
         return NS_OK;
     }
   }
+
+  return NS_OK;
 }
 
 Result<nsIDNSService::DNSFlags, nsresult>
@@ -294,12 +296,28 @@ HappyEyeballsConnectionAttempt::SetupDnsFlags(
   return dnsFlags;
 }
 
+void HappyEyeballsConnectionAttempt::MaybeSendTransportStatus(
+    nsresult aStatus, nsITransport* aTransport, int64_t aProgress) {
+  if (!mSentTransportStatuses.EnsureInserted(static_cast<uint32_t>(aStatus)) ||
+      !mTransaction) {
+    return;
+  }
+  mTransaction->OnTransportStatus(aTransport, aStatus, aProgress);
+}
+
 nsresult HappyEyeballsConnectionAttempt::DNSLookup(
     happy_eyeballs::DnsRecordType aType, nsIDNSService::DNSFlags aFlags,
     uint64_t aId) {
   nsCOMPtr<nsIDNSService> dns = GetOrInitDNSService();
   if (!dns) {
     return NS_ERROR_UNEXPECTED;
+  }
+
+  if (mDomainLookupStart.IsNull() &&
+      (aType == happy_eyeballs::DnsRecordType::A ||
+       aType == happy_eyeballs::DnsRecordType::Aaaa)) {
+    mDomainLookupStart = TimeStamp::Now();
+    MaybeSendTransportStatus(NS_NET_STATUS_RESOLVING_HOST);
   }
 
   RefPtr<DnsRequestInfo> requestInfo = new DnsRequestInfo(aId, aType);
@@ -409,6 +427,14 @@ nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
   }
   RefPtr<TCPConnectionEstablisher> establisher = new TCPConnectionEstablisher(
       info, aAddr, mCaps, mSpeculative, mAllow1918);
+  nsCOMPtr<nsIInterfaceRequestor> callbacks;
+  mTransaction->GetSecurityCallbacks(getter_AddRefs(callbacks));
+  establisher->SetSecurityCallbacks(callbacks);
+  establisher->SetTransportStatusCallback(
+      [self = RefPtr{this}](nsITransport* trans, nsresult status,
+                            int64_t progress) {
+        self->MaybeSendTransportStatus(status, trans, progress);
+      });
   auto callback = [self = RefPtr{this}, establisher,
                    aId](Result<RefPtr<HttpConnectionBase>, nsresult> aResult) {
     self->HandleTCPConnectionResult(std::move(aResult), establisher, aId);
@@ -434,6 +460,11 @@ nsresult HappyEyeballsConnectionAttempt::EstablishUDPConnection(
   }
   RefPtr<UDPConnectionEstablisher> establisher =
       new UDPConnectionEstablisher(info, aAddr, mCaps);
+  establisher->SetTransportStatusCallback(
+      [self = RefPtr{this}](nsITransport* trans, nsresult status,
+                            int64_t progress) {
+        self->MaybeSendTransportStatus(status, trans, progress);
+      });
   auto callback = [self = RefPtr{this}, establisher,
                    aId](Result<RefPtr<HttpConnectionBase>, nsresult> aResult) {
     self->HandleUDPConnectionResult(std::move(aResult), establisher, aId);
@@ -609,6 +640,10 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
 
   entry->RecordIPFamilyPreference(mAddrFamily);
 
+  if (!mDomainLookupStart.IsNull()) {
+    mOutputConn->SetDnsBootstrapTimings(mDomainLookupStart, mDomainLookupEnd);
+  }
+
   RefPtr<nsHttpConnection> connTCP = do_QueryObject(mOutputConn);
   if (connTCP) {
     ProcessTCPConn(connTCP, entry);
@@ -700,9 +735,9 @@ nsresult HappyEyeballsConnectionAttempt::OnARecord(nsIDNSRecord* aRecord,
   LOG(("HappyEyeballsConnectionAttempt::OnARecord: this=%p status %" PRIx32
        " id=%" PRIu64,
        this, static_cast<uint32_t>(status), aId));
-  // TODO: we should report this only once
   if (NS_SUCCEEDED(status)) {
-    mTransaction->OnTransportStatus(nullptr, NS_NET_STATUS_RESOLVED_HOST, 0);
+    mDomainLookupEnd = TimeStamp::Now();
+    MaybeSendTransportStatus(NS_NET_STATUS_RESOLVED_HOST);
   }
 
   // TODO: use NS_ERROR_UNKNOWN_PROXY_HOST if stasus is failed and proxy is used
@@ -745,9 +780,9 @@ nsresult HappyEyeballsConnectionAttempt::OnAAAARecord(nsIDNSRecord* aRecord,
   LOG(("HappyEyeballsConnectionAttempt::OnAAAARecord: this=%p status %" PRIx32
        " id=%" PRIu64,
        this, static_cast<uint32_t>(status), aId));
-  // TODO: we should report this only once
   if (NS_SUCCEEDED(status)) {
-    mTransaction->OnTransportStatus(nullptr, NS_NET_STATUS_RESOLVED_HOST, 0);
+    mDomainLookupEnd = TimeStamp::Now();
+    MaybeSendTransportStatus(NS_NET_STATUS_RESOLVED_HOST);
   }
 
   // TODO: use NS_ERROR_UNKNOWN_PROXY_HOST if stasus is failed and proxy is used

@@ -198,22 +198,7 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(ScriptLoader)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(ScriptLoader)
 
 ScriptLoader::ScriptLoader(Document* aDocument)
-    : mDocument(aDocument),
-      mParserBlockingBlockerCount(0),
-      mBlockerCount(0),
-      mNumberOfProcessors(0),
-      mTotalFullParseSize(0),
-      mPhysicalSizeOfMemory(-1),
-      mEnabled(true),
-      mDeferEnabled(false),
-      mSpeculativeOMTParsingEnabled(false),
-      mDeferCheckpointReached(false),
-      mBlockingDOMContentLoaded(false),
-      mLoadEventFired(false),
-      mGiveUpDiskCaching(false),
-      mContinueParsingDocumentAfterCurrentScript(false),
-      mHadFCPDoNotUseDirectly(false),
-      mReporter(new ConsoleReportCollector()) {
+    : mDocument(aDocument), mReporter(new ConsoleReportCollector()) {
   LOG(("ScriptLoader::ScriptLoader %p", this));
 
   mSpeculativeOMTParsingEnabled = StaticPrefs::
@@ -393,6 +378,19 @@ static void CollectScriptTelemetry(ScriptLoadRequest* aRequest) {
       script_loading_source.EnumGet(ScriptLoadingSourceLabel::eAltdata).Add();
     }
   }
+}
+
+static void AddMemoryCacheRefCountTelemetry(
+    JS::loader::LoadedScript* aLoadedScript) {
+  using namespace mozilla::glean::dom;
+
+  // Skip this function if we are not running telemetry.
+  if (!mozilla::Telemetry::CanRecordExtended()) {
+    return;
+  }
+
+  uint16_t count = aLoadedScript->ClampedRefCountForTelemetry();
+  script_memory_cache_ref_count.AccumulateSingleSample(count);
 }
 
 // Helper method for checking if the script element is an event-handler
@@ -1277,6 +1275,13 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
   aRequest->mNetworkMetadata = cacheResult.mNetworkMetadata;
 
   MOZ_ASSERT(cacheResult.mCompleteValue->ReferrerPolicy() == aReferrerPolicy);
+
+  mMemoryCacheUsed++;
+  if (!cacheResult.mCompleteValue->IsEverHitFromMemoryCache()) {
+    cacheResult.mCompleteValue->SetIsEverHitFromMemoryCache();
+    mCache->OnEntryEverHit();
+  }
+  AddMemoryCacheRefCountTelemetry(cacheResult.mCompleteValue);
 
   aRequest->CacheEntryFound(cacheResult.mCompleteValue, aFetchOptions);
   LOG(
@@ -3519,6 +3524,7 @@ void ScriptLoader::TryCacheRequest(ScriptLoadRequest* aRequest) {
       loadedScript->mFetchCount = 1;
     }
     mCache->Insert(*loadData);
+    mCache->OnEntryInserted();
     LOG(("ScriptLoader (%p): Inserting in-memory cache for %s.", this,
          aRequest->URI()->GetSpecOrDefault().get()));
     TRACE_FOR_TEST(aRequest, "memorycache:saved");
@@ -3736,6 +3742,10 @@ void ScriptLoader::LoadEventFired() {
 }
 
 void ScriptLoader::Destroy() {
+  if (mCache) {
+    mCache->UpdateEverHitTelemetry();
+  }
+
   if (mShutdownObserver) {
     mShutdownObserver->Unregister();
     mShutdownObserver = nullptr;
@@ -4349,9 +4359,11 @@ nsresult ScriptLoader::OnStreamComplete(
             cacheResult.mCompleteValue->AddFetchCount();
 
             TRACE_FOR_TEST(aRequest, "memorycache:dirty:revived");
+            mMemoryCacheRevived++;
           } else {
             mCache->Evict(key);
             TRACE_FOR_TEST(aRequest, "memorycache:dirty:evicted");
+            mMemoryCacheEvictedDirty++;
           }
         }
 
@@ -4379,6 +4391,14 @@ nsresult ScriptLoader::OnStreamComplete(
         rv = SaveSRIHash(aRequest, aSRIDataVerifier);
       }
     }
+
+    if (aRequest->IsTextSource()) {
+      mLoadedFromNeckoAsText++;
+    } else if (aRequest->IsSerializedStencil()) {
+      mLoadedFromNeckoAsSerializedStencil++;
+    }
+    // NOTE: aRequest->IsCachedStencil() case is handled above by incrementing
+    //       mMemoryCacheRevived.
 
     if (NS_SUCCEEDED(rv)) {
       rv = PrepareLoadedRequest(aRequest, aChannel, aChannelStatus);

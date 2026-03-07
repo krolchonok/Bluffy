@@ -43,6 +43,19 @@ class CSSTransition;
 class Document;
 class Promise;
 
+// The helper struct to hold the animation-range values.
+struct AnimationRange {
+  StyleAnimationRangeStart mStart = StyleAnimationRangeStart::DefaultStart();
+  StyleAnimationRangeEnd mEnd = StyleAnimationRangeEnd::DefaultEnd();
+  bool operator==(const AnimationRange& aOther) const {
+    return mStart == aOther.mStart && mEnd == aOther.mEnd;
+  }
+  bool IsNormal() const {
+    return mStart.name == StyleTimelineRangeName::Normal &&
+           mEnd.name == StyleTimelineRangeName::Normal;
+  }
+};
+
 class Animation : public DOMEventTargetHelper,
                   public LinkedListElement<Animation> {
  protected:
@@ -112,6 +125,10 @@ class Animation : public DOMEventTargetHelper,
   AnimationTimeline* GetTimeline() const { return mTimeline; }
   void SetTimeline(AnimationTimeline* aTimeline);
   void SetTimelineNoUpdate(AnimationTimeline* aTimeline);
+
+  const AnimationRange& GetTimelineRange() const { return mTimelineRange; }
+  void SetTimelineRange(AnimationRange&& aRange);
+  void SetTimelineRangeNoUpdate(AnimationRange&& aRange);
 
   Nullable<TimeDuration> GetStartTime() const { return mStartTime; }
   Nullable<double> GetStartTimeAsDouble() const;
@@ -405,7 +422,7 @@ class Animation : public DOMEventTargetHelper,
   ProgressTimelinePosition AtProgressTimelineBoundary() const {
     Nullable<TimeDuration> currentTime = GetUnconstrainedCurrentTime();
     return AtProgressTimelineBoundary(
-        mTimeline ? mTimeline->TimelineDuration() : nullptr,
+        mTimeline ? mTimeline->TimelineDuration(mTimelineRange) : nullptr,
         // Set unlimited current time based on the first matching condition:
         // 1. start time is resolved:
         //    (timeline time - start time) × playback rate
@@ -415,6 +432,8 @@ class Animation : public DOMEventTargetHelper,
         mStartTime.IsNull() ? TimeDuration() : mStartTime.Value(),
         PlaybackRateInternal());
   }
+
+  void UpdateNormalizedTimingForTimelineDataChange();
 
   void SetHiddenByContentVisibility(bool hidden);
   bool IsHiddenByContentVisibility() const {
@@ -532,6 +551,8 @@ class Animation : public DOMEventTargetHelper,
   Nullable<TimeDuration> mPreviousCurrentTime;  // Animation timescale
   double mPlaybackRate = 1.0;
   Maybe<double> mPendingPlaybackRate;
+
+  AnimationRange mTimelineRange;
 
   // A Promise that is replaced on each call to Play()
   // and fulfilled when Play() is successfully completed.

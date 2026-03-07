@@ -1708,7 +1708,16 @@ void ScrollContainerFrame::SetHasOutOfFlowContentInsideFilter() {
   mHasOutOfFlowContentInsideFilter = true;
 }
 
-bool ScrollContainerFrame::WantAsyncScroll() const {
+bool ScrollContainerFrame::WantAsyncScroll(
+    NonZeroScrollRangeOnly aNonZeroScrollRangeOnly) const {
+  if (!bool(aNonZeroScrollRangeOnly)) {
+    const nsStyleDisplay* disp = GetFrameForStyle()->StyleDisplay();
+    if (disp->mOverscrollBehaviorX != StyleOverscrollBehavior::Auto ||
+        disp->mOverscrollBehaviorY != StyleOverscrollBehavior::Auto) {
+      return true;
+    }
+  }
+
   ScrollStyles styles = GetScrollStyles();
 
   // First, as an optimization because getting the scrollrange is
@@ -5124,15 +5133,15 @@ static nsSize GetScrollPortSizeExcludingHeadersAndFooters(
 }
 
 nsSize ScrollContainerFrame::GetPageScrollAmount() const {
-  nsSize effectiveScrollPortSize;
+  nsSize effectiveScrollPortSize = GetVisualOptimalViewingRect().Size();
 
-  if (GetVisualViewportSize() != mScrollPort.Size()) {
-    // We want to use the visual viewport size if one is set.
-    // The headers/footers adjustment is too complicated to do if there is a
-    // visual viewport that differs from the layout viewport, this is probably
-    // okay.
-    effectiveScrollPortSize = GetVisualViewportSize();
-  } else {
+  // We want to use the visual viewport size if one is set.
+  // The headers/footers adjustment is too complicated to do if there is a
+  // visual viewport that differs from the layout viewport, this is probably
+  // okay.
+  // We also assume that if scroll-padding is in use, the author knows what
+  // they're doing and we don't need to auto-account for sticky / fixed stuff.
+  if (effectiveScrollPortSize == mScrollPort.Size()) {
     // Reduce effective scrollport height by the height of any
     // fixed-pos/sticky-pos headers or footers
     effectiveScrollPortSize = GetScrollPortSizeExcludingHeadersAndFooters(

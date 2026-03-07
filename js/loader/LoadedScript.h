@@ -88,6 +88,14 @@ class LoadedScript : public nsIMemoryReporter {
   static already_AddRefed<LoadedScript> FromCache(
       const LoadedScript& aScript, ScriptFetchOptions* aFetchOptions);
 
+  uint16_t ClampedRefCountForTelemetry() const {
+    uintptr_t count = mRefCnt.get();
+    if (count > 100) {
+      return 100;
+    }
+    return uint16_t(count);
+  }
+
   bool IsClassicScript() const { return mKind == ScriptKind::eClassic; }
   bool IsModuleScript() const { return mKind == ScriptKind::eModule; }
   bool IsEventScript() const { return mKind == ScriptKind::eEvent; }
@@ -347,6 +355,9 @@ class LoadedScript : public nsIMemoryReporter {
   void SetTookLongInPreviousRuns() { mTookLongInPreviousRuns = true; }
   bool TookLongInPreviousRuns() const { return mTookLongInPreviousRuns; }
 
+  void SetIsEverHitFromMemoryCache() { mIsEverHitFromMemoryCache = true; }
+  bool IsEverHitFromMemoryCache() const { return mIsEverHitFromMemoryCache; }
+
   /*
    * Set the mBaseURL, based on aChannel.
    * aOriginalURI is the result of aChannel->GetOriginalURI.
@@ -450,6 +461,9 @@ class LoadedScript : public nsIMemoryReporter {
   //
   // TODO: Move this into JS::Stencil, and save to the disk cache (bug 2005128)
   uint64_t mTookLongInPreviousRuns : 1;
+
+  // Set to true if this entry is ever used in the current process.
+  uint64_t mIsEverHitFromMemoryCache : 1;
 
   RefPtr<ScriptFetchOptions> mFetchOptions;
   nsCOMPtr<nsIURI> mURI;

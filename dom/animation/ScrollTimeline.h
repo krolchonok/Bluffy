@@ -149,10 +149,13 @@ class ScrollTimeline : public AnimationTimeline,
   const ScrollTimeline* AsScrollTimeline() const override { return this; }
   bool IsViewTimeline() const override { return false; }
 
-  Nullable<TimeDuration> TimelineDuration() const override {
+  Nullable<TimeDuration> TimelineDuration(
+      const AnimationRange& aRange) const override {
     // We are using this magic number for progress-based timeline duration
     // because we don't support percentage for duration.
-    return TimeDuration::FromMilliseconds(PROGRESS_TIMELINE_DURATION_MILLISEC);
+    const auto interval = IntervalForAttachmentRange(aRange);
+    return TimeDuration::FromMilliseconds((interval.second - interval.first) *
+                                          PROGRESS_TIMELINE_DURATION_MILLISEC);
   }
 
   void WillRefresh();
@@ -196,7 +199,10 @@ class ScrollTimeline : public AnimationTimeline,
   void NotifyAnimationContentVisibilityChanged(Animation* aAnimation,
                                                bool aIsVisible) override;
 
-  void UpdateCachedCurrentTime();
+  virtual void UpdateCachedCurrentTime();
+
+  virtual std::pair<double, double> IntervalForAttachmentRange(
+      const AnimationRange& aStyleRange) const;
 
  protected:
   virtual ~ScrollTimeline();
@@ -204,13 +210,15 @@ class ScrollTimeline : public AnimationTimeline,
   ScrollTimeline(Document* aDocument, const Scroller& aScroller,
                  StyleScrollAxis aAxis);
 
-  struct ScrollOffsets {
+  void TimelineDataDidChange();
+
+  // The timeline data used to represent the full range of the timeline.
+  struct ComputedTimelineData {
+    nscoord mPosition = 0;
     nscoord mStart = 0;
     nscoord mEnd = 0;
   };
-  virtual Maybe<ScrollOffsets> ComputeOffsets(
-      const ScrollContainerFrame* aScrollFrame,
-      layers::ScrollDirection aOrientation) const;
+  virtual Maybe<ComputedTimelineData> ComputeTimelineData() const;
 
   // Note: This function is required to be idempotent, as it can be called from
   // both cycleCollection::Unlink() and ~ScrollTimeline(). When modifying this
@@ -238,9 +246,11 @@ class ScrollTimeline : public AnimationTimeline,
     // The position of the scroller, and this may be negative for RTL or
     // sideways, e.g. the range of its value could be [0, -range]. The user
     // needs to take care of that.
-    nscoord mPosition;
-    ScrollOffsets mOffsets;
+    nscoord mPosition = 0;
+    nscoord mMaxScrollOffset = 0;
   };
+
+ private:
   Maybe<CurrentTimeData> mCachedCurrentTime;
 };
 

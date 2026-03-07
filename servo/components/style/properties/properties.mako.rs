@@ -391,7 +391,10 @@ impl NonCustomPropertyId {
                             pref = getattr(property, "servo_pref")
                         %>
                         % if pref:
-                            Some("${pref}"),
+                            {
+                                const_assert!(!static_prefs::default_value!("${pref}"));
+                                Some("${pref}")
+                            },
                         % else:
                             None,
                         % endif
@@ -402,7 +405,8 @@ impl NonCustomPropertyId {
                     Some(pref) => pref,
                 };
 
-                style_config::get_bool(pref)
+                // The assertions above guarantee that the pref defaults to false.
+                static_prefs::Preference::get(pref, false)
             % endif
         };
 
@@ -1380,6 +1384,7 @@ pub mod style_structs {
                         self.${longhand.ident}.clone()
                     }
 
+                    /// Whether `self` and `other` have the same computed value for ${longhand.name}.
                     #[allow(non_snake_case)]
                     #[inline]
                     pub fn ${longhand.ident}_equals(&self, other: &Self) -> bool {
@@ -1953,6 +1958,14 @@ impl ComputedValues {
                 value.map_or(String::new(), |value| value.to_css_string())
             }
         }
+    }
+
+    /// Calls the given function for each cached lazy pseudo-element style.
+    pub fn each_cached_lazy_pseudo<F>(&self, mut _f: F)
+    where
+        F: FnMut(&Self),
+    {
+        // Servo doesn't currently cache lazy pseudo-element styles.
     }
 }
 
