@@ -2407,7 +2407,7 @@
     }
 
     updateBrowserRemoteness(aBrowser, { newFrameloader, remoteType } = {}) {
-      let isRemote = aBrowser.getAttribute("remote") == "true";
+      let isRemote = aBrowser.hasAttribute("remote");
 
       // We have to be careful with this here, as the "no remote type" is null,
       // not a string. Make sure to check only for undefined, since null is
@@ -2470,7 +2470,7 @@
         aBrowser.setAttribute("remote", "true");
         aBrowser.setAttribute("remoteType", remoteType);
       } else {
-        aBrowser.setAttribute("remote", "false");
+        aBrowser.removeAttribute("remote");
         aBrowser.removeAttribute("remoteType");
       }
 
@@ -2742,7 +2742,7 @@
             getter = () => () => this;
             break;
           case "isRemoteBrowser":
-            getter = () => browser.getAttribute("remote") == "true";
+            getter = () => browser.hasAttribute("remote");
             break;
           case "permitUnload":
             getter = () => () => ({ permitUnload: true });
@@ -10960,15 +10960,23 @@ var TabContextMenu = {
     this.contextTab.splitview?.reverseTabs("menu");
   },
 
+  /**
+   * @param {MozMenuItem} menuItem
+   */
   addNewBadge(menuItem) {
     menuItem.setAttribute(
       "badge",
       gBrowser.tabLocalization.formatValueSync("tab-context-badge-new")
     );
+    menuItem.classList.add("badge-new");
   },
 
+  /**
+   * @param {MozMenuItem} menuItem
+   */
   removeNewBadge(menuItem) {
     menuItem.removeAttribute("badge");
+    menuItem.classList.remove("badge-new");
   },
 
   deleteTabNotes() {

@@ -891,8 +891,8 @@ void nsAccessibilityService::ComboboxValueChanged(nsIContent* aSelect) {
   if (!document) {
     return;
   }
-  if (LocalAccessible* accessible = document->GetAccessible(aSelect)) {
-    MOZ_ASSERT(accessible->IsCombobox());
+  if (LocalAccessible* accessible = document->GetAccessible(aSelect);
+      accessible && accessible->IsCombobox()) {
     document->FireDelayedEvent(nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE,
                                accessible);
   }
@@ -1632,7 +1632,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
 #  include "mozilla/Monitor.h"
 #  include "mozilla/Maybe.h"
 
-static Maybe<Monitor> sAndroidMonitor;
+constinit static Maybe<Monitor> sAndroidMonitor;
 
 mozilla::Monitor& nsAccessibilityService::GetAndroidMonitor() {
   if (!sAndroidMonitor.isSome()) {
@@ -1718,11 +1718,11 @@ bool nsAccessibilityService::Init(uint64_t aCacheDomains) {
   if (XRE_IsParentProcess() &&
       StaticPrefs::accessibility_enable_all_cache_domains_AtStartup()) {
     gCacheDomains = CacheDomain::All;
+  } else {
+    // Set the active accessibility cache domains. We might want to modify the
+    // domains that we activate based on information about the instantiator.
+    gCacheDomains = ::GetCacheDomainsForKnownClients(aCacheDomains);
   }
-
-  // Set the active accessibility cache domains. We might want to modify the
-  // domains that we activate based on information about the instantiator.
-  gCacheDomains = ::GetCacheDomainsForKnownClients(aCacheDomains);
 
   static const char16_t kInitIndicator[] = {'1', 0};
   observerService->NotifyObservers(nullptr, "a11y-init-or-shutdown",

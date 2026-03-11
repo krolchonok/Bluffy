@@ -198,6 +198,10 @@ export class ChatConversation {
       content.contextMentions = userOpts.contextMentions;
     }
 
+    if (pageUrl) {
+      content.contextPageUrl = pageUrl.href;
+    }
+
     let currentTurn = this.currentTurnIndex();
     const newTurnIndex =
       this.#messages.length === 1 ? currentTurn : currentTurn + 1;
@@ -293,7 +297,7 @@ export class ChatConversation {
       contextMentions: userOpts?.contextMentions,
     });
     if (realTimeContext) {
-      userContext[realTimeContext] = realTimeContext;
+      userContext.realTimeContext = realTimeContext;
     }
 
     if (userOpts?.memoriesEnabled) {
@@ -302,7 +306,7 @@ export class ChatConversation {
         engineInstance
       );
       if (memoriesContext) {
-        userContext[memoriesContext] = memoriesContext;
+        userContext.memoriesContext = memoriesContext;
       }
     }
     this.addUserMessage(prompt, pageUrl, userOpts, userContext);

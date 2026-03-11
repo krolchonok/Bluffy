@@ -36,23 +36,23 @@ struct InlineStyleDeclarations {};
 
 template <>
 struct DeclarationTraits<InlineStyleDeclarations> {
-  static StylePropertyTypedValueResult Get(Element* aElement,
-                                           const nsACString& aProperty,
-                                           ErrorResult& aRv) {
+  static StylePropertyTypedValue Get(Element* aElement,
+                                     const nsACString& aProperty,
+                                     ErrorResult& aRv) {
     MOZ_ASSERT(aElement);
 
-    auto result = StylePropertyTypedValueResult::None();
+    auto value = StylePropertyTypedValue::None();
 
     RefPtr<DeclarationBlock> block = aElement->GetInlineStyleDeclaration();
     if (!block) {
-      return result;
+      return value;
     }
 
-    if (!block->GetPropertyTypedValue(aProperty, result)) {
-      return result;
+    if (!block->GetPropertyTypedValue(aProperty, value)) {
+      return value;
     }
 
-    return result;
+    return value;
   }
 };
 
@@ -61,24 +61,24 @@ struct ComputedStyleDeclarations {};
 
 template <>
 struct DeclarationTraits<ComputedStyleDeclarations> {
-  static StylePropertyTypedValueResult Get(Element* aElement,
-                                           const nsACString& aProperty,
-                                           ErrorResult& aRv) {
+  static StylePropertyTypedValue Get(Element* aElement,
+                                     const nsACString& aProperty,
+                                     ErrorResult& aRv) {
     MOZ_ASSERT(aElement);
 
-    auto result = StylePropertyTypedValueResult::None();
+    auto value = StylePropertyTypedValue::None();
 
     RefPtr<const ComputedStyle> style =
         nsComputedDOMStyle::GetComputedStyle(aElement);
     if (!style) {
-      return result;
+      return value;
     }
 
-    if (!style->GetPropertyTypedValue(aProperty, result)) {
-      return result;
+    if (!style->GetPropertyTypedValue(aProperty, value)) {
+      return value;
     }
 
-    return result;
+    return value;
   }
 };
 
@@ -86,19 +86,18 @@ struct DeclarationTraits<ComputedStyleDeclarations> {
 struct StyleRuleDeclarations {};
 template <>
 struct DeclarationTraits<StyleRuleDeclarations> {
-  static StylePropertyTypedValueResult Get(const CSSStyleRule* aRule,
-                                           const nsACString& aProperty,
-                                           ErrorResult& aRv) {
+  static StylePropertyTypedValue Get(const CSSStyleRule* aRule,
+                                     const nsACString& aProperty,
+                                     ErrorResult& aRv) {
     MOZ_ASSERT(aRule);
 
-    auto result = StylePropertyTypedValueResult::None();
+    auto value = StylePropertyTypedValue::None();
 
-    if (!aRule->GetDeclarationBlock().GetPropertyTypedValue(aProperty,
-                                                            result)) {
-      return result;
+    if (!aRule->GetDeclarationBlock().GetPropertyTypedValue(aProperty, value)) {
+      return value;
     }
 
-    return result;
+    return value;
   }
 };
 
@@ -169,7 +168,7 @@ void StylePropertyMapReadOnly::Get(const nsACString& aProperty,
 
   // Step 4.
 
-  auto result = declarations.Get(aProperty, aRv);
+  auto value = declarations.Get(aProperty, aRv);
   if (aRv.Failed()) {
     return;
   }
@@ -181,15 +180,18 @@ void StylePropertyMapReadOnly::Get(const nsACString& aProperty,
 
   RefPtr<CSSStyleValue> styleValue;
 
-  switch (result.tag) {
-    case StylePropertyTypedValueResult::Tag::Typed: {
-      const auto& typedValue = result.AsTyped();
+  switch (value.tag) {
+    case StylePropertyTypedValue::Tag::Typed: {
+      const auto& typedValue = value.AsTyped();
 
       switch (typedValue.tag) {
-        case StyleTypedValue::Tag::Keyword:
-          styleValue =
-              MakeRefPtr<CSSKeywordValue>(mParent, typedValue.AsKeyword());
+        case StyleTypedValue::Tag::Keyword: {
+          const auto& keywordValue = typedValue.AsKeyword();
+
+          styleValue = CSSKeywordValue::Create(mParent, keywordValue);
+
           break;
+        }
 
         case StyleTypedValue::Tag::Numeric: {
           const auto& numericValue = typedValue.AsNumeric();
@@ -202,16 +204,17 @@ void StylePropertyMapReadOnly::Get(const nsACString& aProperty,
       break;
     }
 
-    case StylePropertyTypedValueResult::Tag::Unsupported: {
+    case StylePropertyTypedValue::Tag::Unsupported: {
       auto propertyId = CSSPropertyId::FromIdOrCustomProperty(id, aProperty);
-      auto rawBlock = result.AsUnsupported();
-      auto block = MakeRefPtr<DeclarationBlock>(rawBlock.Consume());
-      styleValue = MakeRefPtr<CSSUnsupportedValue>(mParent, propertyId,
-                                                   std::move(block));
+      auto unsupportedValue = std::move(value).ExtractUnsupported();
+
+      styleValue = CSSUnsupportedValue::Create(mParent, propertyId,
+                                               std::move(unsupportedValue));
+
       break;
     }
 
-    case StylePropertyTypedValueResult::Tag::None:
+    case StylePropertyTypedValue::Tag::None:
       break;
   }
 
@@ -273,7 +276,7 @@ size_t StylePropertyMapReadOnly::SizeOfIncludingThis(
   return SizeOfExcludingThis(aMallocSizeOf) + aMallocSizeOf(this);
 }
 
-StylePropertyTypedValueResult StylePropertyMapReadOnly::Declarations::Get(
+StylePropertyTypedValue StylePropertyMapReadOnly::Declarations::Get(
     const nsACString& aProperty, ErrorResult& aRv) const {
   switch (mKind) {
     case Kind::Inline:

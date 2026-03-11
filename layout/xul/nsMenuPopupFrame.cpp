@@ -183,20 +183,10 @@ void nsMenuPopupFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     mPopupType = PopupType::Tooltip;
   }
 
-  if (PresContext()->IsChrome()) {
-    mInContentShell = false;
-  }
-
-  // Support incontentshell=false attribute to allow popups to be displayed
-  // outside of the content shell. Chrome only.
-  if (el.NodePrincipal()->IsSystemPrincipal()) {
-    if (el.GetXULBoolAttr(nsGkAtoms::incontentshell)) {
-      mInContentShell = true;
-    } else if (el.AttrValueIs(kNameSpaceID_None, nsGkAtoms::incontentshell,
-                              nsGkAtoms::_false, eCaseMatters)) {
-      mInContentShell = false;
-    }
-  }
+  // Support escapecontentshell attribute to allow popups to be displayed
+  // outside of the content shell.
+  mInContentShell = !PresContext()->IsChrome() &&
+                    !el.GetBoolAttr(nsGkAtoms::escapecontentshell);
 
   // To improve performance, create the widget for the popup if needed. Popups
   // such as menus will create their widgets later when the popup opens.
@@ -209,9 +199,7 @@ void nsMenuPopupFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
 bool nsMenuPopupFrame::HasRemoteContent() const {
   return !mInContentShell && mPopupType == PopupType::Panel &&
-         mContent->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                            nsGkAtoms::remote, nsGkAtoms::_true,
-                                            eIgnoreCase);
+         mContent->AsElement()->GetBoolAttr(nsGkAtoms::remote);
 }
 
 bool nsMenuPopupFrame::IsNoAutoHide() const {
@@ -219,9 +207,7 @@ bool nsMenuPopupFrame::IsNoAutoHide() const {
   // outside of them, or when another application is made active. Non-autohide
   // panels cannot be used in content windows.
   return !mInContentShell && mPopupType == PopupType::Panel &&
-         mContent->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                            nsGkAtoms::noautohide,
-                                            nsGkAtoms::_true, eIgnoreCase);
+         mContent->AsElement()->GetBoolAttr(nsGkAtoms::noautohide);
 }
 
 widget::PopupLevel nsMenuPopupFrame::GetPopupLevel(bool aIsNoAutoHide) const {

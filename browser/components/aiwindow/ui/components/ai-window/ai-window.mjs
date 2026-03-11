@@ -97,6 +97,7 @@ export class AIWindow extends MozLitElement {
     mode: { type: String, reflect: true }, // sidebar | fullpage
     showStarters: { type: Boolean, state: true },
     showFooter: { type: Boolean, state: true },
+    showDisclaimer: { type: Boolean, state: true },
   };
 
   #browser;
@@ -254,10 +255,9 @@ export class AIWindow extends MozLitElement {
     this.mode = this.#detectModeFromContext();
     this.showStarters = false;
     this.showFooter = this.mode === FULLPAGE;
+    this.showDisclaimer = this.mode !== FULLPAGE;
 
-    // Apply chat-active immediately if restoring a conversation via back navigation
-    // to prevent layout flash. Only check the attribute (not history.state) since
-    // history.state persists through refresh and could falsely match a stale ID.
+    // Apply chat-active immediately if restoring a conversation
     if (this.#hostBrowser?.getAttribute("data-conversation-id")) {
       this.classList.add("chat-active");
     }
@@ -423,9 +423,10 @@ export class AIWindow extends MozLitElement {
 
     const conversation =
       await lazy.AIWindow.chatStore.findConversationById(conversationId);
-    if (conversation) {
-      this.openConversation(conversation);
-    }
+
+    conversation
+      ? this.openConversation(conversation)
+      : this.#resetConversationState();
 
     if (this.#hostBrowser?.hasAttribute("data-continue-streaming")) {
       this.#hostBrowser.removeAttribute("data-continue-streaming");
@@ -732,7 +733,7 @@ export class AIWindow extends MozLitElement {
       this.conversationId
     );
 
-    const { value, action, contextMentions } = event.detail;
+    const { value, action, contextMentions, contextPageUrl } = event.detail;
     if (action === "chat") {
       // Disable suggestions after the first chat message.
       // We only want to show suggestions for the initial query,
@@ -740,8 +741,7 @@ export class AIWindow extends MozLitElement {
       if (this.#conversation.messages.length === 0) {
         this.#smartbar.suppressStartQuery({ permanent: true });
       }
-
-      this.submitFollowUp(value, contextMentions);
+      this.submitChatMessage(value, contextMentions, contextPageUrl);
       this.#dispatchChromeEvent(
         "ai-window:smartbar-input",
         this.#getAIWindowEventOptions("")
@@ -757,14 +757,31 @@ export class AIWindow extends MozLitElement {
     }
   };
 
-  submitFollowUp(text, contextMentions) {
+  /**
+   * @param {string} text
+   * @param {ContextWebsite[]} [contextMentions]
+   * @param {string|null} [contextPageUrl] - Page URL string from the smartbar
+   * commit event. null means the user removed page context; undefined means
+   * fall back to the current tab URL.
+   */
+  submitChatMessage(text, contextMentions, contextPageUrl) {
     const trimmed = String(text ?? "").trim();
     if (!trimmed) {
       return;
     }
 
+    let pageUrl;
+    if (contextPageUrl === undefined) {
+      pageUrl = this.#getCurrentPageUrl();
+    } else {
+      pageUrl = contextPageUrl ? URL.parse(contextPageUrl) : null;
+    }
+
     this.#recordChatInteraction();
-    this.#fetchAIResponse(trimmed, this.#createUserRoleOpts(contextMentions));
+    this.#fetchAIResponse(trimmed, {
+      ...this.#createUserRoleOpts(contextMentions),
+      pageUrl,
+    });
   }
 
   #handleMemoriesToggle = event => {
@@ -875,7 +892,8 @@ export class AIWindow extends MozLitElement {
   /**
    * Processes tokens from the AI response stream and updates the message.
    * Adds all tokens to their respective arrays in the tokens object and
-   * builds the memoriesApplied array for existing_memory tokens.
+   * builds the _pendingMemoryIds array for existing_memory tokens.
+   * IDs are resolved to full memory objects after streaming ends.
    *
    * @param {Array<{key: string, value: string}>} tokens - Array of parsed tokens from the stream
    * @param {ChatMessage} currentMessage - The message object being updated
@@ -884,9 +902,9 @@ export class AIWindow extends MozLitElement {
     tokens.forEach(({ key, value }) => {
       currentMessage.tokens[key].push(value);
 
-      // Build Applied Memories Array
       if (key === "existing_memory") {
-        currentMessage.memoriesApplied.push(value);
+        currentMessage._pendingMemoryIds ??= [];
+        currentMessage._pendingMemoryIds.push(value);
       }
 
       // Build web search queries
@@ -897,12 +915,16 @@ export class AIWindow extends MozLitElement {
     });
   };
 
-  #setBrowserContainerActiveState(isActive) {
-    const container = this.renderRoot.querySelector("#browser-container");
-    if (!container) {
-      return;
-    }
+  #resetConversationState() {
+    this.classList.remove("chat-active");
+    this.#hostBrowser?.setAttribute(
+      "data-conversation-id",
+      this.#conversation.id
+    );
+    this.#syncHistoryState();
+  }
 
+  #setBrowserContainerActiveState(isActive) {
     if (isActive) {
       this.classList.add("chat-active");
       return;
@@ -938,10 +960,12 @@ export class AIWindow extends MozLitElement {
    * user messages).
    * @param {boolean} [options.memoriesEnabled] - Optional per-call override for
    * memory injection; undefined falls back to use global/default behavior.
+   * @param {URL|null} [options.pageUrl] - Page URL to associate with the
+   * message, or null if the user removed page context.
    */
   #fetchAIResponse = async (
     inputText = false,
-    { skipUserDispatch = false, ...userOpts } = {}
+    { skipUserDispatch = false, pageUrl, ...userOpts } = {}
   ) => {
     const formattedPrompt = (inputText || "").trim();
     if (!formattedPrompt && inputText !== false) {
@@ -949,6 +973,7 @@ export class AIWindow extends MozLitElement {
     }
     this.showStarters = false;
     this.showFooter = false;
+    this.showDisclaimer = true;
     this.#updateTabFavicon();
     this.#setBrowserContainerActiveState(true);
 
@@ -958,7 +983,9 @@ export class AIWindow extends MozLitElement {
       );
 
       if (formattedPrompt) {
-        const pageUrl = this.#getCurrentPageUrl();
+        if (pageUrl === undefined) {
+          pageUrl = this.#getCurrentPageUrl();
+        }
 
         await this.#conversation.generatePrompt(
           formattedPrompt,
@@ -1027,10 +1054,6 @@ export class AIWindow extends MozLitElement {
           };
         }
 
-        if (!currentMessage.memoriesApplied) {
-          currentMessage.memoriesApplied = [];
-        }
-
         if (plainText) {
           currentMessage.content.body += plainText;
         }
@@ -1053,11 +1076,12 @@ export class AIWindow extends MozLitElement {
         this.requestUpdate?.();
       }
 
-      if (currentMessage.memoriesApplied?.length) {
+      if (currentMessage._pendingMemoryIds?.length) {
         currentMessage.memoriesApplied =
-          await lazy.MemoriesManager.getMemoriesByID(
-            currentMessage.memoriesApplied
-          );
+          await lazy.MemoriesManager.getMemoriesByID([
+            ...new Set(currentMessage._pendingMemoryIds),
+          ]);
+        delete currentMessage._pendingMemoryIds;
         this.#updateConversation();
         this.#dispatchMessageToChatContent(currentMessage);
       }
@@ -1161,7 +1185,10 @@ export class AIWindow extends MozLitElement {
     // @todo Bug2013096
     // Add way to batch these messages to the actor in one message
     this.#conversation.renderState().forEach(message => {
-      this.#dispatchMessageToActor(actor, message);
+      this.#dispatchMessageToActor(actor, {
+        ...message,
+        isPreviousMessage: true,
+      });
     });
   }
 
@@ -1217,6 +1244,7 @@ export class AIWindow extends MozLitElement {
       // if convo has messages before hiding the footer element.
       this.showFooter = false;
 
+      this.showDisclaimer = true;
       this.showStarters = false;
       const actor = this.#getAIChatContentActor();
       if (this.#browser && actor) {
@@ -1444,6 +1472,12 @@ export class AIWindow extends MozLitElement {
               @SmartWindowPrompt:prompt-selected=${this.#handlePromptSelected}
             ></smartwindow-prompts>
           `
+        : ""}
+      ${this.showDisclaimer
+        ? html`<div
+            data-l10n-id="smartwindow-disclaimer"
+            class="disclaimer"
+          ></div>`
         : ""}
       ${this.showFooter ? html`<smartwindow-footer></smartwindow-footer>` : ""}
     `;

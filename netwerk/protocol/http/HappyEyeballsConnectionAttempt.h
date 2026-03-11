@@ -64,9 +64,9 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   nsresult Init(ConnectionEntry* ent) override;
   void Abandon() override;
   double Duration(TimeStamp epoch) override;
-  void CloseTransports(nsresult error) override;
+  void OnTimeout() override;
   void PrintDiagnostics(nsCString& log) override;
-  bool Claim() override;
+  bool Claim(nsHttpTransaction* newTransaction = nullptr) override;
   uint32_t UnconnectedUDPConnsLength() const override;
 
  private:
@@ -131,6 +131,7 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
 
   TimeStamp mDomainLookupStart;
   TimeStamp mDomainLookupEnd;
+  TimeStamp mFirstConnectionStart;
 };
 
 }  // namespace net

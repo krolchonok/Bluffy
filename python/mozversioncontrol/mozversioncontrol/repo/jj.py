@@ -163,6 +163,27 @@ class JujutsuRepository(Repository):
             return None
         return email.strip()
 
+    def get_remote_url(self, remote=None, push=False):
+        if not remote:
+            if push:
+                if remote := self._run(
+                    "config", "get", "git.push", return_codes=[0, 1]
+                ):
+                    remote = remote.strip().strip('"')
+            else:
+                fetch_config = self._run(
+                    "config", "get", "git.fetch", return_codes=[0, 1]
+                )
+                if fetch_config:
+                    # Windows may add extra quotes around JSON values
+                    fetch_config = fetch_config.strip().strip('"')
+                    remote = json.loads(fetch_config)[0]
+
+            if not remote:
+                return None
+
+        return self._git.get_remote_url(remote, push)
+
     def get_changed_files(self, diff_filter="ADM", mode="(ignored)", rev="@"):
         assert all(f.lower() in self._valid_diff_filter for f in diff_filter)
 
@@ -320,6 +341,17 @@ class JujutsuRepository(Repository):
             cmd.extend(paths)
         self._run(*cmd, **run_kwargs)
 
+    def push(self, remote: Optional[str] = None, ref: Optional[str] = None):
+        if ref and not remote:
+            raise ValueError("Cannot specify ref without specifying remote")
+
+        args = ["git", "push"]
+        if remote:
+            args.extend(["--remote", remote])
+        if ref:
+            args.extend(["-r", ref])
+        self._run(*args)
+
     def push_to_try(
         self,
         message: str,
@@ -467,6 +499,11 @@ class JujutsuRepository(Repository):
                 self.add_remove_files(p)
             # Update the jj commit with the changes we just made.
             self._snapshot()
+
+            # Tug any bookmarks from parent commit for pushing.
+            self._run(
+                "bookmark", "move", "--from", "heads(@- & bookmarks())", "--to", "@"
+            )
 
             def cleanup():
                 self._run("operation", "restore", opid)

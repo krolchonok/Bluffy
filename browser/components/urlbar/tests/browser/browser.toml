@@ -462,6 +462,11 @@ https_first_disabled = true
 
 ["browser_result_menu_general.js"]
 
+["browser_result_noTitle.js"]
+support-files = [
+  "no_title.html"
+]
+
 ["browser_result_onSelection.js"]
 
 ["browser_results_format_displayValue.js"]
@@ -589,10 +594,6 @@ support-files = [
 
 ["browser_search_continuation.js"]
 support-files = ["../../../search/test/browser/trendingSuggestionEngine.sjs"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1883249
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 1883249
-]
 
 ["browser_search_history_from_history_panel.js"]
 
@@ -675,11 +676,6 @@ skip-if = [
 ["browser_switchTab_decodeuri.js"]
 
 ["browser_switchTab_inputHistory.js"]
-
-["browser_switchTab_noTitle.js"]
-support-files = [
-  "no_title.html"
-]
 
 ["browser_switchTab_notFoundPage.js"]
 

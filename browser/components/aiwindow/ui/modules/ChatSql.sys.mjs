@@ -59,7 +59,8 @@ CREATE TABLE message (
   memories_enabled BOOLEAN,
   memories_flag_source INTEGER,
   memories_applied_jsonb BLOB,
-  web_search_queries_jsonb BLOB
+  web_search_queries_jsonb BLOB,
+  page_history_deleted BOOLEAN NOT NULL DEFAULT false
 ) WITHOUT ROWID;
 `;
 
@@ -161,6 +162,19 @@ WHERE EXISTS (
 ORDER BY c.updated_date DESC;
 `;
 
+export const REMOVE_ALL_SITE_URLS_FROM_MESSAGES = `
+UPDATE message
+SET page_url = NULL,
+    page_history_deleted = true
+`;
+
+export const REMOVE_SITE_URL_FROM_MESSAGES = `
+    UPDATE message
+    SET page_url = NULL,
+        page_history_deleted = true
+    WHERE page_url = :page_url;
+`;
+
 /**
  * Get all messages for multiple conversations
  *
@@ -175,7 +189,7 @@ export function getConversationMessagesSql(amount) {
       page_url, turn_index, memories_enabled, memories_flag_source, 
       json(memories_applied_jsonb) AS memories_applied,
       json(web_search_queries_jsonb) AS web_search_queries,
-      json(content_jsonb) AS content
+      json(content_jsonb) AS content, page_history_deleted
       FROM message
       WHERE conv_id IN(${new Array(amount).fill("?").join(",")})
       ORDER BY ordinal ASC;
@@ -220,17 +234,30 @@ WHERE m.role = :role
 `;
 
 export const CONVERSATIONS_HISTORY_SEARCH = `
-SELECT c.conv_id, c.title, c.description, c.page_url,
-  json(c.page_meta_jsonb) AS page_meta, c.created_date, c.updated_date,
-  c.status, c.active_branch_tip_message_id
-FROM conversation c
-JOIN message m ON m.conv_id = c.conv_id
-WHERE m.role = 0
-  AND (
-    CAST(json_extract(m.content_jsonb, :path) AS TEXT) LIKE :pattern ESCAPE '/'
-    OR
-    c.title LIKE :pattern ESCAPE '/'
-  );
+SELECT
+  c.conv_id,
+  c.title,
+  c.description,
+  c.page_url,
+  json(c.page_meta_jsonb) AS page_meta,
+  c.created_date,
+  c.updated_date,
+  c.status,
+  c.active_branch_tip_message_id,
+  json_extract(m.content_jsonb, :path) AS matching_snippet
+FROM conversation AS c
+LEFT JOIN message AS m
+  ON m.message_id = (
+    SELECT mm.message_id
+    FROM message AS mm
+    WHERE mm.conv_id = c.conv_id
+      AND mm.role IN (0,1) /* USER, ASSISTANT */
+      AND json_extract(mm.content_jsonb, :path) LIKE :pattern ESCAPE '/'
+    ORDER BY mm.created_date DESC
+    LIMIT 1
+  )
+WHERE c.title LIKE :pattern ESCAPE '/'
+   OR m.message_id IS NOT NULL;
 `;
 
 export const MESSAGES_BY_DATE = `
@@ -241,7 +268,7 @@ SELECT
   page_url, turn_index, memories_enabled, memories_flag_source,
   json(memories_applied_jsonb) AS memories_applied,
   json(web_search_queries_jsonb) AS web_search_queries,
-  json(content_jsonb) AS content
+  json(content_jsonb) AS content, page_history_deleted
 FROM message
 WHERE created_date >= :start_date AND created_date <= :end_date
 ORDER BY created_date DESC
@@ -256,7 +283,7 @@ SELECT
   page_url, turn_index, memories_enabled, memories_flag_source,
   json(memories_applied_jsonb) AS memories_applied,
   json(web_search_queries_jsonb) AS web_search_queries,
-  json(content_jsonb) AS content
+  json(content_jsonb) AS content, page_history_deleted
 FROM message
 WHERE role = :role
   AND created_date >= :start_date AND created_date <= :end_date

@@ -493,6 +493,75 @@ add_atomic_task(async function test_ChatStorage_search() {
   });
 });
 
+add_atomic_task(async function test_ChatStorage_search_matchingSnippet() {
+  // Title-only match: matchingSnippet should be null
+  await addConvoWithSpecificTestData(
+    new Date("1/2/2025"),
+    new URL("https://www.firefox.com"),
+    new URL("https://www.mozilla.org"),
+    "Conversation with xyzSnippetToken in title",
+    "unrelated message body"
+  );
+
+  // Body match: matchingSnippet should be populated
+  await addConvoWithSpecificTestData(
+    new Date("1/2/2025"),
+    new URL("https://www.firefox.com"),
+    new URL("https://www.mozilla.org"),
+    "Unrelated title",
+    "message body containing xyzSnippetToken"
+  );
+
+  const conversations = await gChatStore.search("xyzSnippetToken");
+
+  Assert.withSoftAssertions(function (soft) {
+    soft.equal(conversations.length, 2, "Both conversations match");
+
+    const titleMatch = conversations.find(c =>
+      c.title.includes("xyzSnippetToken")
+    );
+    const bodyMatch = conversations.find(
+      c => !c.title.includes("xyzSnippetToken")
+    );
+
+    soft.equal(
+      titleMatch.matchingSnippet,
+      null,
+      "Title-only match has no snippet"
+    );
+    soft.ok(
+      bodyMatch.matchingSnippet?.includes("xyzSnippetToken"),
+      "Body match snippet includes the search term"
+    );
+  });
+});
+
+add_atomic_task(
+  async function test_ChatStorage_search_excludes_system_messages() {
+    const conversation = new ChatConversation({
+      createdDate: new Date("1/2/2025").getTime(),
+      updatedDate: new Date("1/2/2025").getTime(),
+    });
+    conversation.title = "Unrelated title";
+    // role 2 = SYSTEM
+    conversation.addMessage(
+      2,
+      { body: "system prompt xyzSystemToken99" },
+      null,
+      0
+    );
+    conversation.addUserMessage("unrelated user message");
+    await gChatStore.updateConversation(conversation);
+
+    const conversations = await gChatStore.search("xyzSystemToken99");
+    Assert.equal(
+      conversations.length,
+      0,
+      "System message content excluded from search"
+    );
+  }
+);
+
 add_atomic_task(async function test_ChatStorage_deleteConversationById() {
   await addBasicConvoTestData("1/1/2025", "a conversation");
 
@@ -765,3 +834,97 @@ add_atomic_task(
     Assert.equal(null, updatedConversation);
   }
 );
+
+async function addTestMessagesForUrlDeleteTests() {
+  const conv0 = await addConvoWithSpecificTestData(
+    new Date("1/4/2025"),
+    new URL("https://www.mozilla.com"),
+    new URL("https://www.mozilla.com"),
+    "Mozilla.org conversation 1",
+    "some other message"
+  );
+  const conv1 = await addConvoWithSpecificTestData(
+    new Date("1/4/2025"),
+    new URL("https://www.firefox.com/en-US/features/private-browsing/"),
+    new URL("https://www.firefox.com/en-US/features/private-browsing/"),
+    "Mozilla.org conversation 2",
+    "some other message"
+  );
+  const conv2 = await addConvoWithSpecificTestData(
+    new Date("1/4/2025"),
+    new URL("https://www.firefox.com"),
+    new URL("https://www.firefox.com"),
+    "Mozilla.org conversation 3",
+    "some other message"
+  );
+
+  return { conv0, conv1, conv2 };
+}
+
+add_atomic_task(async function test_ChatStorage_deleteAllUrlsFromMessages() {
+  const { conv0, conv1, conv2 } = await addTestMessagesForUrlDeleteTests();
+
+  await gChatStore.deleteAllUrlsFromMessages();
+
+  const updatedConv0 = await gChatStore.findConversationById(conv0.id);
+  const updatedConv1 = await gChatStore.findConversationById(conv1.id);
+  const updatedConv2 = await gChatStore.findConversationById(conv2.id);
+
+  Assert.withSoftAssertions(function (soft) {
+    soft.equal(
+      updatedConv0.messages[0].pageUrl,
+      null,
+      `Conversation 0 was not updated correctly: ${JSON.stringify(updatedConv0.messages)}`
+    );
+    soft.equal(
+      updatedConv0.messages[0].pageHistoryDeleted,
+      true,
+      `Conversation 0 pageHistoryDeleted was not set to true`
+    );
+
+    soft.equal(
+      updatedConv1.messages[0].pageUrl,
+      null,
+      `Conversation 1 was not updated correctly: ${JSON.stringify(updatedConv1.messages)}`
+    );
+    soft.equal(
+      updatedConv1.messages[0].pageHistoryDeleted,
+      true,
+      `Conversation 1 pageHistoryDeleted was not set to true`
+    );
+
+    soft.equal(
+      updatedConv2.messages[0].pageUrl,
+      null,
+      `Conversation 2 was not updated correctly: ${JSON.stringify(updatedConv2.messages)}`
+    );
+    soft.equal(
+      updatedConv2.messages[0].pageHistoryDeleted,
+      true,
+      `Conversation 2 pageHistoryDeleted was not set to true`
+    );
+  });
+});
+
+add_atomic_task(async function test_ChatStorage_deleteUrlFromMessages() {
+  const { conv1 } = await addTestMessagesForUrlDeleteTests();
+
+  await gChatStore.deleteUrlFromMessages(
+    "https://www.firefox.com/en-US/features/private-browsing/"
+  );
+
+  const updatedConv = await gChatStore.findConversationById(conv1.id);
+
+  Assert.withSoftAssertions(function (soft) {
+    soft.equal(
+      updatedConv.messages[0].pageUrl,
+      null,
+      `Conversation 1 was not updated correctly: ${JSON.stringify(updatedConv.messages)}`
+    );
+    soft.equal(
+      updatedConv.messages[0].pageHistoryDeleted,
+      true,
+      `Conversation 1 pageHistoryDeleted was not set to true`
+    );
+  });
+});

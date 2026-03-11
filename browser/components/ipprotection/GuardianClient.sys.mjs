@@ -100,10 +100,12 @@ export class GuardianClient {
     // we know we're done with the browser.
     const finalizerURLs = [this.#successURL, this.#enrollmentError];
     return await lazy.hiddenBrowserManager.withHiddenBrowser(async browser => {
-      aAbortSignal?.addEventListener("abort", () => {
-        browser.stop();
-        browser.remove();
-        throw new Error("aborted");
+      const aborted = new Promise((_, reject) => {
+        aAbortSignal?.addEventListener("abort", () => {
+          browser.stop();
+          browser.remove();
+          reject(new Error("aborted"));
+        });
       });
       const finalEndpoint = waitUntilURL(browser, url => {
         const urlObj = new URL(url);
@@ -130,13 +132,16 @@ export class GuardianClient {
       });
       const loginURL = this.#loginURL;
       loginURL.searchParams.set("experiment", aExperimentType);
-      browser.loadURI(Services.io.newURI(loginURL.href), {
-        // TODO: Make sure this is the right principal to use?
+      const loginURI = Services.io.newURI(loginURL.href);
+      if (!allowedOrigins.includes(loginURL.origin)) {
+        throw new Error(`Login URL origin ${loginURL.origin} is not allowed.`);
+      }
+      browser.loadURI(loginURI, {
         triggeringPrincipal:
-          Services.scriptSecurityManager.getSystemPrincipal(),
+          Services.scriptSecurityManager.createContentPrincipal(loginURI, {}),
       });
 
-      const result = await finalEndpoint;
+      const result = await Promise.race([finalEndpoint, aborted]);
       return GuardianClient._parseGuardianSuccessURL(result);
     });
   }

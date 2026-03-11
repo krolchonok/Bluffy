@@ -28,8 +28,7 @@ class ViewTimeline;
 
 class TimelineManager {
  public:
-  explicit TimelineManager(nsPresContext* aPresContext)
-      : mPresContext(aPresContext) {}
+  explicit TimelineManager(nsPresContext* aPresContext);
 
   ~TimelineManager() {
     MOZ_ASSERT(!mPresContext, "Disconnect should have been called");
@@ -65,7 +64,7 @@ class TimelineManager {
 
  private:
   template <typename TimelineType>
-  using Timelines = nsTArray<TimelineType*>;
+  using Timelines = nsTArray<RefPtr<TimelineType>>;
   // Mapping from timeline names to timelines of that name. Depending on
   // the use of `timeline-scope`, may or may not be visible from the
   // element specifying `animation-timeline`.

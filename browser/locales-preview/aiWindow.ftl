@@ -132,6 +132,11 @@ smartwindow-footer-history =
     .aria-label = History
     .label = History
 
+## Disclaimer
+## Text displayed to user to warn user about potential mistakes.
+
+smartwindow-disclaimer = AI can make mistakes
+
 ## FirefoxView Chats
 ## Chats in this context refers to chats saved from the Smart Window Assistant
 
@@ -158,3 +163,13 @@ firefoxview-chat-date-prev-month = { DATETIME($date, month: "long", year: "numer
 
 firefoxview-chats-empty-header = Get back to your chats
 firefoxview-chats-empty-description = As you use Smart Window, your chats will be saved here.
+
+## Count displayed in fxview chat search results
+
+# Variables:
+#   $count (Number) - The number of chats matching the search query.
+
+firefoxview-search-chat-results-count = { $count ->
+  [one] { $count } chat
+ *[other] { $count } chats
+}

@@ -10,6 +10,7 @@
 #include "PendingTransactionQueue.h"
 #include "ConnectionAttemptPool.h"
 #include "mozilla/WeakPtr.h"
+#include "nsTHashSet.h"
 
 namespace mozilla {
 namespace net {
@@ -22,7 +23,8 @@ namespace net {
 class ConnectionEntry : public SupportsWeakPtr {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ConnectionEntry)
-  explicit ConnectionEntry(nsHttpConnectionInfo* ci);
+  ConnectionEntry(nsHttpConnectionInfo* ci,
+                  nsTHashSet<ConnectionEntry*>& aPendingQSet);
 
   void ReschedTransaction(nsHttpTransaction* aTrans);
 
@@ -151,7 +153,15 @@ class ConnectionEntry : public SupportsWeakPtr {
   // True if this connection entry has initiated a socket
   bool mUsedForConnection : 1;
 
-  bool mDoNotDestroy : 1;
+  // Returns true when the entry has no connections, no pending transactions,
+  // and no in-progress connection attempts. Used to determine whether the
+  // entry can be removed from the connection table.
+  bool IsEmpty() const {
+    return IdleConnectionsLength() == 0 && ActiveConnsLength() == 0 &&
+           DnsAndConnectSocketsLength() == 0 && PendingQueueIsEmpty() &&
+           UrgentStartQueueIsEmpty() && mPendingConns.IsEmpty() &&
+           mExtendedCONNECTConns.IsEmpty();
+  }
 
   bool IsHttp3ProxyConnection() const {
     return mConnInfo->IsHttp3ProxyConnection();
@@ -216,6 +226,8 @@ class ConnectionEntry : public SupportsWeakPtr {
   const HashNumber& OriginFrameHashKey();
 
  private:
+  void MaybeRemoveFromPendingSet();
+  nsTHashSet<ConnectionEntry*>& mPendingQSet;
   void InsertIntoIdleConnections_internal(nsHttpConnection* conn);
   void RemoveFromIdleConnectionsIndex(size_t inx);
   bool RemoveFromIdleConnections(nsHttpConnection* conn);

@@ -40,10 +40,7 @@ body {
     var(--newtab-wallpaper, ''),
     url('chrome://newtab/content/data/content/assets/bluffy-home-bg.png'),
     linear-gradient(to right, var(--newtab-wallpaper-color, ''), var(--newtab-wallpaper-color, ''));
-}
-
-.no-scroll {
-  overflow: hidden;
+  overflow-y: scroll;
 }
 
 h1,

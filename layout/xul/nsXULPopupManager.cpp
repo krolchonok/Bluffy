@@ -784,14 +784,6 @@ static bool ShouldUseNativeAnchoredMenus() {
 #endif
 }
 
-static bool ShouldUseNativeAnchoredMenulists() {
-#ifdef HAS_NATIVE_MENU_SUPPORT
-  return mozilla::widget::NativeMenuSupport::ShouldUseNativeAnchoredMenulists();
-#else
-  return false;
-#endif
-}
-
 static bool ShouldUseNativeContextMenus() {
 #ifdef HAS_NATIVE_MENU_SUPPORT
   return mozilla::widget::NativeMenuSupport::ShouldUseNativeContextMenus();
@@ -874,9 +866,14 @@ bool nsXULPopupManager::ShowMenuAsNativeMenu(nsIContent* aMenu,
     return false;
   }
 
-  if (!ShouldUseNativeAnchoredMenus() ||
-      (aMenu->IsXULElement(nsGkAtoms::menulist) &&
-       !ShouldUseNativeAnchoredMenulists())) {
+  RefPtr popup = &popupFrame->PopupElement();
+
+  if (!ShouldUseNativeAnchoredMenus()) {
+#ifdef XP_MACOSX
+    // When native menus are disabled, add the native="false" attribute so that
+    // CSS can be conditionally applied where necessary.
+    popup->SetAttr(kNameSpaceID_None, nsGkAtoms::native, u"false"_ns, true);
+#endif
     return false;
   }
 
@@ -885,8 +882,6 @@ bool nsXULPopupManager::ShowMenuAsNativeMenu(nsIContent* aMenu,
     return false;
   }
   CSSIntRect rect = frame->GetScreenRect();
-
-  RefPtr popup = &popupFrame->PopupElement();
   PendingPopup pendingPopup(popup, nullptr);
 
   return ShowNativeMenuInternal(
@@ -1916,8 +1911,7 @@ bool nsXULPopupManager::BeginShowingPopup(const PendingPopup& aPendingPopup,
   // Using noautofocus="true" will disable this behaviour, which is needed for
   // the autocomplete widget as it manages focus itself.
   if (popupType == PopupType::Panel &&
-      !popup->AttrValueIs(kNameSpaceID_None, nsGkAtoms::noautofocus,
-                          nsGkAtoms::_true, eCaseMatters)) {
+      !popup->GetBoolAttr(nsGkAtoms::noautofocus)) {
     if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
       Document* doc = popup->GetUncomposedDoc();
 
@@ -1984,8 +1978,7 @@ void nsXULPopupManager::FirePopupHidingEvent(Element* aPopup,
 
   // when a panel is closed, blur whatever has focus inside the popup
   if (aPopupType == PopupType::Panel &&
-      (!aPopup->AttrValueIs(kNameSpaceID_None, nsGkAtoms::noautofocus,
-                            nsGkAtoms::_true, eCaseMatters))) {
+      !aPopup->GetBoolAttr(nsGkAtoms::noautofocus)) {
     if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
       Document* doc = aPopup->GetUncomposedDoc();
 

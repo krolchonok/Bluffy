@@ -53,12 +53,12 @@ class ViewTimeline final : public ScrollTimeline {
                              const PseudoStyleRequest& aPseudoRequest,
                              const StyleViewTimeline& aNew);
 
-  const Element* TimelineTargetElement() const override { return mSubject; }
-
   void UpdateCachedCurrentTime() override;
 
   std::pair<double, double> IntervalForAttachmentRange(
       const AnimationRange& aStyleRange) const override;
+
+  const Element* TimelineTargetElement() const override { return mSubject; }
 
  private:
   ~ViewTimeline() = default;

@@ -53,7 +53,7 @@ class DnsAndConnectSocket final : public ConnectionAttempt,
   nsresult Init(ConnectionEntry* ent) override;
   void Abandon() override;
   double Duration(TimeStamp epoch) override;
-  void CloseTransports(nsresult error) override;
+  void OnTimeout() override;
 
   void PrintDiagnostics(nsCString& log) override;
 
@@ -61,7 +61,7 @@ class DnsAndConnectSocket final : public ConnectionAttempt,
   // half-open's connection.  If this half-open is marked as urgent-start,
   // it only accepts urgent start transactions.  Call only before Claim().
   bool AcceptsTransaction(nsHttpTransaction* trans);
-  bool Claim() override;
+  bool Claim(nsHttpTransaction* newTransaction = nullptr) override;
 
   DnsAndConnectSocket* ToDnsAndConnectSocket() override { return this; }
 

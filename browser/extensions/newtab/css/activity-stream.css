@@ -740,6 +740,22 @@ main section {
   text-decoration: none;
 }
 
+.asrouter-newtab-message-wrapper {
+  background-color: var(--background-color-canvas);
+  border: 2px solid var(--border-color-card);
+  color: var(--text-color);
+  padding: var(--space-large);
+  border-radius: var(--border-radius-medium);
+  margin-block: 0 var(--space-xlarge);
+  margin-inline: auto;
+  overflow: hidden;
+  /**
+   * Bug 2021914 - this is temporary until we get the Nova grid rules more
+   * proliferated on New Tab.
+   */
+  max-width: 960px;
+}
+
 .as-error-fallback {
   align-items: center;
   border-radius: var(--border-radius-medium);
@@ -3775,26 +3791,55 @@ dialog:dir(rtl)::after {
   position: fixed;
   inset-block-end: calc(var(--button-size-icon) + var(--space-xxlarge) + var(--space-small));
   inset-inline-end: var(--space-xlarge);
+  appearance: none;
   border: 0;
-  background: none;
-  z-index: 4;
   border-radius: var(--border-radius-small);
-}
-.discoverystream-admin-toggle .icon-devtools {
   background-color: var(--button-background-color, rgba(21, 20, 26, 0.07));
-  background-image: url("chrome://global/skin/icons/developer.svg");
-  background-size: var(--icon-size-medium);
   box-shadow: 0 0.8px 1.6px 0 rgba(58, 57, 68, 0.2);
-  padding: calc(5 * var(--space-xsmall));
+  padding: calc(5 * var(--space-xxsmall));
+  z-index: 4;
+  display: flex;
+  align-items: center;
+}
+.lightWallpaper .discoverystream-admin-toggle, .darkWallpaper .discoverystream-admin-toggle {
+  background-color: var(--newtab-weather-background-color);
+}
+@media (prefers-contrast) {
+  .lightWallpaper .discoverystream-admin-toggle, .darkWallpaper .discoverystream-admin-toggle {
+    background-color: var(--background-color-box);
+  }
+}
+.discoverystream-admin-toggle:hover {
+  background-color: var(--newtab-button-static-hover-background);
+}
+.discoverystream-admin-toggle:active {
+  background-color: var(--newtab-button-static-active-background);
+}
+.discoverystream-admin-toggle:focus-visible {
+  border: 0;
+  outline: var(--focus-outline);
+  background-color: var(--newtab-button-static-active-background);
 }
 .discoverystream-admin-toggle:dir(rtl) {
   transform: scaleX(-1);
 }
-.discoverystream-admin-toggle:hover {
-  background: var(--newtab-element-hover-color);
+.discoverystream-admin-toggle > div {
+  width: var(--icon-size-medium);
+  height: var(--icon-size-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
-.discoverystream-admin-toggle.expanded {
-  background: rgba(0, 0, 0, 0.2);
+.discoverystream-admin-toggle > div > img {
+  -moz-context-properties: fill;
+  display: inline-block;
+  color: var(--icon-color);
+  fill: currentColor;
+  height: 100%;
+  object-fit: contain;
+  vertical-align: middle;
+  width: 100%;
 }
 
 .discoverystream-admin {
@@ -3808,6 +3853,9 @@ dialog:dir(rtl)::after {
   margin: 0 auto;
   color: var(--newtab-text-primary-color);
   z-index: 3;
+}
+.discoverystream-admin .personalization-data {
+  padding-block-end: var(--space-xlarge);
 }
 .discoverystream-admin.collapsed {
   display: none;
@@ -3825,6 +3873,91 @@ dialog:dir(rtl)::after {
 .discoverystream-admin .toggle-wrapper {
   margin-block: var(--space-large);
   width: 200px;
+}
+.discoverystream-admin .inferred-personalization-overrides {
+  margin-block: var(--space-large);
+}
+.discoverystream-admin .inferred-overrides-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-medium);
+}
+.discoverystream-admin .inferred-overrides-title {
+  margin: 0;
+}
+.discoverystream-admin .inferred-overrides-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-medium);
+}
+.discoverystream-admin .inferred-overrides-actions .button {
+  margin: 0;
+}
+.discoverystream-admin .inferred-overrides-toggle-row td:first-child {
+  font-weight: var(--font-weight-bold);
+}
+.discoverystream-admin .inferred-overrides-last-refreshed {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  font-size: var(--font-size-small);
+  margin-block: var(--space-small) var(--space-medium);
+  padding-inline-start: var(--space-small);
+}
+.discoverystream-admin .inferred-overrides-last-refreshed-label {
+  font-weight: var(--font-weight-bold);
+}
+.discoverystream-admin .inferred-vectors-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-xlarge);
+  margin-block-start: var(--space-xlarge);
+}
+.discoverystream-admin .inferred-vector-column {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+}
+.discoverystream-admin .inferred-vector-panel {
+  border: 1px solid var(--border-color);
+  padding: var(--space-small);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.discoverystream-admin .inferred-vector-panel pre {
+  margin-block-start: 0;
+  flex: 1;
+  overflow: auto;
+}
+.discoverystream-admin .inferred-vector-title {
+  font-weight: var(--font-weight-bold);
+}
+.discoverystream-admin .inferred-overrides-table-header td {
+  font-weight: var(--font-weight-bold);
+}
+.discoverystream-admin .inferred-score-col {
+  width: 1%;
+  white-space: nowrap;
+  text-align: center;
+  padding-inline: 0;
+}
+.discoverystream-admin .inferred-overrides-toggle-row td {
+  vertical-align: middle;
+}
+.discoverystream-admin .inferred-override-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-medium);
+}
+.discoverystream-admin .inferred-override-slider {
+  width: 160px;
+}
+.discoverystream-admin .inferred-override-value {
+  min-width: 2ch;
+  text-align: end;
 }
 .discoverystream-admin .details-section {
   margin-block: var(--space-large);

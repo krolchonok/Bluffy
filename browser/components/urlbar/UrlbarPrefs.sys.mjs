@@ -70,6 +70,12 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // Nimbus variable `autoFillAdaptiveHistoryEnabled`.
   ["autoFill.adaptiveHistory.enabled", false],
 
+  // Duration in ms to block after backspace penalty. Default: 2 days.
+  ["autoFill.adaptiveHistory.backspaceBlockDurationMs", 172800000],
+
+  // Duration in ms to block an origin/URL after dismiss. Default: 7 days.
+  ["autoFill.adaptiveHistory.dismissalBlockDurationMs", 604800000],
+
   // Minimum char length of the user's search string to enable adaptive history
   // autofill. This pref is a fallback for the Nimbus variable
   // `autoFillAdaptiveHistoryMinCharsThreshold`.
@@ -245,7 +251,7 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   ["merino.providers", ""],
 
   // Timeout for Merino fetches (ms).
-  ["merino.timeoutMs", 200],
+  ["merino.timeoutMs", 500],
 
   // Merino endpoint prefs to be used for weather widgets
   ["merino.weather.reportEndpointURL", ""],

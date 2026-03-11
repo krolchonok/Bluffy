@@ -3208,7 +3208,8 @@ nsresult nsHttpChannel::ContinueProcessResponse1(
       RefPtr<HttpChannelParent> httpParent;
       CookieServiceParent::CookieProcessingGuard cookieProcessingGuard;
 
-      if (!LoadOnStartRequestCalled()) {
+      // Skip parent channel interaction for background revalidating channels.
+      if (!LoadOnStartRequestCalled() && !mStaleRevalidation) {
         // This can only happen when a range request is created again in
         // nsHttpChannel::ContinueOnStopRequest. If OnStartRequest is already
         // called, we shouldn't call SetCookieHeaders.
@@ -10135,7 +10136,9 @@ nsHttpChannel::OnStopRequest(nsIRequest* request, nsresult status) {
 
   nsCOMPtr<nsICompressConvStats> conv = do_QueryInterface(mCompressListener);
   if (conv) {
-    conv->GetDecodedDataLength(&mDecodedBodySize);
+    uint64_t decodedDataLength = 0;
+    conv->GetDecodedDataLength(&decodedDataLength);
+    mDecodedBodySize = decodedDataLength;
   }
 
   bool isFromNet = request == mTransactionPump;

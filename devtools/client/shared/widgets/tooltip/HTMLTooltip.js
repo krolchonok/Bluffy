@@ -1007,9 +1007,9 @@ class HTMLTooltip extends EventEmitter {
     // so disable all features that impact the behavior.
     panel.setAttribute("animate", false);
     panel.setAttribute("consumeoutsideclicks", false);
-    panel.setAttribute("incontentshell", false);
+    panel.setAttribute("escapecontentshell", true);
     panel.setAttribute("noautofocus", true);
-    panel.setAttribute("noautohide", this.noAutoHide);
+    panel.toggleAttribute("noautohide", this.noAutoHide);
 
     panel.setAttribute("ignorekeys", true);
     panel.setAttribute("tooltip", "aHTMLTooltip");

@@ -128,7 +128,7 @@ bool ConnectionAttemptPool::FindConnToClaim(
     PendingTransactionInfo* pendingTransInfo) {
   nsHttpTransaction* trans = pendingTransInfo->Transaction();
   for (const auto& sock : mAttempts) {
-    if (sock->AcceptsTransaction(trans) && sock->Claim()) {
+    if (sock->AcceptsTransaction(trans) && sock->Claim(trans)) {
       pendingTransInfo->RememberConnectionAttempt(sock);
       // We've found a speculative connection or a connection that
       // is free to be used in the mAttempts list.
@@ -162,7 +162,7 @@ void ConnectionAttemptPool::TimeoutTick() {
     if (delta > maxConnectTime_ms) {
       LOG(("Force timeout of ConnectionAttempt to %p after %.2fms.\n",
            sock.get(), delta));
-      sock->CloseTransports(NS_ERROR_NET_TIMEOUT);
+      sock->OnTimeout();
     }
 
     // If this ConnectionAttempt hangs around for 5 seconds after we've

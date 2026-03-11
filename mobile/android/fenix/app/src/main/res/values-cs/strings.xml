@@ -1261,9 +1261,9 @@
   <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
   <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage">Údaje o vašem zařízení, konfiguraci hardwaru a používání nám pomáhají zlepšovat funkce, výkon a stabilitu Firefoxu.</string>
   <!-- Preference switch for daily usage ping data collection -->
-  <string name="preferences_daily_usage_ping_title">Ping o denním používání</string>
+  <string name="preferences_daily_usage_ping_title">Denní ping o používání</string>
   <string name="preferences_daily_usage_ping_description">To pomáhá společnosti Mozilla odhadnout počet aktivních uživatelů.</string>
-  <string name="preferences_daily_usage_ping_learn_more">Zjistěte více o denním používání pingu</string>
+  <string name="preferences_daily_usage_ping_learn_more">Zjistěte více o denním pingu o používání</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="crash_reporting_snack_bar_message">Hlášení odesláno</string>
   <!-- Text for sumo link to learn more about crash reports in data collection screen -->
@@ -1643,6 +1643,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Upravit skupinu</string>
   <string name="create_tab_group_save_button">Uložit</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Skupina</string>
   <!--
     Default tab group name when creating a tab group
     %d is the number of existing tab groups + 1.
@@ -2314,23 +2316,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Nastavit Firefox jako můj výchozí prohlížeč</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Vyzkoušejte anonymní prohlížení</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Vyzkoušejte anonymní prohlížení</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Prohlížejte web bez ukládání cookies a historie v aplikaci %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Prohlížejte web bez ukládání cookies a historie v aplikaci %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Prohlížejte beze stop</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Prohlížejte beze stop</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Anonymní prohlížení v aplikaci %1$s neukládá vaše data.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Anonymní prohlížení v aplikaci %1$s neukládá vaše data.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Začnete své první vyhledávání</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Začnete své první vyhledávání</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Najděte něco v okolí, nebo objevte něco zábavného.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Najděte něco v okolí, nebo objevte něco zábavného.</string>
   <!--
     Survey
 

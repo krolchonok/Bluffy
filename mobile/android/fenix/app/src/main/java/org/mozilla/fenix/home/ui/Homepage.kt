@@ -79,6 +79,7 @@ import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.trackingprotection.TrackersBlockedCard
 import org.mozilla.fenix.utils.isLargeScreenSize
 import org.mozilla.fenix.wallpapers.WallpaperState
 import mozilla.components.ui.icons.R as iconsR
@@ -159,6 +160,13 @@ internal fun Homepage(
                                     topSiteColors = topSiteColors,
                                     interactor = interactor,
                                     onTopSitesItemBound = onTopSitesItemBound,
+                                )
+                            }
+
+                            if (showPrivacyReport) {
+                                TrackersBlockedCard(
+                                    trackersBlockedCount = 0,
+                                    modifier = Modifier.padding(top = 16.dp),
                                 )
                             }
 
@@ -498,6 +506,7 @@ private fun HomepagePreview() {
                     showRecentlyVisited = true,
                     showPocketStories = true,
                     showCollections = true,
+                    showPrivacyReport = true,
                     headerState = HeaderState(
                         showHeader = false,
                         wordmarkTextColor = null,
@@ -549,6 +558,7 @@ private fun HomepageBannerPreview() {
                     showRecentlyVisited = true,
                     showPocketStories = true,
                     showCollections = true,
+                    showPrivacyReport = true,
                     headerState = HeaderState(
                         showHeader = true,
                         wordmarkTextColor = null,
@@ -600,6 +610,7 @@ private fun HomepagePreviewCollections() {
                     showRecentlyVisited = true,
                     showPocketStories = true,
                     showCollections = true,
+                    showPrivacyReport = true,
                     headerState = HeaderState(
                         showHeader = false,
                         wordmarkTextColor = null,
@@ -651,7 +662,8 @@ private fun MinimalHomepagePreview() {
                     showRecentlyVisited = false,
                     showPocketStories = true,
                     showCollections = false,
-                    HeaderState(
+                    showPrivacyReport = true,
+                    headerState = HeaderState(
                         showHeader = false,
                         wordmarkTextColor = null,
                         privateBrowsingButtonColor = colorResource(

@@ -10,7 +10,9 @@ use crate::applicable_declarations::{
 use crate::computed_value_flags::ComputedValueFlags;
 use crate::context::{CascadeInputs, QuirksMode};
 use crate::custom_properties::ComputedCustomProperties;
+use crate::custom_properties::{parse_name, SpecifiedValue};
 use crate::derives::*;
+use crate::device::Device;
 use crate::dom::TElement;
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::structs::{ServoStyleSetSizes, StyleRuleInclusion};
@@ -22,7 +24,6 @@ use crate::invalidation::media_queries::{
     EffectiveMediaQueryResults, MediaListKey, ToMediaListKey,
 };
 use crate::invalidation::stylesheets::{RuleChangeKind, StylesheetInvalidationSet};
-use crate::media_queries::Device;
 #[cfg(feature = "gecko")]
 use crate::properties::StyleBuilder;
 use crate::properties::{
@@ -30,8 +31,10 @@ use crate::properties::{
     PropertyDeclarationBlock,
 };
 use crate::properties_and_values::registry::{
-    PropertyRegistration, PropertyRegistrationData, ScriptRegistry as CustomPropertyScriptRegistry,
+    PropertyRegistration, ScriptRegistry as CustomPropertyScriptRegistry,
 };
+use crate::properties_and_values::rule::{Inherits, PropertyRegistrationError, PropertyRuleName, Descriptors as PropertyDescriptors};
+use crate::properties_and_values::syntax::Descriptor;
 use crate::rule_cache::{RuleCache, RuleCacheConditions};
 use crate::rule_collector::RuleCollector;
 use crate::rule_tree::{CascadeLevel, RuleTree, StrongRuleNode, StyleSource};
@@ -49,6 +52,7 @@ use crate::stylesheets::scope_rule::{
     collect_scope_roots, element_is_outside_of_scope, scope_selector_list_is_trivial,
     ImplicitScopeRoot, ScopeRootCandidate, ScopeSubjectMap, ScopeTarget,
 };
+use crate::stylesheets::UrlExtraData;
 use crate::stylesheets::{
     CounterStyleRule, CssRule, CssRuleRef, EffectiveRulesIterator, FontFaceRule,
     FontFeatureValuesRule, FontPaletteValuesRule, Origin, OriginSet, PagePseudoClassFlags,
@@ -58,9 +62,10 @@ use crate::stylesheets::{CustomMediaEvaluator, CustomMediaMap};
 #[cfg(feature = "gecko")]
 use crate::values::specified::position::PositionTryFallbacksItem;
 use crate::values::specified::position::PositionTryFallbacksTryTactic;
-use crate::values::{computed, AtomIdent};
+use crate::values::{computed, AtomIdent, Parser, SourceLocation};
 use crate::AllocErr;
 use crate::{Atom, LocalName, Namespace, ShrinkIfNeeded, WeakAtom};
+use cssparser::ParserInput;
 use dom::{DocumentState, ElementState};
 #[cfg(feature = "gecko")]
 use malloc_size_of::MallocUnconditionalShallowSizeOf;
@@ -882,16 +887,16 @@ impl Stylist {
 
     /// Returns the custom property registration for this property's name.
     /// https://drafts.css-houdini.org/css-properties-values-api-1/#determining-registration
-    pub fn get_custom_property_registration(&self, name: &Atom) -> &PropertyRegistrationData {
+    pub fn get_custom_property_registration(&self, name: &Atom) -> &PropertyDescriptors {
         if let Some(registration) = self.custom_property_script_registry().get(name) {
-            return &registration.data;
+            return &registration.descriptors;
         }
         for (data, _) in self.iter_origins() {
             if let Some(registration) = data.custom_property_registrations.get(name) {
-                return &registration.data;
+                return &registration.descriptors;
             }
         }
-        PropertyRegistrationData::unregistered()
+        PropertyDescriptors::unregistered()
     }
 
     /// Returns custom properties with their registered initial values.
@@ -922,7 +927,7 @@ impl Stylist {
                 let Ok(value) = v.compute_initial_value(&context) else {
                     continue;
                 };
-                let map = if v.inherits() {
+                let map = if v.descriptors.inherits() {
                     &mut initial_values.inherited
                 } else {
                     &mut initial_values.non_inherited
@@ -936,7 +941,7 @@ impl Stylist {
                         let Ok(value) = last_value.compute_initial_value(&context) else {
                             continue;
                         };
-                        let map = if last_value.inherits() {
+                        let map = if last_value.descriptors.inherits() {
                             &mut initial_values.inherited
                         } else {
                             &mut initial_values.non_inherited
@@ -2017,6 +2022,97 @@ impl Stylist {
     /// Shutdown the static data that this module stores.
     pub fn shutdown() {
         let _entries = UA_CASCADE_DATA_CACHE.lock().unwrap().take_all();
+    }
+}
+
+#[allow(missing_docs)]
+#[repr(u8)]
+pub enum RegisterCustomPropertyResult {
+    SuccessfullyRegistered,
+    InvalidName,
+    AlreadyRegistered,
+    InvalidSyntax,
+    NoInitialValue,
+    InvalidInitialValue,
+    InitialValueNotComputationallyIndependent,
+}
+
+impl Stylist {
+    /// <https://drafts.css-houdini.org/css-properties-values-api-1/#the-registerproperty-function>
+    pub fn register_custom_property(
+        &mut self,
+        url_data: &UrlExtraData,
+        name: &str,
+        syntax: &str,
+        inherits: bool,
+        initial_value: Option<&str>,
+    ) -> RegisterCustomPropertyResult {
+        use RegisterCustomPropertyResult::*;
+
+        // If name is not a custom property name string, throw a SyntaxError and exit this algorithm.
+        let name = match parse_name(name) {
+            Ok(n) => Atom::from(n),
+            Err(()) => return InvalidName,
+        };
+
+        // If property set already contains an entry with name as its property name (compared
+        // codepoint-wise), throw an InvalidModificationError and exit this algorithm.
+        if self.custom_property_script_registry().get(&name).is_some() {
+            return AlreadyRegistered;
+        }
+        // Attempt to consume a syntax definition from syntax. If it returns failure, throw a
+        // SyntaxError. Otherwise, let syntax definition be the returned syntax definition.
+        let Ok(syntax) = Descriptor::from_str(syntax, /* preserve_specified = */ false) else {
+            return InvalidSyntax;
+        };
+
+        let initial_value = match initial_value {
+            Some(v) => {
+                let mut input = ParserInput::new(v);
+                let parsed = Parser::new(&mut input)
+                    .parse_entirely(|input| {
+                        input.skip_whitespace();
+                        SpecifiedValue::parse(input, None, url_data).map(Arc::new)
+                    })
+                    .ok();
+                if parsed.is_none() {
+                    return InvalidInitialValue;
+                }
+                parsed
+            },
+            None => None,
+        };
+
+        if let Err(error) =
+            PropertyRegistration::validate_initial_value(&syntax, initial_value.as_deref())
+        {
+            return match error {
+                PropertyRegistrationError::InitialValueNotComputationallyIndependent => {
+                    InitialValueNotComputationallyIndependent
+                },
+                PropertyRegistrationError::InvalidInitialValue => InvalidInitialValue,
+                PropertyRegistrationError::NoInitialValue => NoInitialValue,
+            };
+        }
+
+        let property_registration = PropertyRegistration {
+            name: PropertyRuleName(name),
+            descriptors: PropertyDescriptors {
+                syntax: Some(syntax),
+                inherits: Some(if inherits {
+                    Inherits::True
+                } else {
+                    Inherits::False
+                }),
+                initial_value,
+            },
+            url_data: url_data.clone(),
+            source_location: SourceLocation { line: 0, column: 0 },
+        };
+        self.custom_property_script_registry_mut().register(property_registration);
+        self.rebuild_initial_values_for_custom_properties();
+
+        SuccessfullyRegistered
     }
 }
 

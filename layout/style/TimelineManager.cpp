@@ -17,6 +17,9 @@ using dom::Element;
 using dom::ScrollTimeline;
 using dom::ViewTimeline;
 
+TimelineManager::TimelineManager(nsPresContext* aPresContext)
+    : mPresContext(aPresContext) {}
+
 template <typename TimelineType>
 struct TimelineSourceMatches {
   bool operator()(const TimelineType* aTimeline) {

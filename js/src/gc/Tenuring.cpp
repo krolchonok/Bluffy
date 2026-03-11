@@ -337,8 +337,8 @@ void js::gc::StoreBuffer::MonoTypeBuffer<T>::trace(TenuringTracer& mover,
     last_.trace(mover);
   }
 
-  for (typename StoreSet::Range r = stores_.all(); !r.empty(); r.popFront()) {
-    r.front().trace(mover);
+  for (auto iter = stores_.iter(); !iter.done(); iter.next()) {
+    iter.get().trace(mover);
   }
 }
 
@@ -1620,13 +1620,13 @@ void PromotionStats::printObjectCounts(JSContext* cx,
                                        const JS::AutoRequireNoGC& nogc) {
   CountsVector counts;
 
-  for (auto r = objectCountByBaseShape.all(); !r.empty(); r.popFront()) {
-    size_t count = r.front().value();
+  for (auto iter = objectCountByBaseShape.iter(); !iter.done(); iter.next()) {
+    size_t count = iter.get().value();
     if (count < AttentionThreshold) {
       continue;
     }
 
-    BaseShape* baseShape = r.front().key();
+    BaseShape* baseShape = iter.get().key();
 
     const char* className = baseShape->clasp()->name;
 

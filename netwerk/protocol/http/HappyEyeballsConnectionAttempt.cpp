@@ -177,6 +177,10 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
              static_cast<uint32_t>(event.attempt_connection.protocol),
              event.attempt_connection.port));
 
+        if (mFirstConnectionStart.IsNull()) {
+          mFirstConnectionStart = TimeStamp::Now();
+        }
+
         auto res = ToNetAddr(event.attempt_connection.addr,
                              event.attempt_connection.port);
         if (res.isErr()) {
@@ -212,10 +216,24 @@ nsresult HappyEyeballsConnectionAttempt::ProcessHappyEyeballsOutput() {
         OnSucceeded();
         return NS_OK;
 
-      case happy_eyeballs::Output::Tag::Failed:
+      case happy_eyeballs::Output::Tag::Failed: {
         LOG(("happy_eyeballs::Output::Tag::Failed"));
+        RefPtr<HappyEyeballsConnectionAttempt> self(this);
+        RefPtr<ConnectionEntry> entry(mEntry);
+
+        if (nsHttpTransaction* trans = mTransaction->QueryHttpTransaction()) {
+          if (entry) {
+            entry->RemoveTransFromPendingQ(trans);
+          }
+        }
+        mTransaction->Close(NS_ERROR_CONNECTION_REFUSED);
+
         Abandon();
+        if (entry) {
+          entry->RemoveConnectionAttempt(this, false);
+        }
         return NS_ERROR_CONNECTION_REFUSED;
+      }
 
       case happy_eyeballs::Output::Tag::None:
         LOG(("happy_eyeballs::Output::Tag::None"));
@@ -660,9 +678,20 @@ void HappyEyeballsConnectionAttempt::OnSucceeded() {
   entry->RemoveConnectionAttempt(this, false);
 }
 
-double HappyEyeballsConnectionAttempt::Duration(TimeStamp epoch) { return 0; }
+double HappyEyeballsConnectionAttempt::Duration(TimeStamp epoch) {
+  if (mFirstConnectionStart.IsNull()) {
+    return 0;
+  }
+  return (epoch - mFirstConnectionStart).ToMilliseconds();
+}
 
-void HappyEyeballsConnectionAttempt::CloseTransports(nsresult error) {}
+void HappyEyeballsConnectionAttempt::OnTimeout() {
+  LOG(("HappyEyeballsConnectionAttempt::OnTimeout %p" PRIx32, this));
+  if (mTransaction) {
+    mTransaction->Close(NS_ERROR_NET_TIMEOUT);
+  }
+  Abandon();
+}
 
 void HappyEyeballsConnectionAttempt::PrintDiagnostics(nsCString& log) {}
 
@@ -677,7 +706,7 @@ uint32_t HappyEyeballsConnectionAttempt::UnconnectedUDPConnsLength() const {
   return len;
 }
 
-bool HappyEyeballsConnectionAttempt::Claim() {
+bool HappyEyeballsConnectionAttempt::Claim(nsHttpTransaction* newTransaction) {
   if (mSpeculative) {
     mSpeculative = false;
     mAllow1918 = true;
@@ -690,7 +719,15 @@ bool HappyEyeballsConnectionAttempt::Claim() {
 
   if (mFreeToUse) {
     mFreeToUse = false;
-    // TODO: we should claim the socket transport
+    if (newTransaction && mTransaction &&
+        mTransaction->QueryNullTransaction()) {
+      LOG(
+          ("HappyEyeballsConnectionAttempt::Claim %p replacing null "
+           "transaction %p with %p",
+           this, mTransaction.get(), newTransaction));
+      mTransaction->Close(NS_ERROR_ABORT);
+      mTransaction = newTransaction;
+    }
     return true;
   }
 
@@ -949,6 +986,7 @@ HappyEyeballsConnectionAttempt::GetName(nsACString& aName) {
 
 void HappyEyeballsConnectionAttempt::SetupTimer(uint64_t aTimeout) {
   if (!aTimeout) {
+    MOZ_ASSERT(false, "aTimeout should not be 0");
     return;
   }
 

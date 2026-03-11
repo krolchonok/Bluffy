@@ -705,10 +705,8 @@ void nsHttpConnectionMgr::OnMsgClearConnectionHistory(int32_t,
 
   for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
     RefPtr<ConnectionEntry> ent = iter.Data();
-    if (ent->IdleConnectionsLength() == 0 && ent->ActiveConnsLength() == 0 &&
-        ent->DnsAndConnectSocketsLength() == 0 &&
-        ent->UrgentStartQueueIsEmpty() && ent->PendingQueueIsEmpty() &&
-        !ent->mDoNotDestroy) {
+    if (ent->IsEmpty()) {
+      mPendingQEntries.Remove(ent.get());
       iter.Remove();
     }
   }
@@ -1266,6 +1264,7 @@ bool nsHttpConnectionMgr::ProcessPendingQForEntry(ConnectionEntry* ent,
     ent->RemoveEmptyPendingQ();
   }
 
+  MaybeRemoveEntryFromPendingSet(ent);
   return dispatchedSuccessfully;
 }
 
@@ -1966,7 +1965,7 @@ nsresult nsHttpConnectionMgr::ProcessNewTransaction(nsHttpTransaction* trans) {
 
       if (!specificEnt) {
         RefPtr<nsHttpConnectionInfo> clone(ci->Clone());
-        specificEnt = new ConnectionEntry(clone);
+        specificEnt = new ConnectionEntry(clone, mPendingQEntries);
         mCT.InsertOrUpdate(clone->HashKey(), RefPtr{specificEnt});
       }
 
@@ -2114,6 +2113,13 @@ void nsHttpConnectionMgr::DispatchSpdyPendingQ(
   pendingQ = std::move(leftovers);
 }
 
+void nsHttpConnectionMgr::MaybeRemoveEntryFromPendingSet(ConnectionEntry* ent) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  if (ent->PendingQueueIsEmpty() && ent->UrgentStartQueueIsEmpty()) {
+    mPendingQEntries.Remove(ent);
+  }
+}
+
 // This function tries to dispatch the pending h2 or h3 transactions on
 // the connection entry sent in as an argument. It will do so on the
 // active h2 or h3 connection either in that same entry or from the
@@ -2155,8 +2161,13 @@ void nsHttpConnectionMgr::ProcessSpdyPendingQ(ConnectionEntry* ent) {
 void nsHttpConnectionMgr::OnMsgProcessAllSpdyPendingQ(int32_t, ARefBase*) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   LOG(("nsHttpConnectionMgr::OnMsgProcessAllSpdyPendingQ\n"));
-  for (const auto& entry : mCT.Values()) {
+  AutoTArray<RefPtr<ConnectionEntry>, 16> entries;
+  for (ConnectionEntry* entry : mPendingQEntries) {
+    entries.AppendElement(entry);
+  }
+  for (const auto& entry : entries) {
     ProcessSpdyPendingQ(entry.get());
+    MaybeRemoveEntryFromPendingSet(entry.get());
   }
 }
 
@@ -2226,10 +2237,10 @@ void nsHttpConnectionMgr::AbortAndCloseAllConnections(int32_t, ARefBase*) {
     // Close all half open tcp connections.
     ent->CloseAllConnectionAttempts();
 
-    MOZ_ASSERT(!ent->mDoNotDestroy);
     iter.Remove();
   }
 
+  mPendingQEntries.Clear();
   mActiveTransactions[false].Clear();
   mActiveTransactions[true].Clear();
 }
@@ -2466,15 +2477,18 @@ void nsHttpConnectionMgr::OnMsgPruneDeadConnections(int32_t, ARefBase*) {
   // Reset mTimeOfNextWakeUp so that we can find a new shortest value.
   mTimeOfNextWakeUp = UINT64_MAX;
 
-  // check canreuse() for all idle connections plus any active connections on
-  // connection entries that are using spdy.
-  if (mNumIdleConns ||
-      (mNumActiveConns && StaticPrefs::network_http_http2_enabled())) {
-    for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
-      RefPtr<ConnectionEntry> ent = iter.Data();
+  // Prune dead connections from entries that have idle or active connections.
+  // Empty entries are always removed regardless of table size.
+  bool shouldPrune =
+      mNumIdleConns ||
+      (mNumActiveConns && StaticPrefs::network_http_http2_enabled());
 
-      LOG(("  pruning [ci=%s]\n", ent->mConnInfo->HashKey().get()));
+  for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
+    RefPtr<ConnectionEntry> ent = iter.Data();
 
+    LOG(("  pruning [ci=%s]\n", ent->mConnInfo->HashKey().get()));
+
+    if (shouldPrune) {
       // Find out how long it will take for next idle connection to not
       // be reusable anymore.
       uint32_t timeToNextExpire = ent->PruneDeadConnections();
@@ -2494,22 +2508,18 @@ void nsHttpConnectionMgr::OnMsgPruneDeadConnections(int32_t, ARefBase*) {
       } else {
         ConditionallyStopPruneDeadConnectionsTimer();
       }
+    }
 
-      ent->RemoveEmptyPendingQ();
+    ent->RemoveEmptyPendingQ();
 
-      // If this entry is empty, we have too many entries busy then
-      // we can clean it up and restart
-      if (mCT.Count() > 125 && ent->IdleConnectionsLength() == 0 &&
-          ent->ActiveConnsLength() == 0 &&
-          ent->DnsAndConnectSocketsLength() == 0 &&
-          ent->PendingQueueIsEmpty() && ent->UrgentStartQueueIsEmpty() &&
-          !ent->mDoNotDestroy && (!ent->mUsingSpdy || mCT.Count() > 300)) {
-        LOG(("    removing empty connection entry\n"));
-        iter.Remove();
-        continue;
-      }
+    if (ent->IsEmpty()) {
+      LOG(("    removing empty connection entry\n"));
+      mPendingQEntries.Remove(ent.get());
+      iter.Remove();
+      continue;
+    }
 
-      // Otherwise use this opportunity to compact our arrays...
+    if (shouldPrune) {
       ent->Compact();
     }
   }
@@ -3550,9 +3560,9 @@ ConnectionEntry* nsHttpConnectionMgr::GetOrCreateConnectionEntry(
   // step 1 repeated for an inverted anonymous flag; we return an entry
   // only when it has an h2 established connection that is not authenticated
   // with a client certificate.
-  RefPtr<nsHttpConnectionInfo> anonInvertedCI(specificCI->Clone());
-  anonInvertedCI->SetAnonymous(!specificCI->GetAnonymous());
-  ConnectionEntry* invertedEnt = mCT.GetWeak(anonInvertedCI->HashKey());
+  nsAutoCString anonInvertedKey;
+  specificCI->AnonymousInvertedHashKey(anonInvertedKey);
+  ConnectionEntry* invertedEnt = mCT.GetWeak(anonInvertedKey);
   if (invertedEnt) {
     HttpConnectionBase* h2orh3conn =
         GetH2orH3ActiveConn(invertedEnt, aNoHttp2, aNoHttp3);
@@ -3596,7 +3606,7 @@ ConnectionEntry* nsHttpConnectionMgr::GetOrCreateConnectionEntry(
   LOG(("GetOrCreateConnectionEntry step 3"));
   if (!specificEnt) {
     RefPtr<nsHttpConnectionInfo> clone(specificCI->Clone());
-    specificEnt = new ConnectionEntry(clone);
+    specificEnt = new ConnectionEntry(clone, mPendingQEntries);
     mCT.InsertOrUpdate(clone->HashKey(), RefPtr{specificEnt});
   }
   return specificEnt;
