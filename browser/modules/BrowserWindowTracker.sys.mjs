@@ -35,6 +35,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 const TAB_EVENTS = ["TabBrowserInserted", "TabSelect"];
 const WINDOW_EVENTS = ["activate", "unload"];
 const DEBUG = false;
+const WINDOWS_SNAP_GEOMETRY_TOLERANCE_PX = 24;
 
 // Variables
 let _lastCurrentBrowserId = 0;
@@ -133,6 +134,75 @@ function topicObserved(observeTopic, checkFn) {
     }
     Services.obs.addObserver(observer, observeTopic);
   });
+}
+
+function _getSnappedHalfWindowFeatures(openerWindow) {
+  if (
+    AppConstants.platform != "win" ||
+    !openerWindow ||
+    openerWindow.windowState != openerWindow.STATE_NORMAL
+  ) {
+    return null;
+  }
+
+  let {
+    screenX,
+    screenY,
+    outerWidth,
+    outerHeight,
+    screen: openerScreen,
+  } = openerWindow;
+
+  if (
+    !openerScreen ||
+    !Number.isFinite(screenX) ||
+    !Number.isFinite(screenY) ||
+    !Number.isFinite(outerWidth) ||
+    !Number.isFinite(outerHeight)
+  ) {
+    return null;
+  }
+
+  let { availLeft, availTop, availWidth, availHeight } = openerScreen;
+  if (
+    !Number.isFinite(availLeft) ||
+    !Number.isFinite(availTop) ||
+    !Number.isFinite(availWidth) ||
+    !Number.isFinite(availHeight) ||
+    availWidth <= 0 ||
+    availHeight <= 0
+  ) {
+    return null;
+  }
+
+  // Detect the common Win10/Win11 half-screen snap placements. The tolerance
+  // accounts for DPI rounding and invisible resize borders.
+  let leftHalfWidth = Math.floor(availWidth / 2);
+  let rightHalfWidth = availWidth - leftHalfWidth;
+  let rightHalfX = availLeft + leftHalfWidth;
+  let tolerance = WINDOWS_SNAP_GEOMETRY_TOLERANCE_PX;
+
+  let isAtTop = Math.abs(screenY - availTop) <= tolerance;
+  let isLeftHalf =
+    Math.abs(screenX - availLeft) <= tolerance &&
+    Math.abs(outerWidth - leftHalfWidth) <= tolerance;
+  let isRightHalf =
+    Math.abs(screenX - rightHalfX) <= tolerance &&
+    Math.abs(outerWidth - rightHalfWidth) <= tolerance;
+  // On Windows snapped windows can be a little taller than availHeight due to
+  // non-client bounds; allow small positive deltas here.
+  let heightDelta = outerHeight - availHeight;
+  let hasSnappedHeight = heightDelta >= -tolerance && heightDelta <= 16;
+
+  if (!(isAtTop && hasSnappedHeight && (isLeftHalf || isRightHalf))) {
+    return null;
+  }
+
+  return `left=${Math.round(screenX)},top=${Math.round(
+    screenY
+  )},outerWidth=${Math.round(outerWidth)},outerHeight=${Math.round(
+    outerHeight
+  )}`;
 }
 
 // Methods that impact a window. Put into single object for organization.
@@ -340,6 +410,11 @@ export const BrowserWindowTracker = {
     }
     if (features) {
       windowFeatures += `,${features}`;
+    } else {
+      let snappedHalfFeatures = _getSnappedHalfWindowFeatures(openerWindow);
+      if (snappedHalfFeatures) {
+        windowFeatures += `,${snappedHalfFeatures}`;
+      }
     }
     let loadURIString;
     if (isPrivate && lazy.PrivateBrowsingUtils.enabled) {

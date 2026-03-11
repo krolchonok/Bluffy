@@ -232,3 +232,66 @@ add_task(async function test_pendingWindows() {
 
   await BrowserTestUtils.closeWindow(foundWin);
 });
+
+add_task(async function test_openWindow_inherits_windows_snap_half_geometry() {
+  if (AppConstants.platform != "win") {
+    return;
+  }
+
+  // Start from a normal state before applying explicit geometry.
+  if (window.windowState != window.STATE_NORMAL) {
+    window.restore();
+    await BrowserTestUtils.waitForCondition(
+      () => window.windowState == window.STATE_NORMAL,
+      "Expected the test window to be restored to normal state."
+    );
+  }
+
+  let { availLeft, availTop, availWidth, availHeight } = window.screen;
+  let targetX = availLeft;
+  let targetY = availTop;
+  let targetWidth = Math.floor(availWidth / 2);
+  let targetHeight = availHeight;
+
+  window.moveTo(targetX, targetY);
+  window.resizeTo(targetWidth, targetHeight);
+  await BrowserTestUtils.waitForCondition(
+    () =>
+      Math.abs(window.screenY - targetY) <= 24 &&
+      Math.abs(window.screenX - targetX) <= 24 &&
+      Math.abs(window.outerWidth - targetWidth) <= 24 &&
+      window.outerHeight >= targetHeight - 24,
+    "Expected the opener window to be near left-half snapped geometry."
+  );
+
+  for (let openPrivate of [false, true]) {
+    let openedWindow = BrowserWindowTracker.openWindow({
+      openerWindow: window,
+      private: openPrivate,
+    });
+    await openedWindow.delayedStartupPromise;
+
+    Assert.lessOrEqual(
+      Math.abs(openedWindow.screenX - window.screenX),
+      24,
+      "Opened window should inherit snapped X position from the opener."
+    );
+    Assert.lessOrEqual(
+      Math.abs(openedWindow.screenY - window.screenY),
+      24,
+      "Opened window should inherit snapped Y position from the opener."
+    );
+    Assert.lessOrEqual(
+      Math.abs(openedWindow.outerWidth - window.outerWidth),
+      24,
+      "Opened window should inherit snapped width from the opener."
+    );
+    Assert.lessOrEqual(
+      Math.abs(openedWindow.outerHeight - window.outerHeight),
+      24,
+      "Opened window should inherit snapped height from the opener."
+    );
+
+    await BrowserTestUtils.closeWindow(openedWindow);
+  }
+});

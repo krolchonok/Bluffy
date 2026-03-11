@@ -63,6 +63,9 @@ genai-menu-open-generic =
 # $provider (string) - name of the provider
 genai-menu-open-provider =
     .label = Open { $provider }
+genai-menu-custom-prompt =
+    .label = Custom prompt…
+genai-menu-custom-prompt-message = Enter a custom prompt:
 genai-menu-remove-generic =
     .label = Remove AI Chatbot
 # $provider (string) - name of the provider

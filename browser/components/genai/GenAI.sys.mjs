@@ -819,6 +819,35 @@ export const GenAI = {
       }
     );
 
+    // Add free-form prompt input item when custom prompts are enabled.
+    if (lazy.chatShortcutsCustom) {
+      const customPromptItem = addItem();
+      doc.l10n.setAttributes(customPromptItem, "genai-menu-custom-prompt");
+      customPromptItem.addEventListener("command", async () => {
+        const [dialogMessage] = await lazy.l10n.formatValues([
+          "genai-menu-custom-prompt-message",
+        ]);
+        const input = { value: "" };
+        const accepted = Services.prompt.prompt(
+          context.window,
+          customPromptItem.label,
+          dialogMessage,
+          input,
+          null,
+          {}
+        );
+        if (!accepted) {
+          return;
+        }
+
+        const value = input.value.trim();
+        if (!value) {
+          return;
+        }
+        this.handleAskChat({ value }, context);
+      });
+    }
+
     // For page which currently only shows 1 prompt, make it less empty with an
     // Open or Choose options depending on provider
     if (context.contentType == "page") {
