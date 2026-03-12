@@ -1894,11 +1894,7 @@ pref("browser.newtabpage.activity-stream.unifiedAds.tiles.enabled", true);
 pref("browser.newtabpage.activity-stream.unifiedAds.spocs.enabled", true);
 pref("browser.newtabpage.activity-stream.unifiedAds.endpoint", "https://ads.mozilla.org/");
 pref("browser.newtabpage.activity-stream.unifiedAds.adsFeed.enabled", false);
-#ifdef NIGHTLY_BUILD
 pref("browser.newtabpage.activity-stream.unifiedAds.ohttp.enabled", true);
-#else
-pref("browser.newtabpage.activity-stream.unifiedAds.ohttp.enabled", false);
-#endif
 
 // Weather widget for newtab
 pref("browser.newtabpage.activity-stream.showWeather", true);
@@ -3377,6 +3373,12 @@ pref("first-startup.category-tasks-enabled", true);
 // Handing URLs to external apps via the "Share URL" menu item could allow a proxy bypass
 #ifdef MOZ_PROXY_BYPASS_PROTECTION
   pref("browser.menu.share_url.allow", false);
+#endif
+
+#if defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
+pref("browser.shareqrcode.enabled", true);
+#else
+pref("browser.shareqrcode.enabled", false);
 #endif
 
 // Mozilla-controlled domains that are allowed to use non-standard

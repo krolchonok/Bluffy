@@ -53,7 +53,7 @@ RE_BUILD_OUTPUT = re.compile(
     |(?P<error_summary>^\d+\s+errors?\s+generated\.)
     |(?P<make_error>make(?:\[\d+\])?\s*:\s*\*\*\*)
     |(?P<nsis_warning_block>^\d+\s+warnings?:)
-    |(?P<error_block>^error:(?:\[e\d+\])?:?\s?)
+    |(?P<error_block>^error(?:\[e\d+\])?:\s?)
     |(?P<warning_standalone>^warning:\s+mkdir\s)
     |(?P<warning_num>^warning\s+\d+:)
     |(?P<warning_block>^warning:\s?)
@@ -896,7 +896,10 @@ class StaticAnalysisFooter(Footer):
         monitor = self.monitor
         total = monitor.num_files
         processed = monitor.num_files_processed
-        percent = "(%.2f%%)" % (processed * 100.0 / total)
+        if total:
+            percent = "(%.2f%%)" % (processed * 100.0 / total)
+        else:
+            percent = "(100%)"
         parts = [
             ("bright_black", "Processing"),
             ("yellow", str(processed)),

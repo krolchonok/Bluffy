@@ -63,6 +63,8 @@ support-files = [
 
 ["browser_aiwindow_smartbar_interactions.js"]
 
+["browser_aiwindow_smartbar_keyboard_navigation.js"]
+
 ["browser_aiwindow_smartbar_mentions.js"]
 
 ["browser_aiwindow_switcher.js"]
@@ -84,6 +86,8 @@ support-files = [
 ["browser_sidebar_aiwindow.js"]
 
 ["browser_smartwindow_assistant_ui_errors.js"]
+
+["browser_smartwindow_beta_badge.js"]
 
 ["browser_smartwindow_content.js"]
 
